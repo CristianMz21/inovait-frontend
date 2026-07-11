@@ -66,12 +66,20 @@
 
 .contracts-field input,
 .contracts-field select {
-  font: inherit;
+  /* Use individual font properties instead of `font: inherit` shorthand.
+   * `font: inherit` overrides Chromium's internal metrics for <input type="date">
+   * and stretches the calendar picker indicator to 100% width, hiding the icon. */
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.45;
   padding: 0.45rem 0.6rem;
   border-radius: 4px;
   border: 1px solid var(--app-border);
   background: var(--app-bg);
   color: inherit;
+  display: inline-block;
+  width: 100%;
+  min-height: 2.25rem;
 }
 
 .contracts-field input:focus-visible,
