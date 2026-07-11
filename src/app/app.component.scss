@@ -1,0 +1,98 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--app-border, #d0d4d9);
+  background: var(--app-header-bg, #ffffff);
+}
+
+.app-title {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.app-subtitle {
+  margin: 0.25rem 0 0;
+  color: var(--app-muted, #4a4f55);
+  font-size: 0.9rem;
+}
+
+.app-nav ul {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0;
+  margin: 0.75rem 0 0;
+}
+
+.app-nav a {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.7rem;
+  border-radius: 4px;
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid transparent;
+}
+
+.app-nav a.is-active {
+  border-color: var(--app-accent, #1d4ed8);
+  background: var(--app-accent-soft, #eff6ff);
+}
+
+.app-nav a:focus-visible {
+  outline: 2px solid var(--app-accent, #1d4ed8);
+  outline-offset: 2px;
+}
+
+.app-main {
+  flex: 1 1 auto;
+  padding: 1.25rem;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.app-footer {
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid var(--app-border, #d0d4d9);
+  color: var(--app-muted, #4a4f55);
+  font-size: 0.8rem;
+}
+
+.skip-link {
+  position: absolute;
+  left: -1000px;
+  top: 0;
+  padding: 0.5rem 0.75rem;
+  background: var(--app-accent, #1d4ed8);
+  color: #fff;
+  z-index: 100;
+}
+
+.skip-link:focus {
+  left: 0.5rem;
+  top: 0.5rem;
+}
+
+.route-placeholder {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.route-placeholder h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.route-placeholder p {
+  margin: 0;
+  max-width: 65ch;
+  color: var(--app-muted, #4a4f55);
+}

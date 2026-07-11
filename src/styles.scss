@@ -1,0 +1,67 @@
+/* Estilos globales de Inovait · WU01 (fundación).
+ * Define tokens de color, tipografía base y normalizaciones para
+ * accesibilidad (foco visible, contraste alto, soporte de zoom 200%).
+ */
+
+:root {
+  --app-bg: #f7f8fa;
+  --app-header-bg: #ffffff;
+  --app-muted: #4a4f55;
+  --app-text: #111827;
+  --app-border: #d0d4d9;
+  --app-accent: #1d4ed8;
+  --app-accent-soft: #eff6ff;
+  --app-error: #b91c1c;
+  --app-error-soft: #fef2f2;
+  --app-success: #166534;
+  --app-success-soft: #f0fdf4;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--app-bg);
+  color: var(--app-text);
+  font-family:
+    'Inter',
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+body {
+  min-height: 100vh;
+}
+
+:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --app-muted: #1f2937;
+    --app-border: #000000;
+    --app-accent: #0b3a91;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

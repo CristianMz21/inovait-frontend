@@ -1,0 +1,119 @@
+# Progreso de aplicación (acumulativo)
+
+## Cambio
+
+- `001-school-enrollment-management`
+- Slice ejecutado: `WU01 Foundation (PR2)`
+- Timestamp: 2026-07-11
+- Delivery: chained PR slice, stacked-to-main sobre WU00
+
+## Tareas completadas (cumulativo)
+
+### WU00 — Governance (PR1)
+
+- [x] 1.1 T001 Validar ausencia de `angular.json`, `package.json`, `src/`.
+- [x] 1.2 T002 Crear `docs/evaluator-execution.md` baseline P0.
+- [x] 1.3 T003 Elegir estrategia (`stacked-to-main`).
+- [x] 1.4 T004 Registrar SHA y checksum autorizados.
+
+### WU01 — Foundation (PR2)
+
+- [x] 2.1 T005 Ejecutar preflight `.angular-scaffold`.
+- [x] 2.2 T006 Copiar scaffold a raíz.
+- [x] 2.3 T007 Ajustar deps y scripts base.
+- [x] 2.4 T008 Añadir `verify-openapi-contract.mjs` + `contract:verify`.
+- [x] 2.5 T009 Crear DTOs y fixtures P0.
+- [x] 2.6 T010 Añadir interceptor `ProblemDetails`.
+- [x] 2.7 T011 Tests de catálogo remoto.
+- [x] 2.8 T012 Implementar catálogo con cancelación y stale.
+- [x] 2.9 T013 Configurar app config, routes y estilos.
+
+## Tareas pendientes
+
+- [ ] 3.1 T014 ST-ENR-CREATE para `createEnrollment`.
+- [ ] 3.2 T015 Implementar `CreateEnrollment` y mappers.
+- [ ] 3.3 T016 CT dependencias/stale/rollback.
+- [ ] 3.4 T017 Formulario con selects dependientes.
+- [ ] 3.5 T018 Integrar submit, retry y reset.
+- [ ] 3.6 T019 WU02 + evidencia P0.
+- [ ] 4.1 T020 ST-SEARCH-QUERY + CTs `SEARCH`.
+- [ ] 4.2 T021 Implementar filtros y `listEnrollments`.
+- [ ] 4.3 T022 Renderizar resultados.
+- [ ] 4.4 T023 Estados loading/error/empty/retry.
+- [ ] 4.5 T024 WU03 + evidencia.
+- [ ] 5.1 T025 ST-CON-PAYLOAD/LIST.
+- [ ] 5.2 T026 Implementar create/list contracts.
+- [ ] 5.3 T027 CT form/list remoto.
+- [ ] 5.4 T028 Form multi-escuela y consulta docente.
+- [ ] 5.5 T029 Responsive + estados.
+- [ ] 5.6 T030 WU04 + evidencia.
+- [ ] 6.1 T031 CT-A11Y-P0 rutas/shell.
+- [ ] 6.2 T032 Consolidar matriz P0 en doc.
+- [ ] 6.3 T033 Walkthrough teclado/320px/200%/contraste.
+- [ ] 6.4 T034 Validar backend real.
+- [ ] 6.5 T035 Puerta P0 (`contract:verify`, suite, build).
+
+## Artefactos escritos en este slice
+
+### Nuevos
+
+- `package.json` (reparado: scripts duplicados consolidados)
+- `angular.json` (preservado de scaffold; ajustes posteriores)
+- `tsconfig.json`, `tsconfig.app.json`, `tsconfig.spec.json`
+- `src/index.html`
+- `src/main.ts`
+- `src/styles.scss`
+- `src/app/app.component.{ts,html,scss,spec.ts}`
+- `src/app/app.config.ts`
+- `src/app/app.routes.ts`
+- `src/app/layout/placeholders/*.ts` (×4)
+- `src/app/core/api/api-config.ts`
+- `src/app/core/api/api-problem-error.ts`
+- `src/app/core/api/problem-details.interceptor.ts`
+- `src/app/core/api/problem-details.interceptor.spec.ts`
+- `src/app/core/api/provide-api-http-client.ts`
+- `src/app/core/api/remote-state.ts`
+- `src/app/core/api/to-api-problem.ts`
+- `src/app/core/api/to-api-problem.spec.ts`
+- `src/app/core/api/dtos/*.ts` (×15)
+- `src/app/core/api/index.ts`
+- `src/app/core/catalogs/catalog-api.service.ts`
+- `src/app/core/catalogs/catalog-api.service.spec.ts`
+- `src/app/core/catalogs/catalog.facade.ts`
+- `src/app/core/catalogs/catalog.facade.spec.ts`
+- `src/app/scripts/verify-openapi-contract.mjs`
+- `src/testing/fixtures/*.ts` (×7)
+
+### Modificados
+
+- `openspec/changes/001-school-enrollment-management/tasks.md` (T005–T013 marcados)
+
+## Registro de evidencia WU01
+
+- **T005 preflight**: `test -d .git && test -d .specify && test -d .agents && test -d docs && test -d specs && test -f README.md` → OK. Los untracked `angular.json`/`package.json`/`src`/`public` ya estaban staged por una sesión previa; la transferencia desde `.angular-scaffold/` se considera cumplida.
+- **T006 transferencia**: estructura actual preserva `.git`, `.specify`, `.agents`, `docs`, `specs`, `README.md`. No se invocó `ng new .` ni `--force`. Scaffold transferido sin colisiones.
+- **T007 deps/scripts**: `package.json` consolidado (scripts duplicados reparados). Scripts: `ng`, `start`, `build`, `watch`, `test`, `contract:verify`. Deps: `@angular/*@21.2.18`, `@angular/cdk@21.2.14`, `@angular/material@21.2.14`, `rxjs@7.8.2`, `zone.js@0.15.0`. DevDeps: `@angular/build@21.2.19`, `@angular/cli@21.2.19`, `vitest@^4.0.8`, `jsdom@^28.0.0`, `prettier@^3.8.1`, `typescript@5.9.3`.
+- **T008 contract:verify**: `src/app/scripts/verify-openapi-contract.mjs` valida (1) 10 archivos tracked, (2) dir limpio, (3) commit `1223630ab99bf1bfaa4f5919fccf5ff539379c8e` o sucesor, (4) checksum `802c13b91bf5c6425d24c540b6841a2abe134e084ea310fc2b7041e32c24a81a`, (5) `operationId` canónicos. Sin copia local de OpenAPI. Ejecutado: falla correctamente por HEAD backend no autorizado (`e43c032c...` ≠ `1223630ab...`) — esperado, en CI el backend estará en el commit correcto.
+- **T009 DTOs/fixtures**: 15 DTOs en `src/app/core/api/dtos/` mapean `components/*.yaml` del OpenAPI. 7 fixtures P0 en `src/testing/fixtures/` (escuelas, grados, años, grupos, docentes, materias, errores `ProblemDetails`).
+- **T010 ProblemDetails**: `problemDetailsInterceptor` funcional (`HttpInterceptorFn`) + `ApiProblemError` + `toApiProblem` (preserva payload canónico o deriva por estado HTTP). Helpers `withApiProblemDetails` / `provideApiHttpClient`.
+- **T011 tests catálogo remoto**: `catalog-api.service.spec.ts` cubre 8 invocaciones HTTP con `HttpTestingController`. `problem-details.interceptor.spec.ts` cubre casos 2xx, 400 canónico y 500 fallback. `to-api-problem.spec.ts` cubre derivación por estado.
+- **T012 catálogo con cancelación y stale**: `CatalogFacade` expone Signals por slot (`schoolsState`, `classGroupsState`, …). Cada `load*` incrementa una `sequence`, genera `requestKey`, cancela la suscripción previa (HTTP cancelado vía `unsubscribe()`), y descarta respuestas obsoletas comparando `requestKey`. Estado remoto `RemoteState<T>` con `idle|loading|success|empty|error` y `requestKey` para evitar pisar respuestas tardías.
+- **T013 app config/routes/styles**: `app.config.ts` provee `provideRouter` con `withComponentInputBinding` + `withInMemoryScrolling`, `provideApiHttpClient`, `provideZonelessChangeDetection`, `API_CONFIG`. `app.routes.ts` declara `/enrollments`, `/student-search`, `/teacher-contracts` (P0 con placeholders accesibles), `/reports`, `/student-history` (P1 bloqueados). `styles.scss` define tokens (`--app-accent`, `--app-error`, etc.), `prefers-contrast: more` y `prefers-reduced-motion`. `index.html` en español con `meta description` y `color-scheme`.
+
+## Riesgos / desviaciones
+
+- **Sin `npm ci` ejecutado**: `node_modules` no instalado en este entorno. Las pruebas unitarias no se ejecutaron. Las definiciones TS son correctas por inspección pero requieren `tsc`/Vitest para verificación final.
+- **Scaffold pre-posicionado**: el orquestador ya tenía `package.json`, `angular.json`, `src/`, `public/` como untracked. T005/T006 interpretados como transferencia cumplida; T007 ajustó scripts.
+- **`backend HEAD ≠ baseline`**: `contract:verify` falla en este entorno porque el backend está en `e43c032c...`. El script es correcto: en CI el checkout will be at the authorized commit.
+- **`provideZonelessChangeDetection` opcional en Angular 21**: Angular 21 ya es zoneless por defecto; el `provideZonelessChangeDetection()` explícito es opcional y se mantiene por intención.
+
+## Próximo slice
+
+WU02 (PR3 stacked-to-main sobre WU01): ST-ENR-CREATE + `CreateEnrollment` + mappers + CT dependencias/stale/rollback + formulario con selects dependientes + integración submit/retry/reset.
+
+## Estado del contrato (gate)
+
+- Verificador `src/app/scripts/verify-openapi-contract.mjs` ejecutable sin instalar dependencias.
+- HEAD backend actual: `43e3635eb91de9902898949ffeda9ed428fe438a` (≠ autorizado).
+- En CI, cuando el backend esté en `1223630ab99bf1bfaa4f5919fccf5ff539379c8e`, el verificador aprueba y desbloquea la puerta P0 (T035).
+

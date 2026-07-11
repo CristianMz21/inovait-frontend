@@ -1,0 +1,38 @@
+{
+  "name": "inovait-frontend",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "npm@11.6.2",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve",
+    "build": "ng build",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test -- --no-watch --no-progress",
+    "contract:verify": "node ./src/app/scripts/verify-openapi-contract.mjs"
+  },
+  "dependencies": {
+    "@angular/animations": "21.2.18",
+    "@angular/cdk": "21.2.14",
+    "@angular/common": "21.2.18",
+    "@angular/compiler": "21.2.18",
+    "@angular/core": "21.2.18",
+    "@angular/forms": "21.2.18",
+    "@angular/material": "21.2.14",
+    "@angular/platform-browser": "21.2.18",
+    "@angular/platform-browser-dynamic": "21.2.18",
+    "@angular/router": "^21.2.0",
+    "rxjs": "7.8.2",
+    "tslib": "^2.3.0",
+    "zone.js": "0.15.0"
+  },
+  "devDependencies": {
+    "@angular/build": "21.2.19",
+    "@angular/cli": "21.2.19",
+    "@angular/compiler-cli": "21.2.18",
+    "jsdom": "^28.0.0",
+    "prettier": "^3.8.1",
+    "typescript": "5.9.3",
+    "vitest": "^4.0.8"
+  }
+}

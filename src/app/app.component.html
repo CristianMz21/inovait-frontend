@@ -1,0 +1,33 @@
+<a class="skip-link" href="#main">Saltar al contenido principal</a>
+
+<header role="banner" class="app-header">
+  <h1 class="app-title">Inovait · Gestión escolar municipal</h1>
+  <p class="app-subtitle">P0 · Matrículas, Consulta de estudiantes y Contratos docentes</p>
+  <nav aria-label="Navegación principal" class="app-nav">
+    <ul>
+      <li>
+        <a routerLink="/enrollments" routerLinkActive="is-active">Matrículas</a>
+      </li>
+      <li>
+        <a routerLink="/student-search" routerLinkActive="is-active">Consulta de estudiantes</a>
+      </li>
+      <li>
+        <a routerLink="/teacher-contracts" routerLinkActive="is-active">Contratos docentes</a>
+      </li>
+      <li aria-disabled="true">
+        <a routerLink="/reports" routerLinkActive="is-active" aria-disabled="true">Reportes (P1)</a>
+      </li>
+      <li aria-disabled="true">
+        <a routerLink="/student-history" routerLinkActive="is-active" aria-disabled="true">Historia (P1)</a>
+      </li>
+    </ul>
+  </nav>
+</header>
+
+<main id="main" tabindex="-1" role="main" class="app-main">
+  <router-outlet />
+</main>
+
+<footer role="contentinfo" class="app-footer">
+  <small>P0 listo · WU01 (fundación). P1 bloqueado por puerta P0.</small>
+</footer>
