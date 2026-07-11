@@ -54,6 +54,7 @@ const CONTRACT_FILES = [
 ];
 
 // operationIds que la UI consume en runtime (P0 + esqueleto P1 para gate).
+// Los nombres canónicos viven en `paths/*.yaml` del directorio contractual.
 const REQUIRED_OPERATION_IDS = [
   // Catálogos
   'listSchools',
@@ -71,8 +72,8 @@ const REQUIRED_OPERATION_IDS = [
   'listTeacherContracts',
   // Reportes (P1, pero el contrato debe estar presente)
   'getAgeDistribution',
-  'getTeacherCountsBySector',
-  'getTopSchools',
+  'getDistinctTeacherCountsBySector',
+  'getTopSchoolsByEnrollment',
   // Historia (P1)
   'getStudentHistory',
 ];
@@ -196,22 +197,33 @@ function assertChecksum(contractsDir) {
 }
 
 function extractOperationIds(contractsDir) {
-  const openapiPath = resolve(contractsDir, 'openapi.yaml');
-  const source = readFileSync(openapiPath, 'utf8');
-  // Solo captura líneas `operationId: foo` dentro de openapi.yaml.
+  // Lee operationIds de los archivos `paths/*.yaml` del directorio contractual,
+  // no de `openapi.yaml` (que solo referencia paths/componentes sin inlinearlos).
   // No usamos un parser YAML para mantener el script 100% Node estándar
   // y sin dependencias de runtime.
-  const matches = source.matchAll(/operationId:\s*([A-Za-z0-9_]+)/g);
-  return new Set(Array.from(matches, (m) => m[1]));
+  const pathsDir = resolve(contractsDir, 'paths');
+  const declared = new Set();
+  for (const rel of CONTRACT_FILES) {
+    if (!rel.startsWith('paths/') || !rel.endsWith('.yaml')) {
+      continue;
+    }
+    const absolute = resolve(contractsDir, rel);
+    const source = readFileSync(absolute, 'utf8');
+    const matches = source.matchAll(/operationId:\s*([A-Za-z0-9_]+)/g);
+    for (const match of matches) {
+      declared.add(match[1]);
+    }
+  }
+  return declared;
 }
 
 function assertOperationIds(contractsDir) {
-  logStep('Verificando operationIds canónicos en openapi.yaml');
+  logStep('Verificando operationIds canónicos en paths/*.yaml');
   const declared = extractOperationIds(contractsDir);
   const missing = REQUIRED_OPERATION_IDS.filter((id) => !declared.has(id));
   if (missing.length > 0) {
     throw new VerificationError(
-      `Faltan operationIds en openapi.yaml: ${missing.join(', ')}`,
+      `Faltan operationIds en paths/*.yaml: ${missing.join(', ')}`,
     );
   }
   logOk(
