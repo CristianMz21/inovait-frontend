@@ -37,9 +37,9 @@ export const routes: Routes = [
   {
     path: 'teacher-contracts',
     loadComponent: () =>
-      import(
-        './layout/placeholders/teacher-contracts-placeholder.component'
-      ).then((m) => m.TeacherContractsPlaceholderComponent),
+      import('./features/teacher-contracts').then(
+        (m) => m.TeacherContractsComponent,
+      ),
     title: 'Contratos docentes · Inovait',
   },
   {

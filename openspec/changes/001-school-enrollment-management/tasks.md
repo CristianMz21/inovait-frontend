@@ -58,12 +58,12 @@
 
 ## Fase 4: US3 contratos
 
-- [ ] 5.1 T025 ST-CON-PAYLOAD/LIST.
-- [ ] 5.2 T026 Implementar create/list contracts.
-- [ ] 5.3 T027 CT form/list remoto.
-- [ ] 5.4 T028 Form multi-escuela y consulta docente.
-- [ ] 5.5 T029 Responsive + estados.
-- [ ] 5.6 T030 WU04 + evidencia.
+- [x] 5.1 T025 ST-CON-PAYLOAD/LIST.
+- [x] 5.2 T026 Implementar create/list contracts.
+- [x] 5.3 T027 CT form/list remoto.
+- [x] 5.4 T028 Form multi-escuela y consulta docente.
+- [x] 5.5 T029 Responsive + estados.
+- [x] 5.6 T030 WU04 + evidencia.
 
 ## Fase 5: Hardening P0
 

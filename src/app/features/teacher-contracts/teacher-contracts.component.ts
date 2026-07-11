@@ -1,0 +1,333 @@
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  type OnInit,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {
+  type FormControl,
+  FormGroup,
+  NonNullableFormBuilder,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
+import { CatalogFacade } from '../../core/catalogs/catalog.facade';
+import type { RemoteState } from '../../core/api/remote-state';
+import { TeacherContractsFacade } from './teacher-contracts.facade';
+import { teacherContractsFormToRequest } from './teacher-contracts.mappers';
+import type {
+  TeacherContractResultVm,
+  TeacherContractsFieldVm,
+  TeacherContractsFormVm,
+} from './teacher-contracts.vm';
+
+interface TeacherContractsFormShape {
+  teacherId: FormControl<number | null>;
+  startDate: FormControl<string>;
+  endDate: FormControl<string>;
+}
+
+type TeacherContractsFormGroup = FormGroup<TeacherContractsFormShape>;
+
+interface TeacherQueryFormShape {
+  teacherId: FormControl<number | null>;
+  asOfDate: FormControl<string>;
+}
+
+type TeacherQueryFormGroup = FormGroup<TeacherQueryFormShape>;
+
+/**
+ * Vista principal del recorrido de **Contratos docentes** (US3).
+ *
+ * Responsabilidades de UI:
+ * - Renderizar el formulario de creación multiescuela con identidad
+ *   docente, escuelas elegibles, fechas y envío atómico. La selección
+ *   de escuelas se gestiona con un set de checkboxes accesible para
+ *   permitir la selección múltiple sin perder foco.
+ * - Validar localmente que `endDate` no sea anterior a `startDate` y
+ *   que `schoolIds` no contenga duplicados. La regla de duplicados se
+ *   aplica en el cliente para evitar `409` por la UI.
+ * - Renderizar la consulta histórica por docente con filtros opcionales
+ *   (`asOfDate`).
+ * - Exponer los cuatro estados remotos excluyentes (`loading`, `error`,
+ *   `empty`, `success`) en regiones `aria-live` separadas, manteniendo
+ *   la atomicidad visual: ningún contrato nuevo se muestra si el
+ *   backend rechaza la solicitud.
+ *
+ * La forma del formulario se controla con Reactive Forms (no Signal
+ * Forms) para mantener paridad con el plan técnico acordado.
+ */
+@Component({
+  selector: 'app-teacher-contracts',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [ReactiveFormsModule],
+  providers: [TeacherContractsFacade],
+  templateUrl: './teacher-contracts.component.html',
+  styleUrl: './teacher-contracts.component.scss',
+})
+export class TeacherContractsComponent implements OnInit {
+  private readonly fb = inject(NonNullableFormBuilder);
+  private readonly catalog = inject(CatalogFacade);
+  private readonly contracts = inject(TeacherContractsFacade);
+  private readonly destroyRef = inject(DestroyRef);
+
+  readonly createResult = this.contracts.createResult;
+  readonly listResult = this.contracts.listResult;
+
+  // -- Formulario de creación -----------------------------------------
+
+  readonly createForm: TeacherContractsFormGroup = this.fb.group({
+    teacherId: this.fb.control<number | null>(null, [Validators.required]),
+    startDate: this.fb.control('', [
+      Validators.required,
+      Validators.pattern(/^\d{4}-\d{2}-\d{2}$/),
+    ]),
+    endDate: this.fb.control('', [Validators.pattern(/^\d{4}-\d{2}-\d{2}$/)]),
+  });
+
+  /** Conjunto de escuelas seleccionadas para el envío atómico. */
+  private readonly selectedSchoolIds = new Set<number>();
+  readonly selectedSchoolsCount = computed(() => this.selectedSchoolIds.size);
+
+  readonly createTeacherOptions = computed(() =>
+    this.mapOptions(this.catalog.teachersState(), (teacher) => ({
+      value: teacher.id,
+      label: `${teacher.firstNames} ${teacher.lastNames} · ${teacher.documentType} ${teacher.documentNumber}`,
+    })),
+  );
+
+  readonly schoolOptions = computed(() =>
+    this.mapOptions(this.catalog.schoolsState(), (school) => ({
+      value: school.id,
+      label: `${school.name} · ${school.sector === 'Public' ? 'Público' : 'Privado'}`,
+    })),
+  );
+
+  readonly isCreating = computed(() => this.createResult().status === 'loading');
+  readonly createSuccess = computed(() => {
+    const state = this.createResult();
+    return state.status === 'success' ? state.data : null;
+  });
+  readonly hasCreateError = computed(() => this.createResult().status === 'error');
+  readonly createErrorProblem = computed(() => {
+    const state = this.createResult();
+    return state.status === 'error' ? state.problem : null;
+  });
+  readonly createErrorFields = computed(() => {
+    const problem = this.createErrorProblem();
+    if (!problem?.errors) {
+      return [];
+    }
+    return Object.entries(problem.errors).map(([field, messages]) => ({
+      field,
+      messages,
+    }));
+  });
+
+  // -- Formulario de consulta -----------------------------------------
+
+  readonly queryForm: TeacherQueryFormGroup = this.fb.group({
+    teacherId: this.fb.control<number | null>(null, [Validators.required]),
+    asOfDate: this.fb.control('', [Validators.pattern(/^\d{4}-\d{2}-\d{2}$/)]),
+  });
+
+  readonly queryTeacherOptions = computed(() =>
+    this.mapOptions(this.catalog.teachersState(), (teacher) => ({
+      value: teacher.id,
+      label: `${teacher.firstNames} ${teacher.lastNames} · ${teacher.documentType} ${teacher.documentNumber}`,
+    })),
+  );
+
+  readonly isQuerying = computed(() => this.listResult().status === 'loading');
+  readonly isQueryEmpty = computed(() => this.listResult().status === 'empty');
+  readonly querySuccess = computed<readonly TeacherContractResultVm[] | null>(
+    () => {
+      const state = this.listResult();
+      return state.status === 'success' ? state.data : null;
+    },
+  );
+  readonly hasQueryError = computed(() => this.listResult().status === 'error');
+  readonly queryErrorProblem = computed(() => {
+    const state = this.listResult();
+    return state.status === 'error' ? state.problem : null;
+  });
+
+  /** Etiqueta humana del estado efectivo. */
+  effectiveLabel(
+    status: TeacherContractResultVm['effectiveStatus'],
+  ): string {
+    switch (status) {
+      case 'Upcoming':
+        return 'Próximo';
+      case 'Effective':
+        return 'Vigente';
+      case 'Expired':
+        return 'Vencido';
+      case 'Cancelled':
+        return 'Cancelado';
+    }
+  }
+
+  /** Etiqueta humana del estado persistido. */
+  persistedLabel(
+    status: TeacherContractResultVm['persistedStatus'],
+  ): string {
+    switch (status) {
+      case 'Confirmed':
+        return 'Vigente';
+      case 'Cancelled':
+        return 'Cancelado';
+    }
+  }
+
+  /** Etiqueta del rango de fechas (con `vigente` cuando `endDate` es null). */
+  dateRangeLabel(contract: TeacherContractResultVm): string {
+    if (contract.endDate === null) {
+      return `Desde ${contract.startDate} · vigente`;
+    }
+    return `Desde ${contract.startDate} hasta ${contract.endDate}`;
+  }
+
+  ngOnInit(): void {
+    // Cargar catálogos canónicos al entrar a la ruta. La fachada de
+    // catálogos se encarga de cancelar cualquier solicitud previa.
+    this.catalog.loadTeachers();
+    this.catalog.loadSchools();
+
+    // Mantener el campo docente en sincronía entre el formulario de
+    // creación y el de consulta: el catálogo es el mismo y la identidad
+    // del docente es la referencia canónica.
+    this.createForm.controls.teacherId.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        // El reset del createResult es opcional: se omite para no
+        // perder un resultado exitoso al cambiar de docente en el
+        // formulario de creación. El resetCreate() se invoca
+        // explícitamente desde `onResetCreate()`.
+      });
+  }
+
+  // -- Acciones de creación --------------------------------------------
+
+  onSubmitCreate(): void {
+    if (this.createForm.invalid) {
+      this.createForm.markAllAsTouched();
+      return;
+    }
+    const vm = this.toCreateVm();
+    if (teacherContractsFormToRequest(vm) === null) {
+      // Marca todas las escuelas como tocadas para mostrar feedback de
+      // validación (e.g., al menos una escuela requerida).
+      this.createForm.markAllAsTouched();
+      return;
+    }
+    this.contracts.submit(vm);
+  }
+
+  onRetryCreate(): void {
+    if (this.createForm.invalid) {
+      this.createForm.markAllAsTouched();
+      return;
+    }
+    this.contracts.retrySubmit(this.toCreateVm());
+  }
+
+  onResetCreate(): void {
+    this.contracts.resetCreate();
+    this.createForm.reset({
+      teacherId: null,
+      startDate: '',
+      endDate: '',
+    });
+    this.selectedSchoolIds.clear();
+  }
+
+  onToggleSchool(schoolId: number, checked: boolean): void {
+    if (checked) {
+      this.selectedSchoolIds.add(schoolId);
+    } else {
+      this.selectedSchoolIds.delete(schoolId);
+    }
+  }
+
+  isSchoolSelected(schoolId: number): boolean {
+    return this.selectedSchoolIds.has(schoolId);
+  }
+
+  /** Validez de la VM de creación considerando escuelas seleccionadas. */
+  isCreateSubmittable(): boolean {
+    return teacherContractsFormToRequest(this.toCreateVm()) !== null;
+  }
+
+  /** Etiqueta legible del rango de fechas para el preview. */
+  createRangeHint(): string {
+    const start = this.createForm.controls.startDate.value;
+    const end = this.createForm.controls.endDate.value;
+    if (!start) {
+      return '';
+    }
+    if (!end) {
+      return `Desde ${start} · sin fecha de fin`;
+    }
+    if (end < start) {
+      return 'La fecha de fin debe ser igual o posterior a la fecha de inicio.';
+    }
+    return `Desde ${start} hasta ${end}`;
+  }
+
+  // -- Acciones de consulta --------------------------------------------
+
+  onSubmitQuery(): void {
+    if (this.queryForm.invalid) {
+      this.queryForm.markAllAsTouched();
+      return;
+    }
+    const teacherId = this.queryForm.controls.teacherId.value;
+    if (teacherId === null) {
+      this.queryForm.markAllAsTouched();
+      return;
+    }
+    const asOf = this.queryForm.controls.asOfDate.value;
+    this.contracts.searchByTeacher(
+      teacherId,
+      asOf.length === 0 ? null : asOf,
+    );
+  }
+
+  onRetryQuery(): void {
+    this.contracts.retryList();
+  }
+
+  onResetQuery(): void {
+    this.contracts.resetList();
+    this.queryForm.reset({
+      teacherId: null,
+      asOfDate: '',
+    });
+  }
+
+  // -- Helpers ---------------------------------------------------------
+
+  private toCreateVm(): TeacherContractsFormVm {
+    const raw = this.createForm.getRawValue();
+    return {
+      teacherId: raw.teacherId,
+      schoolIds: [...this.selectedSchoolIds],
+      startDate: raw.startDate,
+      endDate: raw.endDate.length === 0 ? null : raw.endDate,
+    };
+  }
+
+  private mapOptions<T, TValue extends number | string>(
+    state: RemoteState<readonly T[]>,
+    project: (item: T) => TeacherContractsFieldVm<TValue>,
+  ): readonly TeacherContractsFieldVm<TValue>[] {
+    if (state.status === 'success') {
+      return state.data.map(project);
+    }
+    return [];
+  }
+}
