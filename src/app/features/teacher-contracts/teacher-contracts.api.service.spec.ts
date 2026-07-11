@@ -91,7 +91,9 @@ describe("TeacherContractsApiService (ST-CON-PAYLOAD/LIST)", () => {
       let error: unknown;
       service.create(createParams).subscribe({
         next: () => undefined,
-        error: (err) => (error = err),
+        error: (err) => {
+          error = err;
+        },
       });
 
       const req = http.expectOne(
@@ -115,7 +117,9 @@ describe("TeacherContractsApiService (ST-CON-PAYLOAD/LIST)", () => {
       let error: unknown;
       service.create(createParams).subscribe({
         next: () => undefined,
-        error: (err) => (error = err),
+        error: (err) => {
+          error = err;
+        },
       });
 
       const req = http.expectOne(
@@ -139,7 +143,9 @@ describe("TeacherContractsApiService (ST-CON-PAYLOAD/LIST)", () => {
       let error: unknown;
       service.create(createParams).subscribe({
         next: () => undefined,
-        error: (err) => (error = err),
+        error: (err) => {
+          error = err;
+        },
       });
 
       const req = http.expectOne(
@@ -212,7 +218,9 @@ describe("TeacherContractsApiService (ST-CON-PAYLOAD/LIST)", () => {
       let error: unknown;
       service.list({ teacherId: 9999 }).subscribe({
         next: () => undefined,
-        error: (err) => (error = err),
+        error: (err) => {
+          error = err;
+        },
       });
 
       http

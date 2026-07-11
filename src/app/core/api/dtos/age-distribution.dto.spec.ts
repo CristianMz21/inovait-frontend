@@ -19,7 +19,7 @@ import type {
 describe("AgeDistributionDto (CT-AGE-CONTRACT)", () => {
   describe("AgeBandResponse", () => {
     it("declara minimumAge, maximumAge y count como campos requeridos", () => {
-      const required: ReadonlyArray<keyof AgeBandResponse> = [
+      const required: readonly (keyof AgeBandResponse)[] = [
         "minimumAge",
         "maximumAge",
         "count",
@@ -47,7 +47,7 @@ describe("AgeDistributionDto (CT-AGE-CONTRACT)", () => {
 
   describe("AgeDistributionResponseDto", () => {
     it("declara los cinco campos requeridos del contrato", () => {
-      const required: ReadonlyArray<keyof AgeDistributionResponseDto> = [
+      const required: readonly (keyof AgeDistributionResponseDto)[] = [
         "academicYearId",
         "asOfDate",
         "age3To7",

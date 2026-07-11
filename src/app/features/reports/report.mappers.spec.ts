@@ -21,11 +21,7 @@ import {
   topSchoolsFiltersToParams,
   topSchoolsResponseToVm,
 } from "./report.mappers";
-import type {
-  AgeDistributionFiltersVm,
-  TeacherCountsBySectorFiltersVm,
-  TopSchoolsFiltersVm,
-} from "./report.vm";
+import type { AgeDistributionFiltersVm } from "./report.vm";
 
 const validFilters: AgeDistributionFiltersVm = {
   academicYearId: 2,

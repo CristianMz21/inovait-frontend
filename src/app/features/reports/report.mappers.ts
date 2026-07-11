@@ -48,9 +48,11 @@ export function ageDistributionFiltersToParams(vm: AgeDistributionFiltersVm): {
   schoolId?: number;
   gradeId?: number;
 } | null {
-  if (!ageDistributionFiltersAreValid(vm)) {
+  if (vm.academicYearId === null) {
     return null;
   }
+
+  const academicYearId = vm.academicYearId;
   const trimmedAsOf = vm.asOfDate?.trim();
   const params: {
     academicYearId: number;
@@ -58,7 +60,7 @@ export function ageDistributionFiltersToParams(vm: AgeDistributionFiltersVm): {
     schoolId?: number;
     gradeId?: number;
   } = {
-    academicYearId: vm.academicYearId as number,
+    academicYearId,
   };
   if (trimmedAsOf) {
     params.asOfDate = trimmedAsOf;
@@ -241,7 +243,11 @@ export function topSchoolsFiltersToParams(
   if (!topSchoolsFiltersAreValid(vm)) {
     return null;
   }
-  return { academicYearId: vm.academicYearId as number };
+  const academicYearId = vm.academicYearId;
+  if (academicYearId === null) {
+    return null;
+  }
+  return { academicYearId };
 }
 
 /**

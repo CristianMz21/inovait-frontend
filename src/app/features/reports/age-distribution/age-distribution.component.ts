@@ -8,10 +8,12 @@ import {
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import {
+  type AbstractControl,
   type FormControl,
   FormGroup,
   NonNullableFormBuilder,
   ReactiveFormsModule,
+  type ValidatorFn,
   Validators,
 } from "@angular/forms";
 import { CatalogFacade } from "../../../core/catalogs/catalog.facade";
@@ -24,6 +26,9 @@ import type {
   AgeDistributionVm,
   AgeDistributionFieldVm,
 } from "../report.vm";
+
+const requiredValidator: ValidatorFn = (control: AbstractControl<unknown>) =>
+  Validators.required(control);
 
 interface AgeFiltersFormShape {
   academicYearId: FormControl<number | null>;
@@ -73,7 +78,7 @@ export class AgeDistributionComponent implements OnInit {
   readonly result = this.reports.ageState;
 
   readonly form: AgeFiltersFormGroup = this.fb.group({
-    academicYearId: this.fb.control<number | null>(null, [Validators.required]),
+    academicYearId: this.fb.control<number | null>(null, [requiredValidator]),
     asOfDate: this.fb.control("", [Validators.pattern(/^\d{4}-\d{2}-\d{2}$/)]),
     schoolId: this.fb.control<number | null>(null),
     gradeId: this.fb.control<number | null>(null),

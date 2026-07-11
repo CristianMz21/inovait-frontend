@@ -85,7 +85,7 @@ describe("StudentHistoryComponent (CT-HIST-COMP)", () => {
     component.onSubmit();
     fixture.detectChanges();
     expect(component.form.touched).toBe(true);
-    http.expectNone((r) => r.url.startsWith(baseUrl.split("/DNI")[0]!));
+    http.expectNone((r) => r.url.startsWith(baseUrl.split("/DNI")[0]));
   });
 
   it("success muestra la línea de tiempo con <ol>, <time> y asignaciones preservadas", () => {

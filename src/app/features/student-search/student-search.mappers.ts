@@ -35,6 +35,10 @@ export function studentSearchFiltersToParams(vm: StudentSearchFiltersVm): {
   if (!studentSearchFiltersAreComplete(vm)) {
     return null;
   }
+  const { schoolId, gradeId, academicYearId } = vm;
+  if (schoolId === null || gradeId === null || academicYearId === null) {
+    return null;
+  }
   const trimmedAsOf = vm.asOfDate?.trim();
   const params: {
     schoolId: number;
@@ -42,9 +46,9 @@ export function studentSearchFiltersToParams(vm: StudentSearchFiltersVm): {
     academicYearId: number;
     asOfDate?: string;
   } = {
-    schoolId: vm.schoolId as number,
-    gradeId: vm.gradeId as number,
-    academicYearId: vm.academicYearId as number,
+    schoolId,
+    gradeId,
+    academicYearId,
   };
   if (trimmedAsOf) {
     params.asOfDate = trimmedAsOf;

@@ -15,7 +15,7 @@ import {
 describe("TeacherCountsBySectorResponseDto (CT-SECTOR-CONTRACT)", () => {
   describe("campos requeridos", () => {
     it("declara los cuatro campos requeridos por el contrato", () => {
-      const required: ReadonlyArray<keyof TeacherCountsBySectorResponseDto> = [
+      const required: readonly (keyof TeacherCountsBySectorResponseDto)[] = [
         "periodStart",
         "periodEnd",
         "publicDistinctTeacherCount",

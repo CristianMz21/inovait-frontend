@@ -1,17 +1,17 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
   computed,
   inject,
   type OnInit,
 } from "@angular/core";
-import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import {
+  type AbstractControl,
   type FormControl,
   FormGroup,
   NonNullableFormBuilder,
   ReactiveFormsModule,
+  type ValidatorFn,
   Validators,
 } from "@angular/forms";
 import { CatalogFacade } from "../../core/catalogs/catalog.facade";
@@ -23,6 +23,9 @@ import type {
   StudentSearchFiltersVm,
   StudentSearchResultVm,
 } from "./student-search.vm";
+
+const requiredValidator: ValidatorFn = (control: AbstractControl<unknown>) =>
+  Validators.required(control);
 
 interface StudentSearchFormShape {
   schoolId: FormControl<number | null>;
@@ -67,14 +70,13 @@ export class StudentSearchComponent implements OnInit {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly catalog = inject(CatalogFacade);
   private readonly search = inject(StudentSearchFacade);
-  private readonly destroyRef = inject(DestroyRef);
 
   readonly result = this.search.result;
 
   readonly form: StudentSearchFormGroup = this.fb.group({
-    schoolId: this.fb.control<number | null>(null, [Validators.required]),
-    gradeId: this.fb.control<number | null>(null, [Validators.required]),
-    academicYearId: this.fb.control<number | null>(null, [Validators.required]),
+    schoolId: this.fb.control<number | null>(null, [requiredValidator]),
+    gradeId: this.fb.control<number | null>(null, [requiredValidator]),
+    academicYearId: this.fb.control<number | null>(null, [requiredValidator]),
     asOfDate: this.fb.control("", [Validators.pattern(/^\d{4}-\d{2}-\d{2}$/)]),
   });
 

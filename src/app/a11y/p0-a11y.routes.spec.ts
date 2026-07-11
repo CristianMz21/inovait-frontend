@@ -211,9 +211,7 @@ describe("CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0", () => {
     it('botón submit expone aria-busy="false" en estado idle', () => {
       flushCatalog(http);
       const compiled = fixture.nativeElement as HTMLElement;
-      const submit = compiled.querySelector(
-        'button[type="submit"]',
-      ) as HTMLButtonElement | null;
+      const submit = compiled.querySelector('button[type="submit"]');
       expect(submit, "la ruta debe exponer un botón submit").toBeTruthy();
       expect(submit?.getAttribute("aria-busy")).toBe("false");
     });
@@ -358,9 +356,7 @@ describe("CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0", () => {
     it('botón submit expone aria-busy="false" en estado idle', () => {
       flushCatalog(http);
       const compiled = fixture.nativeElement as HTMLElement;
-      const submit = compiled.querySelector(
-        'button[type="submit"]',
-      ) as HTMLButtonElement | null;
+      const submit = compiled.querySelector('button[type="submit"]');
       expect(submit).toBeTruthy();
       expect(submit?.getAttribute("aria-busy")).toBe("false");
     });
@@ -504,9 +500,7 @@ describe("CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0", () => {
     it('cada botón submit expone aria-busy="false" en estado idle', () => {
       flushCatalog(http);
       const compiled = fixture.nativeElement as HTMLElement;
-      const submits = compiled.querySelectorAll(
-        'button[type="submit"]',
-      ) as NodeListOf<HTMLButtonElement>;
+      const submits = compiled.querySelectorAll('button[type="submit"]');
       expect(submits.length).toBeGreaterThanOrEqual(2);
       for (const s of Array.from(submits)) {
         expect(s.getAttribute("aria-busy")).toBe("false");

@@ -5,10 +5,12 @@ import {
   inject,
 } from "@angular/core";
 import {
+  type AbstractControl,
   type FormControl,
   FormGroup,
   NonNullableFormBuilder,
   ReactiveFormsModule,
+  type ValidatorFn,
   Validators,
 } from "@angular/forms";
 import { StudentHistoryFacade } from "./student-history.facade";
@@ -23,6 +25,9 @@ interface StudentHistoryFormShape {
   documentNumber: FormControl<string>;
   asOfDate: FormControl<string>;
 }
+
+const requiredValidator: ValidatorFn = (control: AbstractControl<unknown>) =>
+  Validators.required(control);
 
 type StudentHistoryFormGroup = FormGroup<StudentHistoryFormShape>;
 
@@ -69,12 +74,12 @@ export class StudentHistoryComponent {
 
   readonly form: StudentHistoryFormGroup = this.fb.group({
     documentType: this.fb.control("", [
-      Validators.required,
+      requiredValidator,
       Validators.minLength(1),
       Validators.maxLength(20),
     ]),
     documentNumber: this.fb.control("", [
-      Validators.required,
+      requiredValidator,
       Validators.minLength(1),
       Validators.maxLength(32),
     ]),

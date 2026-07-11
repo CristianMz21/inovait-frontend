@@ -8,10 +8,12 @@ import {
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import {
+  type AbstractControl,
   type FormControl,
   FormGroup,
   NonNullableFormBuilder,
   ReactiveFormsModule,
+  type ValidatorFn,
   Validators,
 } from "@angular/forms";
 import { CatalogFacade } from "../../core/catalogs/catalog.facade";
@@ -22,6 +24,9 @@ import type {
   EnrollmentFieldVm,
   EnrollmentFormVm,
 } from "./enrollment-create.vm";
+
+const requiredValidator: ValidatorFn = (control: AbstractControl<unknown>) =>
+  Validators.required(control);
 
 interface EnrollmentFormShape {
   documentType: FormControl<string>;
@@ -81,29 +86,29 @@ export class EnrollmentCreateComponent implements OnInit {
 
   readonly form: EnrollmentFormGroup = this.fb.group({
     documentType: this.fb.control("", [
-      Validators.required,
+      requiredValidator,
       Validators.maxLength(20),
     ]),
     documentNumber: this.fb.control("", [
-      Validators.required,
+      requiredValidator,
       Validators.maxLength(32),
     ]),
     firstNames: this.fb.control("", [
-      Validators.required,
+      requiredValidator,
       Validators.maxLength(120),
     ]),
     lastNames: this.fb.control("", [
-      Validators.required,
+      requiredValidator,
       Validators.maxLength(120),
     ]),
     birthDate: this.fb.control("", [
-      Validators.required,
+      requiredValidator,
       Validators.pattern(/^\d{4}-\d{2}-\d{2}$/),
     ]),
-    schoolId: this.fb.control<number | null>(null, [Validators.required]),
-    academicYearId: this.fb.control<number | null>(null, [Validators.required]),
-    gradeId: this.fb.control<number | null>(null, [Validators.required]),
-    classGroupId: this.fb.control<number | null>(null, [Validators.required]),
+    schoolId: this.fb.control<number | null>(null, [requiredValidator]),
+    academicYearId: this.fb.control<number | null>(null, [requiredValidator]),
+    gradeId: this.fb.control<number | null>(null, [requiredValidator]),
+    classGroupId: this.fb.control<number | null>(null, [requiredValidator]),
   });
 
   readonly schoolOptions = this.schoolOptionsSignal();

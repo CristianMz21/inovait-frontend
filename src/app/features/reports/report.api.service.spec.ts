@@ -132,7 +132,9 @@ describe("ReportApiService (ST-RPT-AGE)", () => {
       let error: unknown;
       service.getAgeDistribution({ academicYearId: 0 }).subscribe({
         next: () => undefined,
-        error: (err) => (error = err),
+        error: (err) => {
+          error = err;
+        },
       });
 
       const req = http.expectOne((r) => r.url === ageUrl && r.method === "GET");
@@ -154,7 +156,9 @@ describe("ReportApiService (ST-RPT-AGE)", () => {
       let error: unknown;
       service.getAgeDistribution({ academicYearId: 9999 }).subscribe({
         next: () => undefined,
-        error: (err) => (error = err),
+        error: (err) => {
+          error = err;
+        },
       });
 
       const req = http.expectOne((r) => r.url === ageUrl && r.method === "GET");
@@ -178,7 +182,9 @@ describe("ReportApiService (ST-RPT-AGE)", () => {
         .getAgeDistribution({ academicYearId: 2, asOfDate: "2010-01-01" })
         .subscribe({
           next: () => undefined,
-          error: (err) => (error = err),
+          error: (err) => {
+            error = err;
+          },
         });
 
       const req = http.expectOne((r) => r.url === ageUrl && r.method === "GET");
@@ -282,7 +288,9 @@ describe("ReportApiService (ST-RPT-AGE)", () => {
         .getDistinctTeacherCountsBySector({ periodStart: "2026-07-10" })
         .subscribe({
           next: () => undefined,
-          error: (err) => (error = err),
+          error: (err) => {
+            error = err;
+          },
         });
 
       const req = http.expectOne(
@@ -311,7 +319,9 @@ describe("ReportApiService (ST-RPT-AGE)", () => {
         })
         .subscribe({
           next: () => undefined,
-          error: (err) => (error = err),
+          error: (err) => {
+            error = err;
+          },
         });
 
       const req = http.expectOne(
@@ -389,7 +399,9 @@ describe("ReportApiService (ST-RPT-AGE)", () => {
       let error: unknown;
       service.getTopSchoolsByEnrollment({ academicYearId: 0 }).subscribe({
         next: () => undefined,
-        error: (err) => (error = err),
+        error: (err) => {
+          error = err;
+        },
       });
 
       const req = http.expectOne((r) => r.url === topUrl && r.method === "GET");
@@ -411,7 +423,9 @@ describe("ReportApiService (ST-RPT-AGE)", () => {
       let error: unknown;
       service.getTopSchoolsByEnrollment({ academicYearId: 9999 }).subscribe({
         next: () => undefined,
-        error: (err) => (error = err),
+        error: (err) => {
+          error = err;
+        },
       });
 
       const req = http.expectOne((r) => r.url === topUrl && r.method === "GET");

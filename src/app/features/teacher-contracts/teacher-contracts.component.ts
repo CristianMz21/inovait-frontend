@@ -8,10 +8,12 @@ import {
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import {
+  type AbstractControl,
   type FormControl,
   FormGroup,
   NonNullableFormBuilder,
   ReactiveFormsModule,
+  type ValidatorFn,
   Validators,
 } from "@angular/forms";
 import { CatalogFacade } from "../../core/catalogs/catalog.facade";
@@ -23,6 +25,9 @@ import type {
   TeacherContractsFieldVm,
   TeacherContractsFormVm,
 } from "./teacher-contracts.vm";
+
+const requiredValidator: ValidatorFn = (control: AbstractControl<unknown>) =>
+  Validators.required(control);
 
 interface TeacherContractsFormShape {
   teacherId: FormControl<number | null>;
@@ -80,9 +85,9 @@ export class TeacherContractsComponent implements OnInit {
   // -- Formulario de creación -----------------------------------------
 
   readonly createForm: TeacherContractsFormGroup = this.fb.group({
-    teacherId: this.fb.control<number | null>(null, [Validators.required]),
+    teacherId: this.fb.control<number | null>(null, [requiredValidator]),
     startDate: this.fb.control("", [
-      Validators.required,
+      requiredValidator,
       Validators.pattern(/^\d{4}-\d{2}-\d{2}$/),
     ]),
     endDate: this.fb.control("", [Validators.pattern(/^\d{4}-\d{2}-\d{2}$/)]),
@@ -134,7 +139,7 @@ export class TeacherContractsComponent implements OnInit {
   // -- Formulario de consulta -----------------------------------------
 
   readonly queryForm: TeacherQueryFormGroup = this.fb.group({
-    teacherId: this.fb.control<number | null>(null, [Validators.required]),
+    teacherId: this.fb.control<number | null>(null, [requiredValidator]),
     asOfDate: this.fb.control("", [Validators.pattern(/^\d{4}-\d{2}-\d{2}$/)]),
   });
 

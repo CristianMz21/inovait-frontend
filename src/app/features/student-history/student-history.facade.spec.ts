@@ -66,7 +66,7 @@ describe("StudentHistoryFacade (CT-HIST-FAC)", () => {
   it("loadHistory() con VM inválida es no-op y conserva el estado idle", () => {
     facade.loadHistory(incompleteFilters);
     expect(facade.result().status).toBe("idle");
-    http.expectNone((r) => r.url.startsWith(historyUrl.split("/DNI")[0]!));
+    http.expectNone((r) => r.url.startsWith(historyUrl.split("/DNI")[0]));
   });
 
   it("loadHistory() expone loading y luego success al confirmar la consulta", () => {

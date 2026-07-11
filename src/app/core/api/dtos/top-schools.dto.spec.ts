@@ -19,7 +19,7 @@ import {
 describe("TopSchoolResponseDto (CT-TOP-CONTRACT)", () => {
   describe("campos requeridos del DTO individual", () => {
     it("declara los tres campos requeridos por el contrato", () => {
-      const required: ReadonlyArray<keyof TopSchoolResponseDto> = [
+      const required: readonly (keyof TopSchoolResponseDto)[] = [
         "school",
         "academicYearId",
         "enrollmentCount",

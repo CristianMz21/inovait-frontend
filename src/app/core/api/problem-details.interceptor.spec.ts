@@ -44,7 +44,9 @@ describe("problemDetailsInterceptor", () => {
     let received: unknown;
     client.get("/api/x").subscribe({
       next: () => undefined,
-      error: (err) => (received = err),
+      error: (err) => {
+        received = err;
+      },
     });
     const req = http.expectOne("/api/x");
     req.flush(
@@ -75,7 +77,9 @@ describe("problemDetailsInterceptor", () => {
     let received: unknown;
     client.get("/api/y").subscribe({
       next: () => undefined,
-      error: (err) => (received = err),
+      error: (err) => {
+        received = err;
+      },
     });
     const req = http.expectOne("/api/y");
     req.flush("oops", { status: 500, statusText: "Server Error" });

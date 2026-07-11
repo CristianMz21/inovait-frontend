@@ -148,7 +148,7 @@ describe("StudentHistoryMappers (CT-HIST-MAP)", () => {
   describe("enrollmentHistoryItemToVm()", () => {
     it("aplana una inscripción con asignaciones preservando el shape canónico", () => {
       const vm = enrollmentHistoryItemToVm(
-        studentHistoryFixture.enrollments[0]!,
+        studentHistoryFixture.enrollments[0],
       );
       expect(vm.enrollmentId).toBe(100);
       expect(vm.academicYearId).toBe(2);
@@ -163,7 +163,7 @@ describe("StudentHistoryMappers (CT-HIST-MAP)", () => {
 
     it("preserva teachingAssignments verbatim sin reordenar", () => {
       const vm = enrollmentHistoryItemToVm(
-        studentHistorySecondYearFixture.enrollments[0]!,
+        studentHistorySecondYearFixture.enrollments[0],
       );
       expect(vm.teachingAssignments).toHaveLength(2);
       expect(vm.teachingAssignments[0]?.subjectCode).toBe("MATH");
@@ -172,7 +172,7 @@ describe("StudentHistoryMappers (CT-HIST-MAP)", () => {
 
     it("preserva teachingAssignments: [] para inscripciones sin docentes", () => {
       const vm = enrollmentHistoryItemToVm(
-        studentHistoryNoAssignmentsFixture.enrollments[0]!,
+        studentHistoryNoAssignmentsFixture.enrollments[0],
       );
       expect(vm.teachingAssignments).toEqual([]);
     });
@@ -215,7 +215,7 @@ describe("StudentHistoryMappers (CT-HIST-MAP)", () => {
 
     it("preserva los IDs y etiquetas de asignaciones sin reordenar", () => {
       const vm = studentHistoryResponseToVm(studentHistorySecondYearFixture);
-      const firstYear = vm.enrollments[0]!;
+      const firstYear = vm.enrollments[0];
       expect(firstYear.teachingAssignments[0]?.weekdaysLabel).toBe(
         "Lunes, Miércoles, Viernes",
       );

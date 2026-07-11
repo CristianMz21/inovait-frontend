@@ -64,8 +64,12 @@ export function teacherContractsFormToRequest(
   if (!teacherContractsFormIsValid(vm)) {
     return null;
   }
+  const teacherId = vm.teacherId;
+  if (teacherId === null) {
+    return null;
+  }
   return {
-    teacherId: vm.teacherId as number,
+    teacherId,
     request: {
       schoolIds: [...vm.schoolIds],
       startDate: vm.startDate,

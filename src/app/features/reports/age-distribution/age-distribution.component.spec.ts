@@ -116,9 +116,7 @@ describe("AgeDistributionComponent (CT-AGE-RPT)", () => {
   it('botón submit expone aria-busy="false" en estado idle', () => {
     flushCatalogs(http);
     const compiled = fixture.nativeElement as HTMLElement;
-    const submit = compiled.querySelector(
-      'button[type="submit"]',
-    ) as HTMLButtonElement | null;
+    const submit = compiled.querySelector('button[type="submit"]');
     expect(submit).toBeTruthy();
     expect(submit?.getAttribute("aria-busy")).toBe("false");
   });

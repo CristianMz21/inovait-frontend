@@ -8,10 +8,12 @@ import {
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import {
+  type AbstractControl,
   type FormControl,
   FormGroup,
   NonNullableFormBuilder,
   ReactiveFormsModule,
+  type ValidatorFn,
   Validators,
 } from "@angular/forms";
 import { CatalogFacade } from "../../../core/catalogs/catalog.facade";
@@ -19,6 +21,9 @@ import type { RemoteState } from "../../../core/api/remote-state";
 import { ReportFacade } from "../report.facade";
 import { topSchoolsFiltersToParams } from "../report.mappers";
 import type { TopSchoolsFiltersVm, TopSchoolsVm } from "../report.vm";
+
+const requiredValidator: ValidatorFn = (control: AbstractControl<unknown>) =>
+  Validators.required(control);
 
 interface TopFiltersFormShape {
   academicYearId: FormControl<number | null>;
@@ -72,7 +77,7 @@ export class TopSchoolsComponent implements OnInit {
   readonly result = this.reports.topState;
 
   readonly form: TopFiltersFormGroup = this.fb.group({
-    academicYearId: this.fb.control<number | null>(null, [Validators.required]),
+    academicYearId: this.fb.control<number | null>(null, [requiredValidator]),
   });
 
   readonly academicYearOptions = computed(() => {

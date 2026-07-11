@@ -98,9 +98,7 @@ describe("TopSchoolsComponent (CT-TOP-RPT)", () => {
   it('botón submit expone aria-busy="false" en estado idle', () => {
     flushAcademicYears(http);
     const compiled = fixture.nativeElement as HTMLElement;
-    const submit = compiled.querySelector(
-      'button[type="submit"]',
-    ) as HTMLButtonElement | null;
+    const submit = compiled.querySelector('button[type="submit"]');
     expect(submit).toBeTruthy();
     expect(submit?.getAttribute("aria-busy")).toBe("false");
   });

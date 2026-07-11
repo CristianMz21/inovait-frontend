@@ -22,7 +22,7 @@ import type {
 describe("StudentHistoryResponseDto (CT-HIST-CONTRACT)", () => {
   describe("HistoryTeachingAssignmentDto", () => {
     it("declara assignmentId, teacher, subject y weekdays como campos requeridos", () => {
-      const required: ReadonlyArray<keyof HistoryTeachingAssignmentDto> = [
+      const required: readonly (keyof HistoryTeachingAssignmentDto)[] = [
         "assignmentId",
         "teacher",
         "subject",
@@ -72,7 +72,7 @@ describe("StudentHistoryResponseDto (CT-HIST-CONTRACT)", () => {
 
   describe("EnrollmentHistoryItemDto", () => {
     it("declara los seis campos requeridos por el contrato", () => {
-      const required: ReadonlyArray<keyof EnrollmentHistoryItemDto> = [
+      const required: readonly (keyof EnrollmentHistoryItemDto)[] = [
         "enrollmentId",
         "academicYear",
         "school",
@@ -117,7 +117,7 @@ describe("StudentHistoryResponseDto (CT-HIST-CONTRACT)", () => {
 
   describe("StudentHistoryResponseDto", () => {
     it("declara los siete campos requeridos por el contrato", () => {
-      const required: ReadonlyArray<keyof StudentHistoryResponseDto> = [
+      const required: readonly (keyof StudentHistoryResponseDto)[] = [
         "studentId",
         "documentType",
         "documentNumber",
