@@ -55,7 +55,12 @@
 
           <label class="contracts-field">
             <span>Docente</span>
-            <select formControlName="teacherId" required aria-required="true">
+            <select
+              id="contracts-create-teacher-id"
+              formControlName="teacherId"
+              required
+              aria-required="true"
+            >
               <option [ngValue]="null" disabled>Seleccione…</option>
               @for (opt of createTeacherOptions(); track opt.value) {
                 <option [ngValue]="opt.value">{{ opt.label }}</option>
@@ -66,6 +71,7 @@
           <label class="contracts-field">
             <span>Fecha de inicio</span>
             <input
+              id="contracts-create-start-date"
               type="date"
               formControlName="startDate"
               required
@@ -76,6 +82,7 @@
           <label class="contracts-field">
             <span>Fecha de fin (opcional)</span>
             <input
+              id="contracts-create-end-date"
               type="date"
               formControlName="endDate"
               aria-describedby="range-help"
@@ -103,6 +110,7 @@
               <li>
                 <label class="contracts-school">
                   <input
+                    id="contracts-create-school-{{ opt.value }}"
                     type="checkbox"
                     [checked]="isSchoolSelected(opt.value)"
                     (change)="
@@ -196,7 +204,12 @@
 
         <label class="contracts-field">
           <span>Docente</span>
-          <select formControlName="teacherId" required aria-required="true">
+          <select
+            id="contracts-query-teacher-id"
+            formControlName="teacherId"
+            required
+            aria-required="true"
+          >
             <option [ngValue]="null" disabled>Seleccione…</option>
             @for (opt of queryTeacherOptions(); track opt.value) {
               <option [ngValue]="opt.value">{{ opt.label }}</option>
@@ -206,7 +219,11 @@
 
         <label class="contracts-field">
           <span>Fecha de referencia (opcional)</span>
-          <input type="date" formControlName="asOfDate" />
+          <input
+            id="contracts-query-as-of-date"
+            type="date"
+            formControlName="asOfDate"
+          />
         </label>
       </fieldset>
 

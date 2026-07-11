@@ -18,7 +18,12 @@
 
       <label class="search-field">
         <span>Escuela</span>
-        <select formControlName="schoolId" required aria-required="true">
+        <select
+          id="search-school-id"
+          formControlName="schoolId"
+          required
+          aria-required="true"
+        >
           <option [ngValue]="null" disabled>Seleccione…</option>
           @for (opt of schoolOptions(); track opt.value) {
             <option [ngValue]="opt.value">{{ opt.label }}</option>
@@ -28,7 +33,12 @@
 
       <label class="search-field">
         <span>Grado</span>
-        <select formControlName="gradeId" required aria-required="true">
+        <select
+          id="search-grade-id"
+          formControlName="gradeId"
+          required
+          aria-required="true"
+        >
           <option [ngValue]="null" disabled>Seleccione…</option>
           @for (opt of gradeOptions(); track opt.value) {
             <option [ngValue]="opt.value">{{ opt.label }}</option>
@@ -38,7 +48,12 @@
 
       <label class="search-field">
         <span>Año académico</span>
-        <select formControlName="academicYearId" required aria-required="true">
+        <select
+          id="search-academic-year-id"
+          formControlName="academicYearId"
+          required
+          aria-required="true"
+        >
           <option [ngValue]="null" disabled>Seleccione…</option>
           @for (opt of academicYearOptions(); track opt.value) {
             <option [ngValue]="opt.value">{{ opt.label }}</option>
@@ -48,7 +63,7 @@
 
       <label class="search-field">
         <span>Fecha de referencia (opcional)</span>
-        <input type="date" formControlName="asOfDate" />
+        <input id="search-as-of-date" type="date" formControlName="asOfDate" />
       </label>
     </fieldset>
 

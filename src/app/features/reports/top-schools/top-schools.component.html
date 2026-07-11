@@ -20,7 +20,12 @@
 
       <label class="top-field">
         <span>Año académico</span>
-        <select formControlName="academicYearId" required aria-required="true">
+        <select
+          id="top-academic-year-id"
+          formControlName="academicYearId"
+          required
+          aria-required="true"
+        >
           <option [ngValue]="null" disabled>Seleccione…</option>
           @for (opt of academicYearOptions(); track opt.value) {
             <option [ngValue]="opt.value">{{ opt.label }}</option>
