@@ -1,0 +1,219 @@
+<section class="search" aria-labelledby="search-title">
+  <h1 id="search-title" tabindex="-1">Consulta de estudiantes</h1>
+  <p class="search-lede">
+    Seleccione la combinación <strong>Escuela</strong>,
+    <strong>Grado</strong> y <strong>Año académico</strong> para listar las
+    inscripciones vigentes. La fecha de referencia para la edad es opcional.
+  </p>
+
+  <form
+    class="search-form"
+    [formGroup]="form"
+    (ngSubmit)="onSubmit()"
+    novalidate
+    aria-describedby="search-lede"
+  >
+    <fieldset [disabled]="isLoading()">
+      <legend>Filtros académicos</legend>
+
+      <label class="search-field">
+        <span>Escuela</span>
+        <select
+          formControlName="schoolId"
+          required
+          aria-required="true"
+        >
+          <option [ngValue]="null" disabled>Seleccione…</option>
+          @for (opt of schoolOptions(); track opt.value) {
+            <option [ngValue]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="search-field">
+        <span>Grado</span>
+        <select
+          formControlName="gradeId"
+          required
+          aria-required="true"
+        >
+          <option [ngValue]="null" disabled>Seleccione…</option>
+          @for (opt of gradeOptions(); track opt.value) {
+            <option [ngValue]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="search-field">
+        <span>Año académico</span>
+        <select
+          formControlName="academicYearId"
+          required
+          aria-required="true"
+        >
+          <option [ngValue]="null" disabled>Seleccione…</option>
+          @for (opt of academicYearOptions(); track opt.value) {
+            <option [ngValue]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="search-field">
+        <span>Fecha de referencia (opcional)</span>
+        <input
+          type="date"
+          formControlName="asOfDate"
+          aria-describedby="as-of-help"
+        />
+        <small id="as-of-help" class="search-help">
+          Si la deja vacía, se usa la fecha actual.
+        </small>
+      </label>
+    </fieldset>
+
+    <div class="search-actions">
+      <button
+        type="submit"
+        class="search-submit"
+        [disabled]="form.invalid || isLoading()"
+        [attr.aria-busy]="isLoading() ? 'true' : 'false'"
+      >
+        @if (isLoading()) {
+          Buscando…
+        } @else {
+          Buscar
+        }
+      </button>
+      <button
+        type="button"
+        class="search-cancel"
+        (click)="onReset()"
+        [disabled]="isLoading()"
+      >
+        Limpiar
+      </button>
+    </div>
+  </form>
+
+  @if (isLoading()) {
+    <p
+      class="search-status"
+      role="status"
+      aria-live="polite"
+      data-testid="search-loading"
+    >
+      Consultando inscripciones…
+    </p>
+  }
+
+  @if (hasError()) {
+    <div
+      class="search-error"
+      role="alert"
+      aria-live="assertive"
+      data-testid="search-error"
+    >
+      @if (errorProblem(); as problem) {
+        <p class="search-error-title">
+          <strong>{{ problem.title }}</strong>
+          <span class="search-error-status">(HTTP {{ problem.status }})</span>
+        </p>
+        @if (problem.detail) {
+          <p>{{ problem.detail }}</p>
+        }
+        @if (errorFields().length > 0) {
+          <ul class="search-error-fields">
+            @for (entry of errorFields(); track entry.field) {
+              @for (msg of entry.messages; track msg) {
+                <li><code>{{ entry.field }}</code>: {{ msg }}</li>
+              }
+            }
+          </ul>
+        }
+        <button type="button" (click)="onRetry()">Reintentar</button>
+      }
+    </div>
+  }
+
+  @if (isEmpty()) {
+    <div
+      class="search-empty"
+      role="status"
+      aria-live="polite"
+      data-testid="search-empty"
+    >
+      <h2>Sin coincidencias</h2>
+      <p>
+        La combinación seleccionada existe en los catálogos, pero no hay
+        inscripciones registradas. Verifique el año académico o los filtros.
+      </p>
+    </div>
+  }
+
+  @if (successData(); as rows) {
+    <div
+      class="search-results"
+      role="region"
+      aria-labelledby="results-title"
+      data-testid="search-results"
+    >
+      <h2 id="results-title">Inscripciones encontradas</h2>
+      <p class="search-count" aria-live="polite">
+        {{ rows.length }}
+        {{ rows.length === 1 ? 'inscripción' : 'inscripciones' }}
+      </p>
+      <table class="search-table">
+        <caption class="visually-hidden">
+          Inscripciones resultantes de la búsqueda. El orden refleja el
+          devuelto por el backend.
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Identidad</th>
+            <th scope="col">Nombre completo</th>
+            <th scope="col">Edad</th>
+            <th scope="col">Escuela</th>
+            <th scope="col">Año</th>
+            <th scope="col">Grado</th>
+            <th scope="col">Grupo</th>
+            <th scope="col">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows; track row.enrollmentId) {
+            <tr>
+              <td>
+                <span class="search-document">
+                  {{ row.documentType }} · {{ row.documentNumber }}
+                </span>
+              </td>
+              <td>{{ row.fullName }}</td>
+              <td>{{ row.age }}</td>
+              <td>
+                {{ row.schoolName }}
+                <small class="search-sector">({{ row.schoolSector }})</small>
+              </td>
+              <td>{{ row.academicYearName }}</td>
+              <td>{{ row.gradeName }}</td>
+              <td>{{ row.classGroupCode }}</td>
+              <td>
+                <button
+                  type="button"
+                  class="search-history"
+                  disabled
+                  aria-disabled="true"
+                  aria-describedby="history-locked-help"
+                >
+                  Ver historial
+                </button>
+                <small id="history-locked-help" class="search-help">
+                  Disponible tras la apertura de P1.
+                </small>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

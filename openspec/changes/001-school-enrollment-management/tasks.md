@@ -50,11 +50,11 @@
 
 ## Fase 3: US2 consulta
 
-- [ ] 4.1 T020 ST-SEARCH-QUERY + CTs `SEARCH`.
-- [ ] 4.2 T021 Implementar filtros y `listEnrollments`.
-- [ ] 4.3 T022 Renderizar resultados.
-- [ ] 4.4 T023 Estados loading/error/empty/retry.
-- [ ] 4.5 T024 WU03 + evidencia.
+- [x] 4.1 T020 ST-SEARCH-QUERY + CTs `SEARCH`.
+- [x] 4.2 T021 Implementar filtros y `listEnrollments`.
+- [x] 4.3 T022 Renderizar resultados.
+- [x] 4.4 T023 Estados loading/error/empty/retry.
+- [x] 4.5 T024 WU03 + evidencia.
 
 ## Fase 4: US3 contratos
 

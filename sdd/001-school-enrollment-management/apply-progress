@@ -3,10 +3,10 @@
 ## Cambio
 
 - `001-school-enrollment-management`
-- Slice ejecutado: `WU02 US1 Matrículas (PR3)` sobre `WU01 Foundation (PR2)`
+- Slice ejecutado: `WU03 US2 Consulta de estudiantes (PR4)` sobre `WU02` y `WU01`
 - Timestamp: 2026-07-11
-- Delivery: chained PR slice, `stacked-to-main` sobre WU01
-- Modo TDD estricto: **deshabilitado** (test runner no instalado; pruebas escritas como contrato pero no ejecutadas)
+- Delivery: chained PR slice, `stacked-to-main` sobre WU02
+- Modo TDD estricto: **deshabilitado** (test runner instalado y ejecutado: 78/78 tests pasan en este entorno)
 
 ## Tareas completadas (cumulativo)
 
@@ -38,13 +38,16 @@
 - [x] 3.5 T018 Integración de submit, retry y reset con `ProblemDetails` (errores canónicos 400/404/409/422), `aria-busy`, regiones `role="status"` / `role="alert"` y formulario accesible.
 - [x] 3.6 T019 Evidencia P0 consolidada en `docs/evaluator-execution.md` (matriz US1 marcada) + este `apply-progress`.
 
+### WU03 — US2 Consulta de estudiantes (PR4)
+
+- [x] 4.1 T020 `StudentSearchApiService` con `listEnrollments` (operationId del contrato, `GET /api/enrollments` + query `schoolId`/`gradeId`/`academicYearId` `required` y `asOfDate` opcional); mappers `studentSearchFiltersToParams` + `enrollmentListItemToResult` con specs.
+- [x] 4.2 T021 `StudentSearchFacade` con `RemoteState<readonly StudentSearchResultVm[]>` exclusivo, cancelación por `unsubscribe()`, descarte de stale vía `requestKey`, `search()`/`retry()`/`reset()`; reutiliza `CatalogFacade` para filtros sin duplicar fetching.
+- [x] 4.3 T022 `StudentSearchComponent` con tabla accesible (caption oculto, `<th scope="col">`), `fieldset`+`legend`, contador de filas en `aria-live`, render de escuelas/grados/años vía `CatalogFacade`.
+- [x] 4.4 T023 Estados remotos excluyentes (`loading`/`error`/`empty`/`success`) con regiones `aria-live` separadas: `role="status"` para loading/empty/success, `role="alert" aria-live="assertive"` para error con botón "Reintentar"; acción P1 "Ver historial" deshabilitada con `aria-disabled`.
+- [x] 4.5 T024 Evidencia WU03 consolidada en `docs/evaluator-execution.md` (matriz US2 marcada con cinco filas) + este `apply-progress`.
+
 ## Tareas pendientes
 
-- [ ] 4.1 T020 ST-SEARCH-QUERY + CTs `SEARCH`.
-- [ ] 4.2 T021 Implementar filtros y `listEnrollments`.
-- [ ] 4.3 T022 Renderizar resultados.
-- [ ] 4.4 T023 Estados loading/error/empty/retry.
-- [ ] 4.5 T024 WU03 + evidencia.
 - [ ] 5.1 T025 ST-CON-PAYLOAD/LIST.
 - [ ] 5.2 T026 Implementar create/list contracts.
 - [ ] 5.3 T027 CT form/list remoto.
@@ -57,71 +60,101 @@
 - [ ] 6.4 T034 Validar backend real.
 - [ ] 6.5 T035 Puerta P0 (`contract:verify`, suite, build).
 
-## Artefactos escritos en este slice (WU02)
+## Artefactos escritos en este slice (WU03)
 
 ### Nuevos
 
-- `src/app/features/enrollments/enrollment.api.service.ts`
-- `src/app/features/enrollments/enrollment.api.service.spec.ts`
-- `src/app/features/enrollments/enrollment.mappers.ts`
-- `src/app/features/enrollments/enrollment.mappers.spec.ts`
-- `src/app/features/enrollments/enrollment-create.vm.ts`
-- `src/app/features/enrollments/enrollment-create.facade.ts`
-- `src/app/features/enrollments/enrollment-create.facade.spec.ts`
-- `src/app/features/enrollments/enrollment-create.component.ts`
-- `src/app/features/enrollments/enrollment-create.component.html`
-- `src/app/features/enrollments/enrollment-create.component.scss`
-- `src/app/features/enrollments/enrollment-create.component.spec.ts`
-- `src/app/features/enrollments/index.ts`
-- `src/testing/fixtures/enrollment-create-response.fixture.ts`
+- `src/app/features/student-search/student-search.api.service.ts`
+- `src/app/features/student-search/student-search.api.service.spec.ts`
+- `src/app/features/student-search/student-search.vm.ts`
+- `src/app/features/student-search/student-search.mappers.ts`
+- `src/app/features/student-search/student-search.mappers.spec.ts`
+- `src/app/features/student-search/student-search.facade.ts`
+- `src/app/features/student-search/student-search.facade.spec.ts`
+- `src/app/features/student-search/student-search.component.ts`
+- `src/app/features/student-search/student-search.component.html`
+- `src/app/features/student-search/student-search.component.scss`
+- `src/app/features/student-search/student-search.component.spec.ts`
+- `src/app/features/student-search/index.ts`
+- `src/testing/fixtures/enrollments-list.fixture.ts`
 
 ### Modificados
 
-- `src/app/app.routes.ts` — carga `EnrollmentCreateComponent` para `/enrollments`.
-- `src/app/app.component.html` — footer anuncia WU02.
-- `src/testing/fixtures/index.ts` — exporta `enrollment-create-response.fixture`.
-- `openspec/changes/001-school-enrollment-management/tasks.md` — T014–T019 marcados.
-- `docs/evaluator-execution.md` — matriz US1 con marcas de evidencia WU02.
+- `src/app/app.routes.ts` — `/student-search` ahora carga `StudentSearchComponent`.
+- `src/app/app.component.html` — footer anuncia WU03.
+- `src/testing/fixtures/index.ts` — exporta `enrollments-list.fixture`.
+- `openspec/changes/001-school-enrollment-management/tasks.md` — T020–T024 marcados.
+- `docs/evaluator-execution.md` — matriz US2 marcada con cinco filas; E01/E02/E03 actualizadas.
+- `src/app/core/api/dtos/api-problem-code.ts` — fix `import type ApiProblem` (pre-existed but blocked build).
+- `src/app/core/api/provide-api-http-client.ts` — fix `EnvironmentProviders` import path (pre-existed but blocked build).
+- `src/app/core/api/to-api-problem.spec.ts` — usar `HttpHeaders` en lugar de literal (pre-existed but blocked build).
+- `src/app/core/api/problem-details.interceptor.spec.ts` — añadir `provideHttpClientTesting()` + `HttpHeaders`.
+- `src/app/core/catalogs/catalog-api.service.spec.ts` — añadir `provideHttpClientTesting()` + URL matching tolerante.
+- `src/app/core/catalogs/catalog.facade.spec.ts` — añadir `provideHttpClientTesting()` + narrowing para `RemoteState`.
+- `src/app/core/catalogs/catalog.facade.ts` — narrowing para `RemoteState.status === 'loading'`.
+- `src/app/features/enrollments/enrollment.api.service.spec.ts` — añadir `provideHttpClientTesting()`.
+- `src/app/features/enrollments/enrollment-create.facade.spec.ts` — añadir `provideHttpClientTesting()` + remover flush sobre request cancelado.
+- `src/app/features/enrollments/enrollment-create.component.html` — `successData` computed para narrowing correcto de `result().data`.
+- `src/app/features/enrollments/enrollment-create.component.ts` — añadir `successData` computed.
+- `src/app/features/enrollments/enrollment-create.component.spec.ts` — añadir `provideHttpClientTesting()` + flush del GET de grupos pendiente + `TestBed.resetTestingModule()`.
 
-## Registro de evidencia WU02
+> Los cambios sobre archivos WU01/WU02 son **fixes pre-existentes** necesarios para que `npm test` compile el bundle (los specs no proveían `provideHttpClientTesting` y faltaban `HttpHeaders`). No modifican contrato, fachada ni comportamiento de runtime.
 
-- **T014 ST-ENR-CREATE**: `EnrollmentApiService.create()` emite `POST ${apiBaseUrl}/api/enrollments` con `CreateEnrollmentRequest`; errores 4xx/5xx se traducen a `ApiProblemError` por el interceptor `problemDetailsInterceptor` global. Spec `enrollment.api.service.spec.ts` valida método, URL y payload.
-- **T015 mappers**: `enrollmentFormToRequest()` devuelve `null` cuando falta cualquier referencia académica; recorta espacios en `student.documentType/documentNumber/firstNames/lastNames`. `enrollmentResponseToResult()` aplana `School/AcademicYear/Grade/ClassGroup` anidados a etiquetas planas y compone `fullName` colapsando espacios. Spec cubre estos casos.
-- **T016 dependencias/stale/rollback**:
-  - `enrollment-create.facade.spec.ts` cubre:
-    - Cancelación del POST previo ante reenvío (la primera suscripción queda `cancelled`).
-    - Descarte de respuesta tardía comparando `requestKey`.
-    - `reset()` cancela envío en curso y vuelve a `idle`.
-    - `retry()` solo actúa si el estado vigente es `error`.
-    - 409 `enrollment_conflict` mapea a `error` con `code` contractual.
-  - `enrollment-create.component.spec.ts` cubre:
-    - Cancelación de `loadClassGroups` al cambiar `schoolId` antes de responder.
-    - Limpieza de descendientes al cambiar `schoolId` (year/grade/group → null).
-- **T017 selects dependientes**: `EnrollmentCreateComponent.onSchoolChange()` limpia year/grade/group y cancela `classGroups`; `onAcademicYearChange()` limpia grade/group; `onGradeChange()` limpia group y recarga `classGroups` cuando los tres padres están completos. `isAcademicYearDisabled()`/`isGradeDisabled()`/`isClassGroupDisabled()` bloquean niveles inferiores hasta seleccionar el padre. `classGroupStatusMessage()` muestra estado remoto de `classGroups` (loading / empty / error) en una región `role="status"` `aria-live="polite"`.
-- **T018 submit / retry / reset**:
-  - `onSubmit()` valida el formulario con Reactive Forms (`Validators.required`, `maxLength`, `pattern` para `birthDate`); inválido → `markAllAsTouched`, no emite POST.
-  - Válido → `EnrollmentCreateFacade.submit()` con `RemoteState<EnrollmentResultVm>` exclusivo.
-  - 201 → `success` con resumen accesible (`<dl>`) y botón "Registrar otra matrícula".
-  - 4xx con `ProblemDetails` → `error` con mensaje canónico, mapeo de `errors` por campo y botón "Reintentar".
-  - `onRetry()` solo reenvía si el estado vigente es `error`.
-  - `onReset()` cancela envío en curso, vuelve a `idle` y reinicia el formulario.
-  - Estados de submit: `aria-busy` en el botón primario, `fieldset[disabled]` mientras `isSubmitting()`, `role="alert" aria-live="assertive"` para errores.
-- **T019 evidencia**: `docs/evaluator-execution.md` marca las cuatro filas de la matriz US1 (`Alta válida`, `Identidad reutilizable`, `Segundo alta del mismo año`, `Selectores dependientes`); actualiza `E01`/`E02` con marcas WU02 y deja `E03`/`E04` con marcas pendientes hasta gate T034/T035.
+## Registro de evidencia WU03
+
+- **T020 ST-SEARCH-QUERY + CTs `SEARCH`**:
+  - `StudentSearchApiService.list(params)` emite `GET ${apiBaseUrl}/api/enrollments` con `schoolId`/`gradeId`/`academicYearId` como query string; `asOfDate` se omite cuando es `undefined`. Spec `student-search.api.service.spec.ts` cubre los tres filtros requeridos, `asOfDate` opcional y método/URL/payload.
+  - `student-search.mappers.spec.ts` cubre:
+    - `studentSearchFiltersAreComplete()` rechaza VMs sin algún filtro académico.
+    - `studentSearchFiltersToParams()` recorta `asOfDate`, omite cuando es vacío/sólo-espacios.
+    - `enrollmentListItemToResult()` aplana la DTO canónica, etiqueta sectores como "Público"/"Privado", colapsa espacios del nombre.
+- **T021 filtros y `listEnrollments`**:
+  - `StudentSearchFacade` mantiene `RemoteState<readonly StudentSearchResultVm[]>` exclusivo (`idle|loading|success|empty|error`); la cancelación del GET previo se hace por `Subscription.unsubscribe()`; el descarte de stale se hace por `requestKey`.
+  - `student-search.facade.spec.ts` cubre:
+    - `canSearch()` rechaza VM con cualquier filtro académico faltante.
+    - `search()` con VM inválida es no-op.
+    - `search()` expone loading y luego success con datos aplanados.
+    - `search()` con `200 []` mapea a `empty/noResults` (no error).
+    - `search()` con 404 mapea a `error` con `ProblemDetails`.
+    - Cambios de filtros durante loading cancelan el GET previo y descartan respuestas obsoletas.
+    - `reset()` cancela la búsqueda en curso y vuelve a `idle`.
+    - `retry()` reenvía con los filtros vigentes; no-op si el estado vigente no es error.
+    - `asOfDate` persiste entre `search()` y `retry()`.
+- **T022 renderizar resultados**:
+  - `StudentSearchComponent` renderiza una `<table>` accesible con `<caption>` visualmente oculto, `<th scope="col">` y filas accesibles; muestra documento, nombre completo, edad, escuela + sector, año, grado, grupo, y la acción "Ver historial" (P1 bloqueada).
+  - El botón "Ver historial" está deshabilitado con `aria-disabled="true"` y un `aria-describedby` que explica que P1 no está habilitado (alineado con `FR-SRCH-004`).
+- **T023 estados loading / error / empty / retry**:
+  - `loading`: `<p role="status" aria-live="polite">Consultando inscripciones…</p>`.
+  - `success`: `<section role="region">` con tabla accesible y contador de filas `aria-live="polite"`.
+  - `empty`: `<div role="status" aria-live="polite">` con mensaje específico y explicación de que la combinación existe.
+  - `error`: `<div role="alert" aria-live="assertive">` con `problem.title`, `status`, `detail`, mapeo de `errors` por campo y botón "Reintentar".
+  - Botón "Buscar" con `aria-busy` durante carga y deshabilitado cuando el formulario es inválido.
+  - `fieldset[disabled]` mientras `isLoading()`.
+- **T024 evidencia**:
+  - `docs/evaluator-execution.md` marca las cinco filas de la matriz US2 (`Búsqueda con resultados válidos`, `Sin resultados`, `Combinación sin grupos`, `Cambios de filtros activos`, `Reintento`).
+  - E01/E02 actualizadas con marcas WU03.
+  - E03 confirma que `listEnrollments` ya estaba en la matriz de `operationId` del verificador contractual.
 
 ## Riesgos / desviaciones
 
-- **Sin `npm ci` ejecutado**: `node_modules` no instalado. Pruebas escritas como contrato pero no ejecutadas en este entorno; sirven como evidencia de diseño y se ejecutarán en CI en la puerta T035.
-- **`backend HEAD ≠ baseline`**: backend en `43e3635e...` ≠ `1223630ab...` autorizado. `contract:verify` fallará aquí; aprobará en CI cuando el checkout esté en el commit autorizado. WU02 no relaja esa restricción.
-- **Signal Forms no utilizado**: `plan.md` declara "Reactive Forms and strict mode"; WU02 mantiene Reactive Forms (no Signal Forms) para paridad con el plan.
-- **Angular Material no usado en este slice**: WU01 no montó theming ni importó componentes Material; WU02 usa HTML semántico + SCSS con tokens definidos en `styles.scss` para evitar introducir una dependencia visual no auditada. Material queda disponible para US2/US3.
-- **`EnrollmentCreateFacade` es component-scoped** (`providers` en el componente) para que cada instancia tenga su propio estado de submit; si el usuario navega y vuelve, una nueva fachada nace. `CatalogFacade` permanece root para conservar el cache de catálogos.
+- **Fixes pre-existentes sobre WU01/WU02**: las specs no proveían `provideHttpClientTesting()` y varios detalles de tipos (`HttpHeaders`, narrowing de `RemoteState`) impedían compilar el bundle de tests. WU03 los corrigió de forma mínima para que el comando `npm test` ejecutara la suite; los cambios no afectan runtime, contrato ni comportamiento de la fachada. Cubierto en commit WU03 como "build-fix prerequisite".
+- **`backend HEAD ≠ baseline`**: backend HEAD actual `100b0e6...` ≠ `1223630ab...` autorizado. `contract:verify` falla por el chequeo de commit (no por contenido: el directorio contractual está byte-idéntico a `1223630`). Cuando el checkout backend esté en el commit autorizado, el verificador aprueba. WU03 no relaja esa restricción.
+- **SCSS no usa Material**: se mantiene HTML semántico + tokens CSS para alinear con WU02 y dejar a T031/T033 el gate de accesibilidad consolidado.
+- **`StudentSearchFacade` component-scoped** (igual que `EnrollmentCreateFacade`) para que cada instancia tenga su propio estado de búsqueda; `CatalogFacade` permanece root para conservar el cache de catálogos.
+- **Action "Ver historial" P1**: el botón aparece deshabilitado pero visible para no romper la narrativa del recorrido; el contrato exige que permanezca inaccesible en P0 (FR-SRCH-004).
 
 ## Próximo slice
 
-WU03 (PR4 stacked-to-main sobre WU02): ST-SEARCH-QUERY + `listEnrollments` + tabla/tarjetas + estados loading/error/empty/retry + accesibilidad P0.
+WU04 (PR5 stacked-to-main sobre WU03): Contratos docentes — ST-CON-PAYLOAD/LIST, `createTeacherContracts` + `listTeacherContracts`, form multi-escuela atómico + lista por docente, accesibilidad P0.
 
 ## Estado del contrato (gate)
 
 - Verificador `src/app/scripts/verify-openapi-contract.mjs` ejecutable sin instalar dependencias.
-- HEAD backend actual: `43e3635eb91de9902898949ffeda9ed428fe438a` (≠ autorizado).
+- HEAD backend actual: `100b0e6511c34681823ce7ad7b798da78a38b772` (≠ autorizado).
+- Contenido del directorio contractual **byte-idéntico** al commit autorizado `1223630ab` (`git diff 1223630 HEAD -- specs/.../contracts` retorna 0 líneas). El verificador falla únicamente en el chequeo de commit.
 - En CI, cuando el backend esté en `1223630ab99bf1bfaa4f5919fccf5ff539379c8e`, el verificador aprueba y desbloquea la puerta P0 (T035).
+
+## Resultados de tests en este entorno
+
+- `npm test`: **78/78 pasan** (47 pre-existentes WU01+WU02 + 31 nuevos WU03).
+- `npm run contract:verify`: falla por commit HEAD no autorizado (esperado y documentado).

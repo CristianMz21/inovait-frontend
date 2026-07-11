@@ -1,4 +1,5 @@
-import { HttpTestingController } from '@angular/common/http/testing';
+import { HttpHeaders } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import {
   HttpClient,
@@ -17,6 +18,7 @@ describe('problemDetailsInterceptor', () => {
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(withInterceptors([problemDetailsInterceptor])),
+        provideHttpClientTesting(),
       ],
     });
     client = TestBed.inject(HttpClient);
@@ -53,7 +55,7 @@ describe('problemDetailsInterceptor', () => {
       {
         status: 400,
         statusText: 'Bad Request',
-        headers: { 'Content-Type': 'application/problem+json' },
+        headers: new HttpHeaders({ 'Content-Type': 'application/problem+json' }),
       },
     );
     expect(received).toBeInstanceOf(ApiProblemError);

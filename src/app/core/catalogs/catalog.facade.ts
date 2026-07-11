@@ -165,7 +165,8 @@ export class CatalogFacade {
       next: (data) => {
         // Descarte de respuesta obsoleta: si la secuencia cambió,
         // esta respuesta ya no corresponde al estado actual.
-        if (binding.state().status === 'loading' && binding.state().requestKey !== requestKey) {
+        const current = binding.state();
+        if (current.status !== 'loading' || current.requestKey !== requestKey) {
           return;
         }
         if (Array.isArray(data) && data.length === 0) {
@@ -175,7 +176,8 @@ export class CatalogFacade {
         }
       },
       error: (err: unknown) => {
-        if (binding.state().status === 'loading' && binding.state().requestKey !== requestKey) {
+        const current = binding.state();
+        if (current.status !== 'loading' || current.requestKey !== requestKey) {
           return;
         }
         const problem =

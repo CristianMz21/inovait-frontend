@@ -2,6 +2,7 @@ export * from './academic-years.fixture';
 export * from './api-problems.fixture';
 export * from './class-groups.fixture';
 export * from './enrollment-create-response.fixture';
+export * from './enrollments-list.fixture';
 export * from './grades.fixture';
 export * from './schools.fixture';
 export * from './subjects.fixture';

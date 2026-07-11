@@ -1,4 +1,8 @@
-import { HttpTestingController } from '@angular/common/http/testing';
+import { HttpHeaders } from '@angular/common/http';
+import {
+  HttpTestingController,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -20,6 +24,7 @@ describe('CatalogFacade', () => {
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(withInterceptors([problemDetailsInterceptor])),
+        provideHttpClientTesting(),
         { provide: API_CONFIG, useValue: DEFAULT_API_CONFIG },
         CatalogApiService,
         CatalogFacade,
@@ -65,7 +70,7 @@ describe('CatalogFacade', () => {
     req.flush(apiProblemNotFoundFixture, {
       status: 404,
       statusText: 'Not Found',
-      headers: { 'Content-Type': 'application/problem+json' },
+      headers: new HttpHeaders({ 'Content-Type': 'application/problem+json' }),
     });
 
     const state = facade.schoolsState();

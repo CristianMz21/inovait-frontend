@@ -7,7 +7,7 @@
     <strong>Grupo</strong>. Cambiar un nivel superior limpia los inferiores.
   </p>
 
-  @if (isSuccess()) {
+  @if (successData(); as success) {
     <div
       class="enrollment-success"
       role="status"
@@ -15,42 +15,40 @@
       data-testid="enrollment-success"
     >
       <h2>Inscripción registrada</h2>
-      @if (result().status === 'success') {
-        <dl class="enrollment-summary">
-          <div>
-            <dt>Identificador de inscripción</dt>
-            <dd>{{ result().data.enrollmentId }}</dd>
-          </div>
-          <div>
-            <dt>Identificador de estudiante</dt>
-            <dd>{{ result().data.studentId }}</dd>
-          </div>
-          <div>
-            <dt>Estudiante</dt>
-            <dd>{{ result().data.fullName }} ({{ result().data.age }} años)</dd>
-          </div>
-          <div>
-            <dt>Identidad reutilizada</dt>
-            <dd>{{ result().data.studentReused ? 'Sí' : 'No' }}</dd>
-          </div>
-          <div>
-            <dt>Escuela</dt>
-            <dd>{{ result().data.schoolName }}</dd>
-          </div>
-          <div>
-            <dt>Año académico</dt>
-            <dd>{{ result().data.academicYearName }}</dd>
-          </div>
-          <div>
-            <dt>Grado</dt>
-            <dd>{{ result().data.gradeName }}</dd>
-          </div>
-          <div>
-            <dt>Grupo</dt>
-            <dd>{{ result().data.classGroupCode }}</dd>
-          </div>
-        </dl>
-      }
+      <dl class="enrollment-summary">
+        <div>
+          <dt>Identificador de inscripción</dt>
+          <dd>{{ success.enrollmentId }}</dd>
+        </div>
+        <div>
+          <dt>Identificador de estudiante</dt>
+          <dd>{{ success.studentId }}</dd>
+        </div>
+        <div>
+          <dt>Estudiante</dt>
+          <dd>{{ success.fullName }} ({{ success.age }} años)</dd>
+        </div>
+        <div>
+          <dt>Identidad reutilizada</dt>
+          <dd>{{ success.studentReused ? 'Sí' : 'No' }}</dd>
+        </div>
+        <div>
+          <dt>Escuela</dt>
+          <dd>{{ success.schoolName }}</dd>
+        </div>
+        <div>
+          <dt>Año académico</dt>
+          <dd>{{ success.academicYearName }}</dd>
+        </div>
+        <div>
+          <dt>Grado</dt>
+          <dd>{{ success.gradeName }}</dd>
+        </div>
+        <div>
+          <dt>Grupo</dt>
+          <dd>{{ success.classGroupCode }}</dd>
+        </div>
+      </dl>
       <button type="button" class="enrollment-reset" (click)="onReset()">
         Registrar otra matrícula
       </button>

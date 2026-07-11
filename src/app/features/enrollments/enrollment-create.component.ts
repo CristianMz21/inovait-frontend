@@ -115,6 +115,10 @@ export class EnrollmentCreateComponent implements OnInit {
 
   readonly isSubmitting = computed(() => this.result().status === 'loading');
   readonly isSuccess = computed(() => this.result().status === 'success');
+  readonly successData = computed(() => {
+    const state = this.result();
+    return state.status === 'success' ? state.data : null;
+  });
   readonly hasError = computed(() => this.result().status === 'error');
   readonly errorProblem = computed(() => {
     const state = this.result();

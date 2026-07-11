@@ -1,4 +1,7 @@
-import { HttpTestingController } from '@angular/common/http/testing';
+import {
+  HttpTestingController,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -33,6 +36,7 @@ describe('EnrollmentApiService', () => {
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(withApiProblemDetails()),
+        provideHttpClientTesting(),
         { provide: API_CONFIG, useValue: DEFAULT_API_CONFIG },
         EnrollmentApiService,
       ],

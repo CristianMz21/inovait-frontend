@@ -1,3 +1,5 @@
+import type { ApiProblem } from './api-problem.dto';
+
 /**
  * Tipos HTTP canónicos que el backend declara en `components/problems.yaml`.
  * La UI clasifica el error por `code` cuando el `status` es ambiguo.

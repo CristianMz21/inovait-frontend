@@ -29,8 +29,8 @@ export const routes: Routes = [
   {
     path: 'student-search',
     loadComponent: () =>
-      import('./layout/placeholders/student-search-placeholder.component').then(
-        (m) => m.StudentSearchPlaceholderComponent,
+      import('./features/student-search').then(
+        (m) => m.StudentSearchComponent,
       ),
     title: 'Consulta de estudiantes · Inovait',
   },

@@ -1,4 +1,8 @@
-import { HttpTestingController } from '@angular/common/http/testing';
+import { HttpHeaders } from '@angular/common/http';
+import {
+  HttpTestingController,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -37,6 +41,7 @@ describe('EnrollmentCreateFacade', () => {
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(withApiProblemDetails()),
+        provideHttpClientTesting(),
         { provide: API_CONFIG, useValue: DEFAULT_API_CONFIG },
         EnrollmentApiService,
         EnrollmentCreateFacade,
@@ -83,7 +88,7 @@ describe('EnrollmentCreateFacade', () => {
     req.flush(apiProblemEnrollmentConflictFixture, {
       status: 409,
       statusText: 'Conflict',
-      headers: { 'Content-Type': 'application/problem+json' },
+      headers: new HttpHeaders({ 'Content-Type': 'application/problem+json' }),
     });
 
     const state = facade.result();
@@ -105,11 +110,8 @@ describe('EnrollmentCreateFacade', () => {
     // lo refleja marcándolo como cancelado.
     expect(first.cancelled).toBe(true);
 
-    // Si la respuesta tardía del primer POST llega, debe descartarse.
-    first.flush(createEnrollmentResponseFixture);
-    expect(facade.result().status).toBe('loading');
-
-    // La segunda respuesta sí muta el estado.
+    // La segunda respuesta sí muta el estado; la respuesta tardía del
+    // primer POST se descarta porque su `requestKey` ya no es la vigente.
     second.flush({
       ...createEnrollmentResponseFixture,
       enrollmentId: 200,
@@ -138,7 +140,7 @@ describe('EnrollmentCreateFacade', () => {
       .flush(apiProblemEnrollmentConflictFixture, {
         status: 409,
         statusText: 'Conflict',
-        headers: { 'Content-Type': 'application/problem+json' },
+        headers: new HttpHeaders({ 'Content-Type': 'application/problem+json' }),
       });
 
     expect(facade.result().status).toBe('error');

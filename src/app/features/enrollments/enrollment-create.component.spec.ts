@@ -1,6 +1,10 @@
+import { HttpHeaders } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController } from '@angular/common/http/testing';
+import {
+  HttpTestingController,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { ReactiveFormsModule } from '@angular/forms';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -28,6 +32,7 @@ describe('EnrollmentCreateComponent', () => {
       imports: [ReactiveFormsModule],
       providers: [
         provideHttpClient(withApiProblemDetails()),
+        provideHttpClientTesting(),
         { provide: API_CONFIG, useValue: DEFAULT_API_CONFIG },
         provideRouter([]),
       ],
@@ -40,6 +45,7 @@ describe('EnrollmentCreateComponent', () => {
 
   afterEach(() => {
     http.verify();
+    TestBed.resetTestingModule();
   });
 
   /** Resuelve los tres GET de catálogos globales disparados en ngOnInit. */
@@ -81,6 +87,11 @@ describe('EnrollmentCreateComponent', () => {
 
     component.form.controls.gradeId.setValue(1);
     expect(component.isClassGroupDisabled()).toBe(false);
+
+    // El cambio de grado dispara `loadClassGroups`; el test verifica sólo
+    // estados de habilitación, así que cerramos la solicitud pendiente para
+    // que `http.verify()` no falle al terminar.
+    flushClassGroupsRequest();
   });
 
   it('limpia selecciones descendientes al cambiar un nivel superior', () => {
@@ -193,7 +204,7 @@ describe('EnrollmentCreateComponent', () => {
     req.flush(apiProblemEnrollmentConflictFixture, {
       status: 409,
       statusText: 'Conflict',
-      headers: { 'Content-Type': 'application/problem+json' },
+      headers: new HttpHeaders({ 'Content-Type': 'application/problem+json' }),
     });
 
     expect(component.hasError()).toBe(true);

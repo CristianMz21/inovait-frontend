@@ -1,14 +1,15 @@
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { describe, expect, it } from 'vitest';
 import { toApiProblem } from './to-api-problem';
 import { apiProblemNotFoundFixture } from '../../../testing/fixtures';
 
 describe('toApiProblem', () => {
   it('pasa el payload cuando el backend responde ProblemDetails', () => {
+    const headers = new HttpHeaders({ 'Content-Type': 'application/problem+json' });
     const error = new HttpErrorResponse({
       status: 404,
       error: apiProblemNotFoundFixture,
-      headers: { 'Content-Type': 'application/problem+json' },
+      headers,
     });
     const problem = toApiProblem(error);
     expect(problem.code).toBe('resource_not_found');

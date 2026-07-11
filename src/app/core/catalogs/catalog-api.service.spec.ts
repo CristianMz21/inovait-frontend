@@ -1,4 +1,7 @@
-import { HttpTestingController } from '@angular/common/http/testing';
+import {
+  HttpTestingController,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import {
@@ -23,6 +26,7 @@ describe('CatalogApiService', () => {
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(withApiProblemDetails()),
+        provideHttpClientTesting(),
         { provide: API_CONFIG, useValue: DEFAULT_API_CONFIG },
         CatalogApiService,
       ],
@@ -114,7 +118,8 @@ describe('CatalogApiService', () => {
 
     service.listTeachersBySchool(7, '2026-07-10').subscribe();
     const req2 = http.expectOne(
-      `${DEFAULT_API_CONFIG.apiBaseUrl}/api/schools/7/teachers`,
+      (r) =>
+        r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/schools/7/teachers`,
     );
     expect(req2.request.params.get('asOfDate')).toBe('2026-07-10');
     req2.flush([]);

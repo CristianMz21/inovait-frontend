@@ -1,7 +1,6 @@
+import type { EnvironmentProviders } from '@angular/core';
 import {
-  type EnvironmentProviders,
   type HttpInterceptorFn,
-  type Provider,
   provideHttpClient,
   withInterceptors,
 } from '@angular/common/http';
@@ -23,4 +22,3 @@ export const provideApiHttpClient = (): EnvironmentProviders =>
   provideHttpClient(withInterceptors([problemDetailsInterceptor]));
 
 export type { HttpInterceptorFn };
-export type { Provider };
