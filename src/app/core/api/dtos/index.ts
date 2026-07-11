@@ -1,4 +1,5 @@
 export * from './academic-year-summary.dto';
+export * from './age-distribution.dto';
 export * from './api-problem-code';
 export * from './api-problem.dto';
 export * from './class-group-summary.dto';

@@ -1,4 +1,5 @@
 export * from './academic-years.fixture';
+export * from './age-distribution.fixture';
 export * from './api-problems.fixture';
 export * from './class-groups.fixture';
 export * from './enrollment-create-response.fixture';
