@@ -48,14 +48,14 @@ Estimated: ~1.4k LOC en 4 PR stacked; split PR2→PR3→PR4→PR5; delivery on-r
 
 ## Fase 4: WU10-RPT — shell + consolidación + gate (PR5)
 
-- [ ] T066 Crear `reports-shell.component.{ts,html,scss,spec.ts}` con tres `<section>` (sin child routes), anclas internas, 320 px OK.
-- [ ] T067 Spec shell: una ruta, tres secciones, host cancela suscripciones al destruir.
-- [ ] T068 Crear `src/app/a11y/p0-a11y-reports.routes.spec.ts` con `CT-A11Y-RPT-AGE/SECTOR/TOP` (success, empty, 422, 404) espejo de `CT-A11Y-P0`.
-- [ ] T069 Modificar `src/app/app.routes.ts`: `/reports` → `ReportsShellComponent`; `/student-history` conserva `data.lockedFeature`.
-- [ ] T070 Modificar `src/app/app.component.html`: footer "Reportes operativos · Historia pendiente"; nav Reportes `aria-disabled="false"`.
-- [ ] T071 Actualizar `docs/evaluator-execution.md`: matriz P1 + walkthrough (T033-RPT + T034-RPT).
-- [ ] T072 Rerun gate: `npm test --no-watch`, `ng build --configuration=development`, `npm run contract:verify`; output verbatim en el doc.
-- [ ] T073 Evidencia WU10 + commit `feat(002): reports shell + a11y consolidation + gate rerun (WU10)` + push.
+- [x] T066 Crear `reports-shell.component.{ts,html,scss,spec.ts}` con tres `<section>` (sin child routes), anclas internas, 320 px OK.
+- [x] T067 Spec shell: una ruta, tres secciones, host cancela suscripciones al destruir.
+- [x] T068 Crear `src/app/a11y/p0-a11y-reports.routes.spec.ts` con `CT-A11Y-RPT-AGE/SECTOR/TOP` (success, empty, 422, 404) espejo de `CT-A11Y-P0`.
+- [x] T069 Modificar `src/app/app.routes.ts`: `/reports` → `ReportsShellComponent`; `/student-history` conserva `data.lockedFeature`.
+- [x] T070 Modificar `src/app/app.component.html`: footer "Reportes operativos · Historia pendiente"; nav Reportes `aria-disabled="false"`.
+- [x] T071 Actualizar `docs/evaluator-execution.md`: matriz P1 + walkthrough (T033-RPT + T034-RPT).
+- [x] T072 Rerun gate: `npm test --no-watch`, `ng build --configuration=development`, `npm run contract:verify`; output verbatim en el doc.
+- [x] T073 Evidencia WU10 + commit `feat(002): reports shell + a11y consolidation + gate rerun (WU10)` + push.
 
 ## Fuera de alcance (recordatorio)
 

@@ -1,6 +1,6 @@
 <section class="sector" aria-labelledby="sector-title">
   <h1 id="sector-title" tabindex="-1">Docentes distintos por sector</h1>
-  <p class="sector-lede">
+  <p id="sector-lede" class="sector-lede">
     Indique un <strong>período</strong> (opcional) para obtener el conteo
     de docentes con contratos vigentes en cada sector. Si lo deja vacío,
     se usa la fecha actual como <code>periodStart</code> y
@@ -113,7 +113,7 @@
       data-testid="sector-results"
     >
       <h2 id="sector-results-title">Docentes distintos por sector</h2>
-      <p class="sector-context" aria-live="polite">
+      <p class="sector-context" role="status" aria-live="polite">
         Período <strong>{{ data.periodStart }}</strong> a
         <strong>{{ data.periodEnd }}</strong>
         · Total <strong>{{ data.totalDistinctTeacherCount }}</strong>

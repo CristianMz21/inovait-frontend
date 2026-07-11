@@ -394,13 +394,206 @@ Veredicto parcial:
 
 - [ ] Pendiente de walkthrough manual (T034). Script de verificación previa disponible en `scripts/dev-check-backend.mjs`.
 
+## P1 Gate Reportes (002 / WU10)
+
+> Verificación ejecutada localmente en `inovait-frontend` para el cierre de
+> `002-municipal-reports` WU10. La habilitación cubre `/reports` únicamente;
+> `/student-history` permanece bloqueada.
+
+- Cambio: `002-municipal-reports`
+- Slice objetivo: `WU10-RPT` (shell + consolidación a11y + gate rerun)
+- Modo: Frontend-only (sin cambios al backend)
+- Fecha WU10: 2026-07-11
+- Modo TDD estricto: **deshabilitado** (pruebas escritas como contrato de evidencia)
+
+### Matriz P1 reportes (T071)
+
+| Ruta / sección | Estado remoto | Errores canónicos | A11y | 320 px / 200 % / contraste | Evidencia |
+|---|---|---|---|---|---|
+| `/reports#age-report` — Distribución por edad | `loading → success`; 200 con ceros se mantiene como `success` | 400 `invalid_request`, 404 `resource_not_found`, 422 `as_of_date_invalid` | `<h1 tabindex="-1">`, `<fieldset><legend>`, `academicYearId aria-required="true"`, submit `aria-busy`, loading/success `role="status"`, error `role="alert"`, tabla con `<caption class="visually-hidden">` + `<th scope="col">` | [x] `@media (max-width: 320px)` y tokens `--app-muted`/`--app-accent` verificados por spec | `age-distribution.component.spec.ts`, `p0-a11y-reports.routes.spec.ts` (`CT-A11Y-RPT-AGE`) |
+| `/reports#sector-report` — Docentes por sector | `loading → success`; conteos 0/0 se mantienen como `success` | 400 `invalid_request`, 422 `period_invalid` | `<h1 tabindex="-1">`, `<fieldset><legend>`, período opcional sin `aria-required`, submit `aria-busy`, loading/success `role="status"`, error `role="alert"`, tabla con caption oculto + `th scope="col"` | [x] `@media (max-width: 320px)` y tokens de contraste verificados por spec | `teacher-counts-by-sector.component.spec.ts`, `p0-a11y-reports.routes.spec.ts` (`CT-A11Y-RPT-SECTOR`) |
+| `/reports#top-schools-report` — Escuelas líderes | `loading → success` o `loading → empty` para 200 `[]` | 400 `invalid_request`, 404 `resource_not_found` | `<h1 tabindex="-1">`, `<fieldset><legend>`, `academicYearId aria-required="true"`, submit `aria-busy`, loading/empty/success `role="status"`, error `role="alert"`, tabla con caption oculto + `th scope="col"` | [x] `@media (max-width: 320px)` y tokens de contraste verificados por spec | `top-schools.component.spec.ts`, `p0-a11y-reports.routes.spec.ts` (`CT-A11Y-RPT-TOP`) |
+| Shell `/reports` | Navegación interna por anclas; sin child routes | `/student-history` continúa con `P1LockedComponent` | tres `<section>` (`age-report`, `sector-report`, `top-schools-report`), nav interna con `aria-current`, fragment subscription cerrada con `takeUntilDestroyed` | [x] shell responsivo a 320 px con tokens `--app-border`, `--app-muted`, `--app-accent` | `reports-shell.component.spec.ts`, `app.component.spec.ts` |
+
+### Walkthrough Script (T033-RPT — manual evidence pending)
+
+> **Estado**: manual evidence pending — ejecutar después de desplegar WU10 en
+> entorno con backend disponible o fixtures equivalentes.
+
+#### Bloque R-A — Navegación y foco
+
+1. Cargar `/reports`. Pulsar `Tab`.
+   - Esperado: primer foco visible en `Saltar al contenido principal`; `Enter` mueve el foco al `<main id="main" tabindex="-1">`.
+2. Tabular hasta la navegación interna de reportes.
+   - Esperado: tres enlaces: `Distribución por edad`, `Docentes por sector`, `Escuelas líderes`; el enlace activo expone `aria-current="location"`.
+3. Activar cada ancla (`#age-report`, `#sector-report`, `#top-schools-report`).
+   - Esperado: el viewport se mueve a la sección correspondiente sin cambiar de ruta ni cargar child routes.
+4. Confirmar que `/student-history` sigue mostrando `Historia del estudiante` con el placeholder P1 bloqueado y no invoca endpoints de historia.
+
+#### Bloque R-B — Estados remotos y anuncios
+
+5. En `Distribución por edad`, consultar un año válido.
+   - Esperado: loading en `role="status"`, success con contexto `role="status"`, tabla con tres bandas y sin `role="alert"`.
+6. En `Distribución por edad`, usar `asOfDate` inválido.
+   - Esperado: `422 as_of_date_invalid` anunciado en `role="alert"`; filtros conservados.
+7. En `Docentes por sector`, consultar sin período y luego con período válido.
+   - Esperado: conteos público/privado exactos, deduplicación delegada al backend, success `role="status"`.
+8. En `Docentes por sector`, usar `periodEnd < periodStart`.
+   - Esperado: `422 period_invalid` en `role="alert"`; no se muestran conteos parciales.
+9. En `Escuelas líderes`, consultar año con empates.
+   - Esperado: tabla con todas las escuelas empatadas en el orden estable del backend.
+10. En `Escuelas líderes`, consultar año sin inscripciones.
+    - Esperado: estado `empty` con `role="status"` y botón `Reintentar`; no hay `role="alert"`.
+11. En `Escuelas líderes`, consultar año inexistente.
+    - Esperado: `404 resource_not_found` en `role="alert"`; filtros conservados.
+
+#### Bloque R-C — 320 px / zoom / contraste
+
+12. Redimensionar a `320 × 800` y recorrer las tres secciones.
+    - Esperado: navegación interna en una columna, formularios en una columna y tablas sin clipping horizontal.
+13. Repetir los estados `loading`, `empty`, `success` y `error` a 320 px.
+    - Esperado: regiones `role="status"`/`role="alert"` visibles y sin solapamiento.
+14. Activar zoom 200 % y repetir el Bloque R-B.
+    - Esperado: textos y tablas legibles; foco visible no queda oculto.
+15. Validar contraste de `--app-muted`, `--app-accent`, `--app-error` y enlaces de navegación con Lighthouse/axe/Stark.
+    - Esperado: WCAG 2.2 AA (texto normal ≥ 4.5:1; UI/foco ≥ 3:1).
+
+#### Tabla de registro manual T033-RPT
+
+| # | Paso | Resultado | Observación |
+|---|---|---|---|
+| R1 | Skip-link `/reports` | ☐ |  |
+| R2 | Navegación interna y `aria-current` | ☐ |  |
+| R3 | Anclas de secciones | ☐ |  |
+| R4 | `/student-history` bloqueado | ☐ |  |
+| R5 | Age success | ☐ |  |
+| R6 | Age 422 | ☐ |  |
+| R7 | Sector success | ☐ |  |
+| R8 | Sector 422 | ☐ |  |
+| R9 | Top schools con empates | ☐ |  |
+| R10 | Top schools empty 200 `[]` | ☐ |  |
+| R11 | Top schools 404 | ☐ |  |
+| R12 | 320 px | ☐ |  |
+| R13 | 320 px estados remotos | ☐ |  |
+| R14 | Zoom 200 % | ☐ |  |
+| R15 | Contraste WCAG 2.2 AA | ☐ |  |
+
+### Backend integration (T034-RPT — manual integration pending)
+
+> **Estado**: manual integration pending — no se modificó backend durante WU10.
+
+1. Iniciar backend local autorizado en `http://localhost:5000`.
+2. Confirmar que el contrato en backend corresponde a commit autorizado `1223630ab99bf1bfaa4f5919fccf5ff539379c8e` o sucesor aprobado.
+3. Ejecutar frontend con `npm start`.
+4. Recorrer `/reports#age-report`, `/reports#sector-report` y `/reports#top-schools-report` con los pasos R5–R11.
+5. Confirmar que no hay llamadas a `/api/students/{documentType}/{documentNumber}/history` ni habilitación accidental de `/student-history`.
+6. Registrar HEAD/SHA backend y observaciones.
+
+| # | Verificación | Resultado | Backend HEAD/SHA | Fecha | Observación |
+|---|---|---|---|---|---|
+| R1 | `getAgeDistribution` end-to-end | ☐ | ☐ | ☐ |  |
+| R2 | `getDistinctTeacherCountsBySector` end-to-end | ☐ | ☐ | ☐ |  |
+| R3 | `getTopSchoolsByEnrollment` end-to-end | ☐ | ☐ | ☐ |  |
+| R4 | `/student-history` sin llamadas backend | ☐ | ☐ | ☐ |  |
+| R5 | CORS / reports endpoints | ☐ | ☐ | ☐ |  |
+
+### Gate WU10 (T072)
+
+#### 1) `npm test -- --no-watch --no-progress`
+
+Salida final verbatim:
+
+```text
+> inovait-frontend@0.0.0 test
+> ng test --no-watch --no-progress --no-watch --no-progress
+
+Test Files 29 passed (29)
+     Tests 358 passed (358)
+  Start at 10:15:57
+  Duration 7.44s (transform 5.64s, setup 15.94s, import 15.03s, tests 17.65s, environment 62.54s)
+```
+
+Veredicto: **PASS — 358/358**. La salida completa incluyó advertencias heredadas de Angular sobre `disabled` con reactive forms en componentes P0; no son fallos y no fueron suprimidas.
+
+#### 2) `npx ng build --configuration=development`
+
+Salida verbatim:
+
+```text
+❯ Building...
+✔ Building...
+Initial chunk files | Names               |  Raw size
+chunk-VBHD5NVV.js   | -                   |   1.11 MB |
+chunk-M4NOITT6.js   | -                   | 259.66 kB |
+main.js             | main                |  11.86 kB |
+styles.css          | styles              |   1.12 kB |
+chunk-TEYC5D7I.js   | -                   | 970 bytes |
+
+                    | Initial total       |   1.39 MB
+
+Lazy chunk files    | Names               |  Raw size
+chunk-OE2HLHKP.js   | -                   | 158.47 kB |
+chunk-J2BHBSPD.js   | index               | 125.00 kB |
+chunk-LWMSHO4D.js   | index               |  71.37 kB |
+chunk-ZKUSX3DN.js   | index               |  51.32 kB |
+chunk-ZLFUWDY2.js   | index               |  46.26 kB |
+chunk-FBZE3QTB.js   | -                   |   3.38 kB |
+chunk-EKPZ7NPK.js   | p1-locked-component |   3.11 kB |
+
+Application bundle generation complete. [4.564 seconds] - 2026-07-11T15:16:25.940Z
+
+Output location: /home/mackroph/Dev/Tecnica/inovait/inovait-frontend/dist/inovait-frontend
+```
+
+Veredicto: **PASS**.
+
+#### 3) `npm run contract:verify`
+
+Salida verbatim:
+
+```text
+> inovait-frontend@0.0.0 contract:verify
+> node ./src/app/scripts/verify-openapi-contract.mjs
+
+
+verify-openapi-contract — baseline 1223630ab99b
+Directorio contractual: /home/mackroph/Dev/Tecnica/inovait/inovait-backend/specs/001-school-enrollment-management/contracts
+
+• Verificando que los 10 archivos contractuales están bajo seguimiento
+  ✓ openapi.yaml presente y bajo seguimiento
+  ✓ paths/catalogs.yaml presente y bajo seguimiento
+  ✓ paths/enrollments.yaml presente y bajo seguimiento
+  ✓ paths/teacher-contracts.yaml presente y bajo seguimiento
+  ✓ paths/reports.yaml presente y bajo seguimiento
+  ✓ components/catalogs.yaml presente y bajo seguimiento
+  ✓ components/enrollments.yaml presente y bajo seguimiento
+  ✓ components/teacher-contracts.yaml presente y bajo seguimiento
+  ✓ components/reports.yaml presente y bajo seguimiento
+  ✓ components/problems.yaml presente y bajo seguimiento
+• Verificando que el directorio contractual está limpio
+  ✓ Directorio contractual limpio
+• Verificando commit autorizado o sucesor aprobado
+  ✗ HEAD no autorizado: ea8335496badae0c4de4de81cb61a661a23f8da6. Autorizado: 1223630ab99bf1bfaa4f5919fccf5ff539379c8e. Aprobados: (ninguno)
+```
+
+Veredicto: **FAIL local por entorno backend**. Tracking y limpieza contractual pasan; el script aborta en el commit-check porque el repositorio backend local está en `ea8335496badae0c4de4de81cb61a661a23f8da6`, distinto del commit autorizado `1223630ab99bf1bfaa4f5919fccf5ff539379c8e`. No se modificó backend ni se agregó sucesor aprobado.
+
+#### Resumen del gate WU10
+
+| Comando | Veredicto | Detalle |
+|---|---|---|
+| `npm test -- --no-watch --no-progress` | ✅ PASS | 29 archivos, 358/358 tests |
+| `npx ng build --configuration=development` | ✅ PASS | Build development OK |
+| `npm run contract:verify` | ⚠ FAIL local documentado | Tracking + clean OK; commit-check falla por HEAD backend local no autorizado |
+
 ## Notas operativas
 
 - Antes de ejecutar WU01+, el contrato debe mantenerse bajo seguimiento y la línea
   base de backend validada contra el `checksum` registrado.
-- Los P1 (`/reports`, `/student-history`) permanecen bloqueados hasta cierre de la
-  puerta P0.
+- `/reports` queda operativo desde `002-municipal-reports`; `/student-history`
+  permanece bloqueado hasta el cambio `003-student-history`.
 - El script `npm test` está definido como `ng test --no-watch --no-progress`
-  (corregido en WU05). La invocación correcta es `npm test` sin argumentos
-  adicionales; pasar `-- --no-watch --no-progress` produce el error
-  `Schema validation failed` de Angular CLI porque duplica el separador.
+  (corregido en WU05). En WU10 se ejecutó la invocación solicitada
+  `npm test -- --no-watch --no-progress`; Angular recibió flags duplicados
+  (`ng test --no-watch --no-progress --no-watch --no-progress`) y la suite
+  pasó correctamente.

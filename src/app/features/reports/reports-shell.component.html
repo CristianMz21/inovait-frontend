@@ -1,0 +1,46 @@
+<div class="reports-shell" aria-label="Reportes operativos">
+  <nav class="reports-shell-nav" aria-label="Navegación interna de reportes">
+    <p class="reports-shell-kicker">Reportes operativos</p>
+    <ul>
+      @for (section of sections(); track section.id) {
+        <li>
+          <a
+            [routerLink]="['/reports']"
+            [fragment]="section.id"
+            [attr.aria-current]="isActive(section.id) ? 'location' : null"
+          >
+            <span class="reports-shell-link-label">{{ section.label }}</span>
+            <span class="reports-shell-link-summary">{{ section.summary }}</span>
+          </a>
+        </li>
+      }
+    </ul>
+    <p class="reports-shell-active" role="status" aria-live="polite">
+      Sección activa: <strong>{{ activeSectionLabel() }}</strong>
+    </p>
+  </nav>
+
+  <section
+    id="age-report"
+    class="reports-shell-section reports-shell-section--age"
+    aria-label="Distribución por edad"
+  >
+    <app-age-distribution />
+  </section>
+
+  <section
+    id="sector-report"
+    class="reports-shell-section reports-shell-section--sector"
+    aria-label="Docentes distintos por sector"
+  >
+    <app-teacher-counts-by-sector />
+  </section>
+
+  <section
+    id="top-schools-report"
+    class="reports-shell-section reports-shell-section--top-schools"
+    aria-label="Escuelas líderes por matrícula"
+  >
+    <app-top-schools />
+  </section>
+</div>

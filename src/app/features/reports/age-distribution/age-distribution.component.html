@@ -1,6 +1,6 @@
 <section class="age" aria-labelledby="age-title">
   <h1 id="age-title" tabindex="-1">Distribución por edad</h1>
-  <p class="age-lede">
+  <p id="age-lede" class="age-lede">
     Seleccione el <strong>año académico</strong> para obtener el conteo de
     inscripciones distribuidas en tres rangos etarios. Puede acotar la
     consulta por <strong>escuela</strong>, <strong>grado</strong> o
@@ -136,7 +136,7 @@
       data-testid="age-results"
     >
       <h2 id="age-results-title">Distribución por edad</h2>
-      <p class="age-context" aria-live="polite">
+      <p class="age-context" role="status" aria-live="polite">
         Año académico <strong>{{ data.academicYearId }}</strong>
         · Fecha de referencia <strong>{{ data.asOfDate }}</strong>
         · Total <strong>{{ data.totalCount }}</strong>

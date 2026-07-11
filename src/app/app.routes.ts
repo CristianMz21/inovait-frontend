@@ -7,9 +7,9 @@ import type { Routes } from '@angular/router';
  *   están listas para bootstrap. `/enrollments` ya entrega el recorrido
  *   completo de creación de matrícula (WU02); `/student-search` y
  *   `/teacher-contracts` cargan placeholders accesibles hasta WU03/WU04.
- * - Las rutas P1 (`/reports`, `/student-history`) existen pero están
- *   bloqueadas por gate P0: navegan a un componente `p1-locked` que no
- *   invoca endpoints P1.
+ * - La ruta P1 `/reports` queda habilitada por `002-municipal-reports` y
+ *   monta el shell operativo con tres reportes internos. `/student-history`
+ *   permanece bloqueada por gate P1 y no invoca endpoints de historia.
  * - `/` redirige a `/enrollments`.
  */
 export const routes: Routes = [
@@ -45,10 +45,7 @@ export const routes: Routes = [
   {
     path: 'reports',
     loadComponent: () =>
-      import('./layout/placeholders/p1-locked.component').then(
-        (m) => m.P1LockedComponent,
-      ),
-    data: { lockedFeature: 'reports' },
+      import('./features/reports').then((m) => m.ReportsShellComponent),
     title: 'Reportes · Inovait',
   },
   {

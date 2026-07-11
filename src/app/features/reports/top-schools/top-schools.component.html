@@ -1,6 +1,6 @@
 <section class="top" aria-labelledby="top-title">
   <h1 id="top-title" tabindex="-1">Escuelas líderes por matrícula</h1>
-  <p class="top-lede">
+  <p id="top-lede" class="top-lede">
     Seleccione el <strong>año académico</strong> para obtener las escuelas
     con mayor cantidad de inscripciones del año. Cuando hay empates en
     el conteo máximo, se muestran <strong>todas</strong> las escuelas
@@ -120,7 +120,7 @@
       data-testid="top-results"
     >
       <h2 id="top-results-title">Escuelas líderes</h2>
-      <p class="top-context" aria-live="polite">
+      <p class="top-context" role="status" aria-live="polite">
         Año académico <strong>{{ data.academicYearId }}</strong>
         · {{ data.schools.length }}
         {{ data.schools.length === 1 ? 'escuela líder' : 'escuelas líderes' }}
