@@ -157,7 +157,6 @@
             required
             aria-required="true"
             [attr.aria-disabled]="isAcademicYearDisabled() ? 'true' : null"
-            [disabled]="isAcademicYearDisabled()"
           >
             <option [ngValue]="null" disabled>Seleccione…</option>
             @for (opt of academicYearOptions(); track opt.value) {
@@ -174,7 +173,6 @@
             required
             aria-required="true"
             [attr.aria-disabled]="isGradeDisabled() ? 'true' : null"
-            [disabled]="isGradeDisabled()"
           >
             <option [ngValue]="null" disabled>Seleccione…</option>
             @for (opt of gradeOptions(); track opt.value) {
@@ -191,7 +189,6 @@
             required
             aria-required="true"
             [attr.aria-disabled]="isClassGroupDisabled() ? 'true' : null"
-            [disabled]="isClassGroupDisabled()"
           >
             <option [ngValue]="null" disabled>Seleccione…</option>
             @for (opt of classGroupOptions(); track opt.value) {

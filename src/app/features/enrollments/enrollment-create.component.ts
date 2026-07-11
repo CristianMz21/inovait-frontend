@@ -3,6 +3,7 @@ import {
   Component,
   DestroyRef,
   computed,
+  effect,
   inject,
   type OnInit,
 } from "@angular/core";
@@ -116,7 +117,7 @@ export class EnrollmentCreateComponent implements OnInit {
   readonly gradeOptions = this.gradeOptionsSignal();
   readonly classGroupOptions = this.classGroupOptionsSignal();
 
-  readonly isSubmitting = computed(() => this.result().status === "loading");
+readonly isSubmitting = computed(() => this.result().status === "loading");
   readonly isSuccess = computed(() => this.result().status === "success");
   readonly successData = computed(() => {
     const state = this.result();
@@ -138,7 +139,42 @@ export class EnrollmentCreateComponent implements OnInit {
     }));
   });
 
-  ngOnInit(): void {
+  // Sincronizar el estado disabled del FormControl con la cascada
+  // jerárquica. Esto evita el warning de Angular sobre `[disabled]`
+  // aplicado directamente a directivas de Reactive Forms en el
+  // template: la convención es manejar disabled vía la API del
+  // FormControl (formControl.disable()/enable()), y dejar que el
+  // CVA refleje el estado en el DOM sin warnings de
+  // "changed after checked".
+  private readonly _academicYearDisabledEffect = effect(() => {
+    const disabled = this.isAcademicYearDisabled();
+    const ctrl = this.form.controls.academicYearId;
+    if (disabled && ctrl.enabled) {
+      ctrl.disable({ emitEvent: false });
+    } else if (!disabled && ctrl.disabled) {
+      ctrl.enable({ emitEvent: false });
+    }
+  });
+  private readonly _gradeDisabledEffect = effect(() => {
+    const disabled = this.isGradeDisabled();
+    const ctrl = this.form.controls.gradeId;
+    if (disabled && ctrl.enabled) {
+      ctrl.disable({ emitEvent: false });
+    } else if (!disabled && ctrl.disabled) {
+      ctrl.enable({ emitEvent: false });
+    }
+  });
+  private readonly _classGroupDisabledEffect = effect(() => {
+    const disabled = this.isClassGroupDisabled();
+    const ctrl = this.form.controls.classGroupId;
+    if (disabled && ctrl.enabled) {
+      ctrl.disable({ emitEvent: false });
+    } else if (!disabled && ctrl.disabled) {
+      ctrl.enable({ emitEvent: false });
+    }
+  });
+
+ngOnInit(): void {
     // Cargar catálogos globales al entrar a la ruta. La fachada de
     // catálogos se encarga de cancelar cualquier solicitud previa.
     this.catalog.loadSchools();
