@@ -117,7 +117,7 @@ export class EnrollmentCreateComponent implements OnInit {
   readonly gradeOptions = this.gradeOptionsSignal();
   readonly classGroupOptions = this.classGroupOptionsSignal();
 
-readonly isSubmitting = computed(() => this.result().status === "loading");
+  readonly isSubmitting = computed(() => this.result().status === "loading");
   readonly isSuccess = computed(() => this.result().status === "success");
   readonly successData = computed(() => {
     const state = this.result();
@@ -174,7 +174,7 @@ readonly isSubmitting = computed(() => this.result().status === "loading");
     }
   });
 
-ngOnInit(): void {
+  ngOnInit(): void {
     // Cargar catálogos globales al entrar a la ruta. La fachada de
     // catálogos se encarga de cancelar cualquier solicitud previa.
     this.catalog.loadSchools();

@@ -4,6 +4,8 @@ import {
   provideHttpClient,
   withInterceptors,
 } from "@angular/common/http";
+import { environment } from "../../../environments/environment";
+import { mockBackendInterceptor } from "../mocks/mock-backend.interceptor";
 import { problemDetailsInterceptor } from "./problem-details.interceptor";
 
 /**
@@ -17,8 +19,18 @@ export const withApiProblemDetails = (): ReturnType<typeof withInterceptors> =>
 /**
  * Helper combinado para `bootstrapApplication` / `TestBed`: provee un
  * `HttpClient` ya conectado al interceptor `problemDetailsInterceptor`.
+ *
+ * When `environment.useMocks` is true, the mock backend interceptor is
+ * added BEFORE `problemDetailsInterceptor` so mocks can short-circuit
+ * requests and ProblemDetails handling only runs for error cases.
  */
-export const provideApiHttpClient = (): EnvironmentProviders =>
-  provideHttpClient(withInterceptors([problemDetailsInterceptor]));
+export const provideApiHttpClient = (): EnvironmentProviders => {
+  const interceptors: HttpInterceptorFn[] = [];
+  if (environment.useMocks) {
+    interceptors.push(mockBackendInterceptor);
+  }
+  interceptors.push(problemDetailsInterceptor);
+  return provideHttpClient(withInterceptors(interceptors));
+};
 
 export type { HttpInterceptorFn };
