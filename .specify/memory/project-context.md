@@ -1,8 +1,8 @@
 # Contexto de planificación del proyecto
 
 **Proyecto**: `inovait-frontend`
-**Fecha de detección**: 2026-07-10
-**Persistencia SDD**: GitHub Spec Kit (`.specify/`) con integración Codex
+**Fecha de detección**: 2026-07-11
+**Persistencia SDD**: GitHub Spec Kit local (`.specify/`) con integración Codex; estado adicional persistido en Engram.
 
 ## Estado del repositorio
 

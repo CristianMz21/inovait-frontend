@@ -1,7 +1,7 @@
 # Capacidades de pruebas y calidad
 
-**Modo TDD estricto**: deshabilitado temporalmente
-**Fecha de detección**: 2026-07-10
+**Modo TDD estricto**: deshabilitado
+**Fecha de detección**: 2026-07-11
 
 El repositorio todavía no contiene un proyecto Angular, dependencias instaladas
 ni comandos ejecutables de pruebas o calidad. La planificación de la feature
@@ -23,7 +23,7 @@ siguen sin estar instalados. Playwright no forma parte del P0 comprometido.
 
 ## Cobertura
 
-- Disponible: no.
+- Disponible: No.
 - Comando: no disponible.
 
 ## Herramientas de calidad
@@ -35,6 +35,5 @@ siguen sin estar instalados. Playwright no forma parte del P0 comprometido.
 | Formatter | No | No disponible |
 
 El modo TDD estricto deberá revisarse cuando exista un test runner real. Su
-deshabilitación actual describe una limitación del scaffold y no autoriza a
-implementar funcionalidades sin pruebas una vez que la infraestructura haya
-sido definida.
+deshabilitación actual describe una limitación del scaffold; se habilitará en un
+futuro inmediato al definir un flujo de pruebas reproducible para la feature.
