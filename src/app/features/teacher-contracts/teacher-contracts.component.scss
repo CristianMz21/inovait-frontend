@@ -54,10 +54,16 @@
 }
 
 .contracts-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  /* Use display: block instead of flex column so <input type="date"> keeps
+   * its native calendar picker icon. See enrollment-create for details. */
+  display: block;
   font-size: 0.9rem;
+  margin-bottom: 0.75rem;
+}
+
+.contracts-field span {
+  display: block;
+  margin-bottom: 0.25rem;
 }
 
 .contracts-field span {
@@ -78,7 +84,6 @@
   background: var(--app-bg);
   color: inherit;
   display: inline-block;
-  width: 100%;
   min-height: 2.25rem;
 }
 
