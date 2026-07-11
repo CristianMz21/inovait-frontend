@@ -9,6 +9,10 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test --no-watch --no-progress",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.spec.json --noEmit",
+    "lint:style": "prettier --check src",
+    "lint:eslint": "eslint \"src/**/*.{ts,html}\" --max-warnings=0 --no-inline-config --report-unused-disable-directives",
+    "lint": "npm run typecheck && npm run lint:eslint && npm run lint:style",
     "contract:verify": "node ./src/app/scripts/verify-openapi-contract.mjs"
   },
   "dependencies": {
@@ -27,12 +31,19 @@
     "zone.js": "0.15.0"
   },
   "devDependencies": {
+    "@angular-eslint/builder": "^21.4.0",
+    "@angular-eslint/eslint-plugin": "^21.4.0",
+    "@angular-eslint/eslint-plugin-template": "^21.4.0",
+    "@angular-eslint/template-parser": "^21.4.0",
     "@angular/build": "21.2.19",
     "@angular/cli": "21.2.19",
     "@angular/compiler-cli": "21.2.18",
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.7.0",
     "jsdom": "^28.0.0",
     "prettier": "^3.8.1",
     "typescript": "5.9.3",
+    "typescript-eslint": "^8.63.0",
     "vitest": "^4.0.8"
   }
 }
