@@ -113,7 +113,7 @@ describe('ReportsShellComponent (WU10-RPT)', () => {
     expect(component.activeSectionId()).toBe('sector-report');
   });
 
-  it('mantiene /reports como ruta única y /student-history bloqueada', async () => {
+  it('mantiene /reports como ruta única y /student-history operativa (WU11-STU)', async () => {
     const reportsRoute = routes.find((route) => route.path === 'reports');
     const studentHistoryRoute = routes.find(
       (route) => route.path === 'student-history',
@@ -123,11 +123,14 @@ describe('ReportsShellComponent (WU10-RPT)', () => {
     const reportsComponent = await reportsRoute?.loadComponent?.();
     expect(reportsComponent).toBe(ReportsShellComponent);
 
-    expect(studentHistoryRoute?.data).toEqual({
-      lockedFeature: 'student-history',
-    });
+    // Tras 003-student-history (WU11-STU) la ruta deja de usar
+    // P1LockedComponent: ya no expone `data.lockedFeature` y monta
+    // StudentHistoryComponent directamente.
+    expect(studentHistoryRoute?.data).toBeUndefined();
+    const { StudentHistoryComponent } = await import('../student-history');
     const studentHistoryComponent = await studentHistoryRoute?.loadComponent?.();
-    expect(studentHistoryComponent).toBe(P1LockedComponent);
+    expect(studentHistoryComponent).toBe(StudentHistoryComponent);
+    expect(studentHistoryComponent).not.toBe(P1LockedComponent);
   });
 
   it('incluye media query 320 px y tokens de contraste del sistema', () => {

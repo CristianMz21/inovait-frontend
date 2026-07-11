@@ -1,0 +1,252 @@
+<section class="history" aria-labelledby="history-title">
+  <h1 id="history-title" tabindex="-1">Historial académico-docente</h1>
+  <p class="history-lede">
+    Ingrese el <strong>tipo</strong> y <strong>número de documento</strong> del
+    estudiante para consultar su línea de tiempo académica (escuela, grado,
+    grupo y año) con las asignaciones docentes de cada año. La fecha de
+    referencia es opcional.
+  </p>
+
+  <form
+    class="history-form"
+    [formGroup]="form"
+    (ngSubmit)="onSubmit()"
+    novalidate
+    aria-describedby="history-lede"
+  >
+    <fieldset [disabled]="isLoading()">
+      <legend>Identidad del estudiante</legend>
+
+      <label class="history-field">
+        <span>Tipo de documento</span>
+        <input
+          type="text"
+          formControlName="documentType"
+          required
+          aria-required="true"
+          autocomplete="off"
+          inputmode="text"
+          minlength="1"
+          maxlength="20"
+        />
+      </label>
+
+      <label class="history-field">
+        <span>Número de documento</span>
+        <input
+          type="text"
+          formControlName="documentNumber"
+          required
+          aria-required="true"
+          autocomplete="off"
+          inputmode="text"
+          minlength="1"
+          maxlength="32"
+        />
+      </label>
+
+      <label class="history-field">
+        <span>Fecha de referencia (opcional)</span>
+        <input
+          type="date"
+          formControlName="asOfDate"
+          aria-describedby="as-of-help"
+        />
+        <small id="as-of-help" class="history-help">
+          Si la deja vacía, se usa la fecha actual.
+        </small>
+      </label>
+    </fieldset>
+
+    <div class="history-actions">
+      <button
+        type="submit"
+        class="history-submit"
+        [disabled]="form.invalid || isLoading()"
+        [attr.aria-busy]="isLoading() ? 'true' : 'false'"
+      >
+        @if (isLoading()) {
+          Consultando…
+        } @else {
+          Consultar
+        }
+      </button>
+      <button
+        type="button"
+        class="history-cancel"
+        (click)="onReset()"
+        [disabled]="isLoading()"
+      >
+        Limpiar
+      </button>
+    </div>
+  </form>
+
+  @if (isLoading()) {
+    <p
+      class="history-status"
+      role="status"
+      aria-live="polite"
+      data-testid="history-loading"
+    >
+      Consultando historial académico…
+    </p>
+  }
+
+  @if (hasError()) {
+    <div
+      class="history-error"
+      role="alert"
+      aria-live="assertive"
+      data-testid="history-error"
+    >
+      @if (errorProblem(); as problem) {
+        <p class="history-error-title">
+          <strong>{{ problem.title }}</strong>
+          <span class="history-error-status">(HTTP {{ problem.status }})</span>
+        </p>
+        @if (problem.detail) {
+          <p>{{ problem.detail }}</p>
+        }
+        @if (errorFields().length > 0) {
+          <ul class="history-error-fields">
+            @for (entry of errorFields(); track entry.field) {
+              @for (msg of entry.messages; track msg) {
+                <li><code>{{ entry.field }}</code>: {{ msg }}</li>
+              }
+            }
+          </ul>
+        }
+        <button type="button" (click)="onRetry()">Reintentar</button>
+      }
+    </div>
+  }
+
+  @if (isEmpty()) {
+    <div
+      class="history-empty"
+      role="status"
+      aria-live="polite"
+      data-testid="history-empty"
+    >
+      <p>
+        La identidad consultada es válida pero no tiene inscripciones
+        registradas.
+      </p>
+      <button type="button" (click)="onRetry()">Reintentar</button>
+    </div>
+  }
+
+  @if (successData(); as data) {
+    <section
+      class="history-timeline"
+      aria-labelledby="history-results-title"
+      data-testid="history-results"
+    >
+      <h2 id="history-results-title">
+        Línea de tiempo de {{ data.identity.fullName }}
+      </h2>
+      <p class="history-context" role="status" aria-live="polite">
+        {{ data.identity.documentType }} · {{ data.identity.documentNumber }}
+        · {{ data.enrollments.length }}
+        @if (data.enrollments.length === 1) {
+          inscripción
+        } @else {
+          inscripciones
+        }
+      </p>
+
+      <ol class="history-list">
+        @for (entry of data.enrollments; track entry.enrollmentId) {
+          <li class="history-entry">
+            <article
+              class="history-card"
+              [attr.aria-labelledby]="'entry-' + entry.enrollmentId"
+            >
+              <header class="history-card-header">
+                <h3 [id]="'entry-' + entry.enrollmentId">
+                  {{ entry.academicYearName }}
+                  @if (entry.academicYearIsCurrent) {
+                    <span class="history-current">(actual)</span>
+                  }
+                </h3>
+                <time
+                  class="visually-hidden"
+                  [attr.datetime]="entry.academicYearStartDate"
+                >
+                  Inicio del año académico
+                  {{ entry.academicYearStartDate }}.
+                </time>
+                <span class="visually-hidden">
+                  Inscripción #{{ entry.enrollmentId }}.
+                </span>
+              </header>
+              <dl class="history-meta">
+                <div>
+                  <dt>Escuela</dt>
+                  <dd>
+                    {{ entry.schoolName }}
+                    <small class="history-sector">
+                      ({{ entry.schoolSectorLabel }})
+                    </small>
+                  </dd>
+                </div>
+                <div>
+                  <dt>Grado</dt>
+                  <dd>{{ entry.gradeName }}</dd>
+                </div>
+                <div>
+                  <dt>Grupo</dt>
+                  <dd>{{ entry.classGroupCode }}</dd>
+                </div>
+              </dl>
+
+              <h4 class="history-assignments-title">
+                Asignaciones docentes
+                <span class="visually-hidden">
+                  ({{ entry.teachingAssignments.length }}
+                  @if (entry.teachingAssignments.length === 1) {
+                    asignación
+                  } @else {
+                    asignaciones
+                  })
+                </span>
+              </h4>
+              @if (entry.teachingAssignments.length === 0) {
+                <p class="history-assignments-empty">
+                  Sin asignaciones docentes registradas para este año.
+                </p>
+              } @else {
+                <ul class="history-assignments">
+                  @for (
+                    assignment of entry.teachingAssignments;
+                    track assignment.assignmentId
+                  ) {
+                    <li class="history-assignment">
+                      <strong>{{ assignment.subjectName }}</strong>
+                      <span class="history-assignment-code">
+                        ({{ assignment.subjectCode }})
+                      </span>
+                      · {{ assignment.teacherFullName }}
+                      <small class="history-assignment-document">
+                        {{ assignment.teacherDocumentType }}
+                        {{ assignment.teacherDocumentNumber }}
+                      </small>
+                      <span class="history-assignment-days" aria-hidden="true">
+                        — {{ assignment.weekdaysLabel }}
+                      </span>
+                      <span class="visually-hidden">
+                        Días de clase:
+                        {{ assignment.weekdaysLabel }}.
+                      </span>
+                    </li>
+                  }
+                </ul>
+              }
+            </article>
+          </li>
+        }
+      </ol>
+    </section>
+  }
+</section>

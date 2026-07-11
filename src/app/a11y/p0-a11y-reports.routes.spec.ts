@@ -75,7 +75,7 @@ describe('CT-A11Y-RPT — Hardening accesibilidad rutas de reportes', () => {
       expect(nav).toBeTruthy();
     });
 
-    it('habilita Reportes y conserva Historia bloqueada', () => {
+    it('habilita Reportes y mantiene Historia como ruta accesible', () => {
       const fixture = TestBed.createComponent(App);
       fixture.detectChanges();
       const compiled = fixture.nativeElement as HTMLElement;
@@ -84,14 +84,17 @@ describe('CT-A11Y-RPT — Hardening accesibilidad rutas de reportes', () => {
         (link) => link.textContent?.trim() === 'Reportes',
       );
       const history = navLinks.find(
-        (link) => link.textContent?.trim() === 'Historia (P1)',
+        (link) => link.textContent?.trim() === 'Historia',
       );
 
       expect(reports?.textContent?.trim()).toBe('Reportes');
       expect(reports?.getAttribute('aria-disabled')).toBe('false');
-      expect(history?.getAttribute('aria-disabled')).toBe('true');
+      // Tras 003-student-history (WU11-STU) la etiqueta del nav pierde el
+      // sufijo "(P1)" y el `aria-disabled` queda `false`.
+      expect(history).toBeTruthy();
+      expect(history?.getAttribute('aria-disabled')).toBe('false');
       expect(compiled.querySelector('footer')?.textContent).toContain(
-        'Reportes operativos · Historia pendiente',
+        'Reportes operativos · Historia operativa',
       );
     });
   });

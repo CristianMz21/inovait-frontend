@@ -16,7 +16,7 @@ describe('App', () => {
     expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('renders the navigation landmark with P0 links', async () => {
+  it('renders the navigation landmark with P0 + P1 operative links', async () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
     await fixture.whenStable();
@@ -29,23 +29,23 @@ describe('App', () => {
     expect(labels).toContain('Consulta de estudiantes');
     expect(labels).toContain('Contratos docentes');
     expect(labels).toContain('Reportes');
-    expect(labels).toContain('Historia (P1)');
+    expect(labels).toContain('Historia');
   });
 
-  it('marks reports as enabled while history remains locked', () => {
+  it('marks both reports and history as enabled (P1 fully operative)', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
     const links = Array.from(compiled.querySelectorAll('nav a'));
     const reports = links.find((link) => link.textContent?.trim() === 'Reportes');
     const history = links.find(
-      (link) => link.textContent?.trim() === 'Historia (P1)',
+      (link) => link.textContent?.trim() === 'Historia',
     );
 
     expect(reports?.getAttribute('aria-disabled')).toBe('false');
-    expect(history?.getAttribute('aria-disabled')).toBe('true');
+    expect(history?.getAttribute('aria-disabled')).toBe('false');
     expect(compiled.querySelector('footer')?.textContent).toContain(
-      'Reportes operativos · Historia pendiente',
+      'Reportes operativos · Historia operativa',
     );
   });
 

@@ -106,7 +106,7 @@ describe('CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0', () => {
           'Consulta de estudiantes',
           'Contratos docentes',
           'Reportes',
-          'Historia (P1)',
+          'Historia',
         ]),
       );
     });

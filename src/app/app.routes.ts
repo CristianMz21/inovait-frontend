@@ -8,8 +8,10 @@ import type { Routes } from '@angular/router';
  *   completo de creación de matrícula (WU02); `/student-search` y
  *   `/teacher-contracts` cargan placeholders accesibles hasta WU03/WU04.
  * - La ruta P1 `/reports` queda habilitada por `002-municipal-reports` y
- *   monta el shell operativo con tres reportes internos. `/student-history`
- *   permanece bloqueada por gate P1 y no invoca endpoints de historia.
+ *   monta el shell operativo con tres reportes internos.
+ * - La ruta P1 `/student-history` queda habilitada por `003-student-history`
+ *   (WU11-STU) y monta el componente operativo que consume
+ *   `getStudentHistory`. `P1LockedComponent` deja de usarse en esa ruta.
  * - `/` redirige a `/enrollments`.
  */
 export const routes: Routes = [
@@ -51,11 +53,10 @@ export const routes: Routes = [
   {
     path: 'student-history',
     loadComponent: () =>
-      import('./layout/placeholders/p1-locked.component').then(
-        (m) => m.P1LockedComponent,
+      import('./features/student-history').then(
+        (m) => m.StudentHistoryComponent,
       ),
-    data: { lockedFeature: 'student-history' },
-    title: 'Historia del estudiante · Inovait',
+    title: 'Historial del estudiante · Inovait',
   },
   {
     path: '**',

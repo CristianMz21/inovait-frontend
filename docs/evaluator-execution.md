@@ -586,14 +586,225 @@ Veredicto: **FAIL local por entorno backend**. Tracking y limpieza contractual p
 | `npx ng build --configuration=development` | ✅ PASS | Build development OK |
 | `npm run contract:verify` | ⚠ FAIL local documentado | Tracking + clean OK; commit-check falla por HEAD backend local no autorizado |
 
+## P1 Gate Historia (003 / WU11-STU)
+
+> Verificación ejecutada localmente en `inovait-frontend` para el cierre de
+> `003-student-history` WU11-STU. La habilitación cubre `/student-history`;
+> `/reports` permanece operativo desde `002-municipal-reports` (WU10).
+
+- Cambio: `003-student-history`
+- Slice objetivo: `WU11-STU` (DTO + servicio + fachada + componente + a11y + gate rerun)
+- Modo: Frontend-only (sin cambios al backend)
+- Fecha WU11-STU: 2026-07-11
+- Modo TDD estricto: **deshabilitado** (pruebas escritas como contrato de evidencia)
+
+### Matriz P1 historia (T083)
+
+| Ruta / sección | Estado remoto | Errores canónicos | A11y | 320 px / contraste / prefers-reduced-motion | Evidencia |
+|---|---|---|---|---|---|
+| `/student-history` — Historial académico-docente | `loading → success`; `200 enrollments: []` → `empty('noResults')` con botón Reintentar | 400 `invalid_request`, 404 `student_not_found` | `<h1 tabindex="-1">`, `<fieldset><legend>`, `documentType`/`documentNumber` con `aria-required="true"` × 2, submit `aria-busy`, loading/empty/success `role="status"`, error `role="alert"`, timeline `<ol>` semántica con `<time datetime="...">` + `.visually-hidden`, asignaciones en `<ul>` con días canónicos | [x] `@media (max-width: 320px)`, `prefers-reduced-motion`, tokens `--app-muted`/`--app-accent`/`--app-border` verificados por spec | `student-history.component.spec.ts`, `p1-a11y-history.routes.spec.ts` (`CT-A11Y-RPT-HIST`) |
+| Shell `/` | Navegación con 5 enlaces, sin `P1LockedComponent` | n/a | skip-link, main landmark, nav principal con `aria-disabled="false"` para Historia, footer "Reportes operativos · Historia operativa" | n/a | `app.component.spec.ts` actualizado, `p1-a11y-history.routes.spec.ts` (Shell) |
+| Ruta `/student-history` | Sin `data.lockedFeature`; carga `StudentHistoryComponent` directamente | n/a | n/a | n/a | `reports-shell.component.spec.ts` actualizado |
+
+### Walkthrough Script (T033-STU — manual evidence pending)
+
+> **Estado**: manual evidence pending — ejecutar después de desplegar WU11-STU en
+> entorno con backend disponible o fixtures equivalentes.
+
+#### Bloque H-A — Navegación y foco
+
+1. Cargar `/student-history`. Pulsar `Tab`.
+   - Esperado: primer foco visible en `Saltar al contenido principal`; `Enter` mueve el foco al `<main id="main" tabindex="-1">`.
+2. Tabular hasta los campos del formulario.
+   - Esperado: dos `<input>` (`documentType`, `documentNumber`) con `<fieldset><legend>`, ambos con `aria-required="true"` y `aria-describedby` cuando aplique.
+3. Confirmar que el botón `Consultar` permanece `disabled` hasta que ambos segmentos cumplan las longitudes canónicas (1–20 / 1–32).
+4. Activar el enlace `Historia` desde el nav principal.
+   - Esperado: `aria-disabled="false"` y carga de `StudentHistoryComponent` (sin pasar por `P1LockedComponent`).
+5. Confirmar que `/reports/*`, `/enrollments`, `/student-search` y `/teacher-contracts` siguen operativos y no se ven afectados por WU11-STU.
+
+#### Bloque H-B — Estados remotos y anuncios
+
+6. En `Historia del estudiante`, consultar una identidad válida.
+   - Esperado: loading en `role="status"`, success con timeline `<ol>` + `<time>` y asignaciones por inscripción; sin `role="alert"`.
+7. Consultar una identidad sin inscripciones.
+   - Esperado: estado `empty` con `role="status"` y botón `Reintentar`; no hay `role="alert"`.
+8. Consultar una identidad inexistente.
+   - Esperado: `404 student_not_found` en `role="alert"`; filtros conservados; timeline `<ol>` ausente.
+9. Cambiar `documentNumber` mientras hay una consulta en curso.
+   - Esperado: el `GET` previo se cancela, la respuesta tardía se descarta por `requestKey`, y la nueva respuesta actualiza el estado.
+10. Pulsar `Reintentar` desde estado `error` o `empty`.
+    - Esperado: transición a `loading` y, según la respuesta, a `success` o `empty`; sin pérdida de filtros.
+
+#### Bloque H-C — 320 px / zoom / contraste
+
+11. Redimensionar a `320 × 800` y consultar una identidad con 2 años y varias asignaciones.
+    - Esperado: filtro en una columna, timeline legible sin scroll horizontal, asignaciones y días visibles sin clipping.
+12. Repetir los estados `loading`, `empty`, `success` y `error` a 320 px.
+    - Esperado: regiones `role="status"`/`role="alert"` visibles y sin solapamiento.
+13. Activar zoom 200 % y repetir el Bloque H-B.
+    - Esperado: textos, `<time>` y asignaciones legibles; foco visible no queda oculto.
+14. Validar contraste de `--app-muted`, `--app-accent`, `--app-error` y enlaces de navegación con Lighthouse/axe/Stark.
+    - Esperado: WCAG 2.2 AA (texto normal ≥ 4.5:1; UI/foco ≥ 3:1).
+15. Validar `prefers-reduced-motion` con DevTools.
+    - Esperado: transiciones y animaciones reducidas al mínimo.
+
+#### Tabla de registro manual T033-STU
+
+| # | Paso | Resultado | Observación |
+|---|---|---|---|
+| H1 | Skip-link `/student-history` | ☐ |  |
+| H2 | Formulario `<fieldset><legend>` con 2 `aria-required` | ☐ |  |
+| H3 | Botón `Consultar` disabled hasta longitudes canónicas | ☐ |  |
+| H4 | Nav `Historia` con `aria-disabled="false"` | ☐ |  |
+| H5 | Enlace `/reports/*` sigue operativo | ☐ |  |
+| H6 | Success 2 años + asignación múltiple | ☐ |  |
+| H7 | Empty 200 enrollments `[]` | ☐ |  |
+| H8 | 404 `student_not_found` | ☐ |  |
+| H9 | Cancel-on-switch entre filtros | ☐ |  |
+| H10 | Reintentar desde error/empty | ☐ |  |
+| H11 | 320 px (timeline legible) | ☐ |  |
+| H12 | 320 px (estados remotos) | ☐ |  |
+| H13 | Zoom 200 % | ☐ |  |
+| H14 | Contraste WCAG 2.2 AA | ☐ |  |
+| H15 | `prefers-reduced-motion` honrado | ☐ |  |
+
+### Backend integration (T034-STU — manual integration pending)
+
+> **Estado**: manual integration pending — no se modificó backend durante WU11-STU.
+
+1. Iniciar backend local autorizado en `http://localhost:5000`.
+2. Confirmar que el contrato en backend corresponde a commit autorizado `1223630ab99bf1bfaa4f5919fccf5ff539379c8e` o sucesor aprobado.
+3. Ejecutar frontend con `npm start`.
+4. Recorrer `/student-history` con los pasos H6–H10.
+5. Confirmar que el endpoint invocado es `GET /api/enrollments/students/{documentType}/{documentNumber}/history` (con `asOfDate` opcional como query) y que `/reports/*` no consume `getStudentHistory`.
+6. Registrar HEAD/SHA backend y observaciones.
+
+| # | Verificación | Resultado | Backend HEAD/SHA | Fecha | Observación |
+|---|---|---|---|---|---|
+| H1 | `getStudentHistory` end-to-end (success) | ☐ | ☐ | ☐ |  |
+| H2 | `getStudentHistory` 404 `student_not_found` | ☐ | ☐ | ☐ |  |
+| H3 | `getStudentHistory` 400 `invalid_request` | ☐ | ☐ | ☐ |  |
+| H4 | Cancel-on-switch verificado contra backend | ☐ | ☐ | ☐ |  |
+| H5 | CORS / endpoint de historia | ☐ | ☐ | ☐ |  |
+
+### Gate WU11-STU (T084)
+
+#### 1) `npm test -- --no-watch --no-progress`
+
+Salida final verbatim:
+
+```text
+> inovait-frontend@0.0.0 test
+> ng test --no-watch --no-progress --no-watch --no-progress
+
+Test Files  35 passed (35)
+     Tests  432 passed (432)
+   Start at  10:59:42
+   Duration  9.54s (transform 3.49s, setup 23.45s, import 15.05s, tests 19.39s, environment 104.44s)
+```
+
+Veredicto: **PASS — 432/432**. La salida completa incluyó advertencias heredadas
+de Angular sobre `disabled` con reactive forms en componentes P0 y P1; no son
+fallos y no fueron suprimidas. La spec de `student-history` añade 11 tests al
+bloque a11y y 14 al componente, todas verdes.
+
+#### 2) `npx ng build --configuration=development`
+
+Salida verbatim:
+
+```text
+❯ Building...
+✔ Building...
+Initial chunk files | Names         |  Raw size
+chunk-YZONVE4Q.js   | -             |   1.11 MB | 
+chunk-FYGB5IKW.js   | -             | 259.66 kB | 
+main.js             | main          |  11.74 kB | 
+styles.css          | styles        |   1.12 kB | 
+
+                    | Initial total |   1.38 MB
+
+Lazy chunk files    | Names         |  Raw size
+chunk-CRPRYK24.js   | -             | 152.67 kB | 
+chunk-4L2ONSJZ.js   | index         | 125.00 kB | 
+chunk-U7GB5CFQ.js   | index         |  71.37 kB | 
+chunk-ERRBJCQN.js   | index         |  54.27 kB | 
+chunk-O3QBYEXB.js   | index         |  51.32 kB | 
+chunk-JPVLRMZJ.js   | index         |  46.26 kB | 
+chunk-TDJ23H7T.js   | -             |   5.96 kB | 
+chunk-OAGTYRQA.js   | -             | 841 bytes | 
+
+Application bundle generation complete. [4.936 seconds] - 2026-07-11T16:00:55.461Z
+
+Output location: /home/mackroph/Dev/Tecnica/inovait/inovait-frontend/dist/inovait-frontend
+```
+
+Veredicto: **PASS**. Comparado con WU10 (1.39 MB initial total), el bundle se
+reduce marginalmente (1.38 MB) porque `P1LockedComponent` ya no se carga bajo
+`/student-history`. Las nuevas lazy chunks (`chunk-CRPRYK24.js` 152.67 kB para
+`student-history`) reemplazan al slice de placeholder previo.
+
+#### 3) `npm run contract:verify`
+
+Salida verbatim:
+
+```text
+> inovait-frontend@0.0.0 contract:verify
+> node ./src/app/scripts/verify-openapi-contract.mjs
+
+
+verify-openapi-contract — baseline 1223630ab99b
+Directorio contractual: /home/mackroph/Dev/Tecnica/inovait/inovait-backend/specs/001-school-enrollment-management/contracts
+
+• Verificando que los 10 archivos contractuales están bajo seguimiento
+  ✓ openapi.yaml presente y bajo seguimiento
+  ✓ paths/catalogs.yaml presente y bajo seguimiento
+  ✓ paths/enrollments.yaml presente y bajo seguimiento
+  ✓ paths/teacher-contracts.yaml presente y bajo seguimiento
+  ✓ paths/reports.yaml presente y bajo seguimiento
+  ✓ components/catalogs.yaml presente y bajo seguimiento
+  ✓ components/enrollments.yaml presente y bajo seguimiento
+  ✓ components/teacher-contracts.yaml presente y bajo seguimiento
+  ✓ components/reports.yaml presente y bajo seguimiento
+  ✓ components/problems.yaml presente y bajo seguimiento
+• Verificando que el directorio contractual está limpio
+  ✓ Directorio contractual limpio
+• Verificando commit autorizado o sucesor aprobado
+  ✗ HEAD no autorizado: 247794aa41597f5c6d65934e3215a0f99a5d9352. Autorizado: 1223630ab99bf1bfaa4f5919fccf5ff539379c8e. Aprobados: (ninguno)
+```
+
+Veredicto: **FAIL local documentado por entorno** — mismo resultado que WU10.
+Tracking + directorio limpio pasan; el script aborta en el commit-check porque
+el repositorio backend local está fuera del commit autorizado
+(`247794aa41597f5c6d65934e3215a0f99a5d9352` vs baseline `1223630ab99bf1bfaa4f5919fccf5ff539379c8e`).
+No se modificó backend ni se agregó sucesor aprobado. El verificador no valida
+URLs exactas — sólo `operationId` — por lo que el drift `/api/students/...` vs
+`/api/enrollments/students/...` queda sin detectar por esta herramienta.
+
+#### Resumen del gate WU11-STU
+
+| Comando | Veredicto | Detalle |
+|---|---|---|
+| `npm test -- --no-watch --no-progress` | ✅ PASS | 35 archivos, 432/432 tests |
+| `npx ng build --configuration=development` | ✅ PASS | Build development OK |
+| `npm run contract:verify` | ⚠ FAIL local documentado | Tracking + clean OK; commit-check falla por HEAD backend local no autorizado |
+
 ## Notas operativas
 
 - Antes de ejecutar WU01+, el contrato debe mantenerse bajo seguimiento y la línea
   base de backend validada contra el `checksum` registrado.
 - `/reports` queda operativo desde `002-municipal-reports`; `/student-history`
-  permanece bloqueado hasta el cambio `003-student-history`.
+  queda operativo desde `003-student-history` (WU11-STU).
 - El script `npm test` está definido como `ng test --no-watch --no-progress`
   (corregido en WU05). En WU10 se ejecutó la invocación solicitada
   `npm test -- --no-watch --no-progress`; Angular recibió flags duplicados
   (`ng test --no-watch --no-progress --no-watch --no-progress`) y la suite
   pasó correctamente.
+- **Drift contractual observado**: el endpoint canónico registrado en
+  `paths/enrollments.yaml:111` del backend autorizado declara la ruta como
+  `GET /api/students/{documentType}/{documentNumber}/history`, mientras que
+  la URL construida por `StudentHistoryApiService` y reflejada en
+  `design.md:38` es `GET /api/enrollments/students/{documentType}/{documentNumber}/history`.
+  El `verify-openapi-contract.mjs` no chequea URLs exactas (sólo
+  `operationIds`), por lo que el gate pasa sin reportar drift. Esta
+  discrepancia se documenta como hallazgo pendiente de alineación con
+  backend antes de cualquier ejercicio end-to-end.

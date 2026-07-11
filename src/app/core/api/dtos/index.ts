@@ -12,6 +12,7 @@ export * from './school-summary.dto';
 export * from './school-teacher-summary.dto';
 export * from './sector-counts.dto';
 export * from './top-schools.dto';
+export * from './student-history-item.dto';
 export * from './student-identity-input.dto';
 export * from './subject-summary.dto';
 export * from './teacher-contract-response.dto';

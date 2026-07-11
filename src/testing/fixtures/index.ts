@@ -7,6 +7,7 @@ export * from './enrollments-list.fixture';
 export * from './grades.fixture';
 export * from './schools.fixture';
 export * from './sector-counts.fixture';
+export * from './student-history.fixture';
 export * from './subjects.fixture';
 export * from './top-schools.fixture';
 export * from './teacher-contracts.fixture';
