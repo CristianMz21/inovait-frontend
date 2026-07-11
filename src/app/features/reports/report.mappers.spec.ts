@@ -3,9 +3,13 @@ import {
   ageDistributionFixture,
   emptyAgeDistributionFixture,
   emptyTeacherCountsBySectorFixture,
+  emptyTopSchoolsFixture,
   teacherCountsBySectorFixture,
+  topSchoolsFixture,
+  topSchoolsSingleFixture,
 } from '../../../testing/fixtures';
 import type { AgeDistributionResponseDto } from '../../core/api/dtos/age-distribution.dto';
+import type { TopSchoolResponseDto } from '../../core/api/dtos/top-schools.dto';
 import {
   ageDistributionFiltersAreValid,
   ageDistributionFiltersToParams,
@@ -13,10 +17,14 @@ import {
   teacherCountsBySectorFiltersAreValid,
   teacherCountsBySectorFiltersToParams,
   teacherCountsBySectorResponseToVm,
+  topSchoolsFiltersAreValid,
+  topSchoolsFiltersToParams,
+  topSchoolsResponseToVm,
 } from './report.mappers';
 import type {
   AgeDistributionFiltersVm,
   TeacherCountsBySectorFiltersVm,
+  TopSchoolsFiltersVm,
 } from './report.vm';
 
 const validFilters: AgeDistributionFiltersVm = {
@@ -315,10 +323,138 @@ describe('ReportMappers (CT-AGE-MAP)', () => {
       expect(JSON.stringify(teacherCountsBySectorFixture)).toBe(original);
     });
 
-    it('preserva el período verbatim (no recalcula ni ajusta)', () => {
+it('preserva el período verbatim (no recalcula ni ajusta)', () => {
       const vm = teacherCountsBySectorResponseToVm(teacherCountsBySectorFixture);
       expect(vm.periodStart).toBe(teacherCountsBySectorFixture.periodStart);
       expect(vm.periodEnd).toBe(teacherCountsBySectorFixture.periodEnd);
+    });
+  });
+
+  describe('topSchoolsFiltersAreValid()', () => {
+    it('acepta una VM con academicYearId', () => {
+      expect(
+        topSchoolsFiltersAreValid({ academicYearId: 2 }),
+      ).toBe(true);
+    });
+
+    it('rechaza cuando academicYearId es null', () => {
+      expect(
+        topSchoolsFiltersAreValid({ academicYearId: null }),
+      ).toBe(false);
+    });
+  });
+
+  describe('topSchoolsFiltersToParams()', () => {
+    it('produce el payload canónico (sólo academicYearId)', () => {
+      expect(
+        topSchoolsFiltersToParams({ academicYearId: 2 }),
+      ).toEqual({ academicYearId: 2 });
+    });
+
+    it('devuelve null cuando academicYearId falta', () => {
+      expect(
+        topSchoolsFiltersToParams({ academicYearId: null }),
+      ).toBeNull();
+    });
+  });
+
+  describe('topSchoolsResponseToVm() (CT-TOP-MAP)', () => {
+    it('aplana la respuesta canónica a la VM de presentación', () => {
+      const vm = topSchoolsResponseToVm(topSchoolsFixture);
+      expect(vm.academicYearId).toBe(2);
+      expect(vm.schools).toHaveLength(2);
+    });
+
+    it('preserva el orden estable del backend (school.name ASC, school.id)', () => {
+      const vm = topSchoolsResponseToVm(topSchoolsFixture);
+      expect(vm.schools.map((s) => s.schoolName)).toEqual([
+        'Escuela Río Claro',
+        'Instituto Horizonte',
+      ]);
+      expect(vm.schools.map((s) => s.schoolId)).toEqual([1, 2]);
+    });
+
+    it('conserva los empates en count=12 (no colapsa ni filtra)', () => {
+      // El contrato exige "todos los empates" (T062 spec). El mapper
+      // no debe descartar entradas con el mismo `enrollmentCount`.
+      const vm = topSchoolsResponseToVm(topSchoolsFixture);
+      expect(vm.schools.map((s) => s.enrollmentCount)).toEqual([12, 12]);
+    });
+
+    it('preserva los conteos exactos del DTO sin recalcular ni agregar', () => {
+      const vm = topSchoolsResponseToVm(topSchoolsFixture);
+      expect(vm.schools[0]).toMatchObject({
+        schoolId: 1,
+        schoolName: 'Escuela Río Claro',
+        sector: 'Public',
+        enrollmentCount: 12,
+      });
+      expect(vm.schools[1]).toMatchObject({
+        schoolId: 2,
+        schoolName: 'Instituto Horizonte',
+        sector: 'Private',
+        enrollmentCount: 12,
+      });
+    });
+
+    it('asigna etiquetas legibles por sector (Public → Público, Private → Privado)', () => {
+      const vm = topSchoolsResponseToVm(topSchoolsFixture);
+      expect(vm.schools[0]?.sectorLabel).toBe('Público');
+      expect(vm.schools[1]?.sectorLabel).toBe('Privado');
+    });
+
+    it('preserva una sola escuela líder sin empates (lista unitaria)', () => {
+      const vm = topSchoolsResponseToVm(topSchoolsSingleFixture);
+      expect(vm.schools).toHaveLength(1);
+      expect(vm.schools[0]?.schoolId).toBe(3);
+      expect(vm.schools[0]?.enrollmentCount).toBe(8);
+    });
+
+    it('mapea una lista vacía a una VM con schools vacío', () => {
+      // El caller (facade) emite `empty` antes de invocar el mapper con
+      // `[]`, pero el mapper debe seguir siendo defensivo: si recibe
+      // `[]`, devuelve una VM con `schools` vacío (la fachada no entra
+      // a esta rama por la rama `empty` previa).
+      const vm = topSchoolsResponseToVm(emptyTopSchoolsFixture);
+      expect(vm.schools).toEqual([]);
+      expect(vm.schools).toHaveLength(0);
+    });
+
+    it('no muta el DTO de entrada', () => {
+      const original = JSON.stringify(topSchoolsFixture);
+      topSchoolsResponseToVm(topSchoolsFixture);
+      expect(JSON.stringify(topSchoolsFixture)).toBe(original);
+    });
+
+    it('preserva verbatim schoolId, schoolName, sector y enrollmentCount', () => {
+      const vm = topSchoolsResponseToVm(topSchoolsFixture);
+      const first = vm.schools[0];
+      const sourceFirst = topSchoolsFixture[0];
+      expect(first).toBeDefined();
+      expect(sourceFirst).toBeDefined();
+      if (first && sourceFirst) {
+        expect(first.schoolId).toBe(sourceFirst.school.id);
+        expect(first.schoolName).toBe(sourceFirst.school.name);
+        expect(first.sector).toBe(sourceFirst.school.sector);
+        expect(first.enrollmentCount).toBe(sourceFirst.enrollmentCount);
+      }
+    });
+
+    it('tolera un DTO arbitrario de una sola entrada con sector Private', () => {
+      // La forma canónica puede traer una sola escuela privada; el
+      // mapper no debe asumir un mínimo de dos entradas.
+      const dto: readonly TopSchoolResponseDto[] = [
+        {
+          school: { id: 9, name: 'Colegio Andino', sector: 'Private' },
+          academicYearId: 2,
+          enrollmentCount: 5,
+        },
+      ];
+      const vm = topSchoolsResponseToVm(dto);
+      expect(vm.schools).toHaveLength(1);
+      expect(vm.schools[0]?.sector).toBe('Private');
+      expect(vm.schools[0]?.sectorLabel).toBe('Privado');
+      expect(vm.academicYearId).toBe(2);
     });
   });
 });

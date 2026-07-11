@@ -1,9 +1,11 @@
 import type { AgeBandResponse, AgeDistributionResponseDto } from '../../core/api/dtos/age-distribution.dto';
 import type { TeacherCountsBySectorResponseDto } from '../../core/api/dtos/sector-counts.dto';
+import type { TopSchoolResponseDto } from '../../core/api/dtos/top-schools.dto';
 import {
   AGE_BAND_LABELS,
   SECTOR_LABELS,
   SECTOR_ORDER,
+  TOP_SCHOOL_SECTOR_LABELS,
   type AgeBandId,
   type AgeBandVm,
   type AgeDistributionFiltersVm,
@@ -12,6 +14,9 @@ import {
   type SectorId,
   type TeacherCountsBySectorFiltersVm,
   type TeacherCountsBySectorVm,
+  type TopSchoolVm,
+  type TopSchoolsFiltersVm,
+  type TopSchoolsVm,
 } from './report.vm';
 
 /**
@@ -210,5 +215,87 @@ export function teacherCountsBySectorResponseToVm(
     sectors,
     totalDistinctTeacherCount:
       dto.publicDistinctTeacherCount + dto.privateDistinctTeacherCount,
+  };
+}
+
+/**
+ * Determina si los filtros académicos permiten invocar
+ * `getTopSchoolsByEnrollment`. El contrato declara `academicYearId` como
+ * `required: true`; la UI bloquea el envío en cualquier otro caso.
+ */
+export function topSchoolsFiltersAreValid(vm: TopSchoolsFiltersVm): boolean {
+  return vm.academicYearId !== null;
+}
+
+/**
+ * Convierte la `TopSchoolsFiltersVm` a los parámetros canónicos del
+ * endpoint `getTopSchoolsByEnrollment`. Devuelve `null` cuando falta
+ * `academicYearId`; el llamador debe bloquear el envío en ese caso.
+ */
+export function topSchoolsFiltersToParams(
+  vm: TopSchoolsFiltersVm,
+): { academicYearId: number } | null {
+  if (!topSchoolsFiltersAreValid(vm)) {
+    return null;
+  }
+  return { academicYearId: vm.academicYearId as number };
+}
+
+/**
+ * Aplana una entrada individual `TopSchoolResponseDto` a `TopSchoolVm`.
+ * Conserva el shape canónico:
+ *
+ * - `schoolId`, `schoolName` y `sector` se toman verbatim de
+ *   `school.*` (no se recomputan ni se normalizan).
+ * - `sectorLabel` se asigna a partir de la tabla `TOP_SCHOOL_SECTOR_LABELS`
+ *   para mantener los literales de UI centralizados en `report.vm`.
+ * - `enrollmentCount` se conserva verbatim (el contrato declara
+ *   `minimum: 1`).
+ *
+ * El mapper **no** reordena ni empata/desempata: la lista se itera en el
+ * orden de llegada del backend (estable por `school.name` ASC y
+ * `school.id`).
+ */
+function toTopSchoolVm(dto: TopSchoolResponseDto): TopSchoolVm {
+  return {
+    schoolId: dto.school.id,
+    schoolName: dto.school.name,
+    sector: dto.school.sector,
+    sectorLabel: TOP_SCHOOL_SECTOR_LABELS[dto.school.sector],
+    enrollmentCount: dto.enrollmentCount,
+  };
+}
+
+/**
+ * Aplana la respuesta canónica `TopSchoolResponse[]` a `TopSchoolsVm`
+ * (VM de presentación).
+ *
+ * Transformación estructural:
+ *
+ * - `academicYearId` se toma del primer elemento cuando la lista no es
+ *   vacía; cuando lo es, devuelve `null` y el caller (la fachada) emite
+ *   `empty` antes de invocar este mapper. Conservar este contrato
+ *   permite que el mapper nunca reciba un array vacío en el flujo real
+ *   — la rama `[]` se trata aguas arriba.
+ * - La lista `schools` preserva el orden estable del backend sin
+ *   reordenar ni podar. Los empates (`enrollmentCount` máximo repetido)
+ *   se conservan tal cual: la UI los renderiza como una tabla con
+ *   varias filas del mismo conteo.
+ * - El mapper NO calcula totales: los empates implican que todas las
+ *   entradas comparten el mismo `enrollmentCount`, y agregar conteos
+ *   iguales perdería el significado de "líderes empatados". El conteo
+ *   visible por escuela es el dato canónico.
+ *
+ * La función está tipada como `readonly TopSchoolResponseDto[]` para
+ * reflejar exactamente la forma del response canónico (array). El
+ * caller (`ReportFacade.dispatchTop`) la trata como tal.
+ */
+export function topSchoolsResponseToVm(
+  dto: readonly TopSchoolResponseDto[],
+): TopSchoolsVm {
+  const firstEntry = dto[0];
+  return {
+    academicYearId: firstEntry ? firstEntry.academicYearId : 0,
+    schools: dto.map(toTopSchoolVm),
   };
 }

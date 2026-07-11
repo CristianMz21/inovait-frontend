@@ -39,12 +39,12 @@ Estimated: ~1.4k LOC en 4 PR stacked; split PR2→PR3→PR4→PR5; delivery on-r
 
 ## Fase 3: WU09-RPT — top-schools-report (PR4)
 
-- [ ] T060 Crear `top-schools.dto.ts` + fixtures happy y `[]` + spec.
-- [ ] T061 Añadir `getTopSchoolsByEnrollment(academicYearId)` al servicio + spec ST-RPT-TOP.
-- [ ] T062 Mapper `topSchoolsResponseToVm()` preserva orden canónico y empates + spec con caso `count=12`.
-- [ ] T063 Añadir slot `topState` al facade + spec (loading/empty/error + stale).
-- [ ] T064 Crear `top-schools.component.{ts,html,scss,spec.ts}` con `<table>`, `<caption class="visually-hidden">`, `<th scope="col">`, botón Reintentar.
-- [ ] T065 Evidencia WU09 + commit `feat(002): top schools report with ties preserved (WU09)`.
+- [x] T060 Crear `top-schools.dto.ts` + fixtures happy y `[]` + spec.
+- [x] T061 Añadir `getTopSchoolsByEnrollment(academicYearId)` al servicio + spec ST-RPT-TOP.
+- [x] T062 Mapper `topSchoolsResponseToVm()` preserva orden canónico y empates + spec con caso `count=12`.
+- [x] T063 Añadir slot `topState` al facade + spec (loading/empty/error + stale).
+- [x] T064 Crear `top-schools.component.{ts,html,scss,spec.ts}` con `<table>`, `<caption class="visually-hidden">`, `<th scope="col">`, botón Reintentar.
+- [x] T065 Evidencia WU09 + commit `feat(002): top schools report with ties preserved (WU09)`.
 
 ## Fase 4: WU10-RPT — shell + consolidación + gate (PR5)
 

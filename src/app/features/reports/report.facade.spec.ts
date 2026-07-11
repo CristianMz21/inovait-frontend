@@ -19,17 +19,21 @@ import {
   apiProblemPeriodInvalidFixture,
   emptyAgeDistributionFixture,
   emptyTeacherCountsBySectorFixture,
+  emptyTopSchoolsFixture,
   teacherCountsBySectorFixture,
+  topSchoolsFixture,
 } from '../../../testing/fixtures';
 import { ReportApiService } from './report.api.service';
 import { ReportFacade } from './report.facade';
 import type {
   AgeDistributionFiltersVm,
   TeacherCountsBySectorFiltersVm,
+  TopSchoolsFiltersVm,
 } from './report.vm';
 
 const ageUrl = `${DEFAULT_API_CONFIG.apiBaseUrl}/api/reports/age-distribution`;
 const sectorUrl = `${DEFAULT_API_CONFIG.apiBaseUrl}/api/reports/teacher-counts-by-sector`;
+const topUrl = `${DEFAULT_API_CONFIG.apiBaseUrl}/api/reports/top-schools`;
 
 const validFilters: AgeDistributionFiltersVm = {
   academicYearId: 2,
@@ -58,6 +62,14 @@ const validSectorFilters: TeacherCountsBySectorFiltersVm = {
 const asymmetricSectorFilters: TeacherCountsBySectorFiltersVm = {
   periodStart: '2026-07-01',
   periodEnd: null,
+};
+
+const validTopFilters: TopSchoolsFiltersVm = {
+  academicYearId: 2,
+};
+
+const invalidTopFilters: TopSchoolsFiltersVm = {
+  academicYearId: null,
 };
 
 describe('ReportFacade (CT-AGE-AGE)', () => {
@@ -526,5 +538,232 @@ describe('ReportFacade (CT-AGE-AGE)', () => {
 
     expect(facade.ageState().status).toBe('success');
     expect(facade.sectorState().status).toBe('success');
+  });
+
+  // -- canLoadTop ---------------------------------------------------------
+
+  describe('top slot (CT-TOP-FAC)', () => {
+    it('canLoadTop() rechaza la VM cuando falta academicYearId', () => {
+      expect(facade.canLoadTop(validTopFilters)).toBe(true);
+      expect(facade.canLoadTop(invalidTopFilters)).toBe(false);
+    });
+
+    it('loadTop() con VM inválida es no-op y conserva el estado idle', () => {
+      facade.loadTop(invalidTopFilters);
+      expect(facade.topState().status).toBe('idle');
+      http.expectNone((r) => r.url === topUrl);
+    });
+
+    it('loadTop() expone loading y luego success con la VM aplanada y empates preservados', () => {
+      facade.loadTop(validTopFilters);
+      expect(facade.topState().status).toBe('loading');
+
+      const req = http.expectOne(
+        (r) => r.url === topUrl && r.method === 'GET',
+      );
+      expect(req.request.params.get('academicYearId')).toBe('2');
+      req.flush(topSchoolsFixture);
+
+      const state = facade.topState();
+      expect(state.status).toBe('success');
+      if (state.status === 'success') {
+        expect(state.data.academicYearId).toBe(2);
+        expect(state.data.schools).toHaveLength(2);
+        // Orden estable preservado.
+        expect(state.data.schools.map((s) => s.schoolName)).toEqual([
+          'Escuela Río Claro',
+          'Instituto Horizonte',
+        ]);
+        // Empates conservados.
+        expect(state.data.schools.map((s) => s.enrollmentCount)).toEqual([12, 12]);
+      }
+    });
+
+    it('loadTop() mapea 200 [] a empty (no error)', () => {
+      facade.loadTop(validTopFilters);
+      http
+        .expectOne((r) => r.url === topUrl && r.method === 'GET')
+        .flush(emptyTopSchoolsFixture);
+
+      const state = facade.topState();
+      expect(state.status).toBe('empty');
+      if (state.status === 'empty') {
+        expect(state.reason).toBe('noResults');
+      }
+    });
+
+    it('loadTop() mapea 400 con ProblemDetails a error', () => {
+      facade.loadTop({ ...validTopFilters, academicYearId: 0 });
+      const req = http.expectOne(
+        (r) => r.url === topUrl && r.method === 'GET',
+      );
+      req.flush(apiProblemBadRequestFixture, {
+        status: 400,
+        statusText: 'Bad Request',
+        headers: new HttpHeaders({
+          'Content-Type': 'application/problem+json',
+        }),
+      });
+
+      const state = facade.topState();
+      expect(state.status).toBe('error');
+      if (state.status === 'error') {
+        expect(state.problem.status).toBe(400);
+        expect(state.problem.code).toBe('invalid_request');
+      }
+    });
+
+    it('loadTop() mapea 404 con ProblemDetails a error', () => {
+      facade.loadTop({ ...validTopFilters, academicYearId: 9999 });
+      http
+        .expectOne((r) => r.url === topUrl && r.method === 'GET')
+        .flush(apiProblemNotFoundFixture, {
+          status: 404,
+          statusText: 'Not Found',
+          headers: new HttpHeaders({
+            'Content-Type': 'application/problem+json',
+          }),
+        });
+
+      const state = facade.topState();
+      expect(state.status).toBe('error');
+      if (state.status === 'error') {
+        expect(state.problem.status).toBe(404);
+        expect(state.problem.code).toBe('resource_not_found');
+      }
+    });
+
+    it('loadTop() cancela el envío previo cuando cambia academicYearId', () => {
+      facade.loadTop({ ...validTopFilters, academicYearId: 1 });
+      const first = http.expectOne(
+        (r) =>
+          r.url === topUrl &&
+          r.method === 'GET' &&
+          r.params.get('academicYearId') === '1',
+      );
+      expect(facade.topState().status).toBe('loading');
+
+      facade.loadTop({ ...validTopFilters, academicYearId: 2 });
+      const second = http.expectOne(
+        (r) =>
+          r.url === topUrl &&
+          r.method === 'GET' &&
+          r.params.get('academicYearId') === '2',
+      );
+      // La respuesta tardía del primer GET se descarta por `requestKey`.
+      expect(first.cancelled).toBe(true);
+
+      second.flush(topSchoolsFixture);
+      const fresh = facade.topState();
+      expect(fresh.status).toBe('success');
+      if (fresh.status === 'success') {
+        expect(fresh.data.academicYearId).toBe(2);
+      }
+    });
+
+    it('resetTop() cancela el envío en curso y vuelve a idle', () => {
+      facade.loadTop(validTopFilters);
+      const req = http.expectOne(
+        (r) => r.url === topUrl && r.method === 'GET',
+      );
+      expect(facade.topState().status).toBe('loading');
+
+      facade.resetTop();
+      expect(req.cancelled).toBe(true);
+      expect(facade.topState().status).toBe('idle');
+    });
+
+    it('retryTop() reenvía tras un error con los filtros previos', () => {
+      facade.loadTop(validTopFilters);
+      http
+        .expectOne((r) => r.url === topUrl && r.method === 'GET')
+        .flush(apiProblemBadRequestFixture, {
+          status: 400,
+          statusText: 'Bad Request',
+          headers: new HttpHeaders({
+            'Content-Type': 'application/problem+json',
+          }),
+        });
+      expect(facade.topState().status).toBe('error');
+
+      facade.retryTop();
+      const retryReq = http.expectOne(
+        (r) => r.url === topUrl && r.method === 'GET',
+      );
+      expect(retryReq.request.params.get('academicYearId')).toBe('2');
+      retryReq.flush(topSchoolsFixture);
+
+      expect(facade.topState().status).toBe('success');
+    });
+
+    it('retryTop() reenvía desde empty (200 []) con los mismos filtros', () => {
+      facade.loadTop(validTopFilters);
+      http
+        .expectOne((r) => r.url === topUrl && r.method === 'GET')
+        .flush(emptyTopSchoolsFixture);
+      expect(facade.topState().status).toBe('empty');
+
+      facade.retryTop();
+      const retryReq = http.expectOne(
+        (r) => r.url === topUrl && r.method === 'GET',
+      );
+      retryReq.flush(topSchoolsFixture);
+
+      expect(facade.topState().status).toBe('success');
+    });
+
+    it('retryTop() no hace nada si el estado vigente no es error ni empty', () => {
+      facade.loadTop(validTopFilters);
+      http.expectOne((r) => r.url === topUrl && r.method === 'GET');
+
+      facade.retryTop();
+      expect(facade.topState().status).toBe('loading');
+      http.expectNone((r) => r.url === topUrl);
+    });
+
+    it('retryTop() no hace nada si los filtros previos son inválidos', () => {
+      facade.retryTop();
+      expect(facade.topState().status).toBe('idle');
+      http.expectNone((r) => r.url === topUrl);
+    });
+
+    it('descarte stale: el requestKey se incrementa entre envíos consecutivos', () => {
+      // El descarte de respuesta tardía por `requestKey` se cubre en
+      // `loadTop() cancela el envío previo cuando cambia
+      // academicYearId`. Esta spec verifica el invariante del
+      // `requestKey` observable: dos envíos consecutivos producen
+      // estados `loading` distintos (requestKey incrementa) y la
+      // respuesta del segundo envío es la que persiste.
+      facade.loadTop({ ...validTopFilters, academicYearId: 1 });
+      const first = http.expectOne(
+        (r) =>
+          r.url === topUrl &&
+          r.method === 'GET' &&
+          r.params.get('academicYearId') === '1',
+      );
+      const firstState = facade.topState();
+      expect(firstState.status).toBe('loading');
+      const firstKey = firstState.status === 'loading'
+        ? firstState.requestKey
+        : '';
+      facade.loadTop({ ...validTopFilters, academicYearId: 2 });
+      const second = http.expectOne(
+        (r) =>
+          r.url === topUrl &&
+          r.method === 'GET' &&
+          r.params.get('academicYearId') === '2',
+      );
+      expect(first.cancelled).toBe(true);
+      const secondState = facade.topState();
+      const secondKey = secondState.status === 'loading'
+        ? secondState.requestKey
+        : '';
+      expect(secondKey).not.toBe(firstKey);
+      expect(secondKey.startsWith('report-top#')).toBe(true);
+
+      second.flush(topSchoolsFixture);
+
+      expect(facade.topState().status).toBe('success');
+    });
   });
 });

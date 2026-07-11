@@ -1,0 +1,158 @@
+<section class="top" aria-labelledby="top-title">
+  <h1 id="top-title" tabindex="-1">Escuelas líderes por matrícula</h1>
+  <p class="top-lede">
+    Seleccione el <strong>año académico</strong> para obtener las escuelas
+    con mayor cantidad de inscripciones del año. Cuando hay empates en
+    el conteo máximo, se muestran <strong>todas</strong> las escuelas
+    empatadas, en el orden que devuelve el backend (por
+    <code>school.name</code> y luego <code>school.id</code>).
+  </p>
+
+  <form
+    class="top-form"
+    [formGroup]="form"
+    (ngSubmit)="onSubmit()"
+    novalidate
+    aria-describedby="top-lede"
+  >
+    <fieldset [disabled]="isLoading()">
+      <legend>Filtros</legend>
+
+      <label class="top-field">
+        <span>Año académico</span>
+        <select
+          formControlName="academicYearId"
+          required
+          aria-required="true"
+        >
+          <option [ngValue]="null" disabled>Seleccione…</option>
+          @for (opt of academicYearOptions(); track opt.value) {
+            <option [ngValue]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+      </label>
+    </fieldset>
+
+    <div class="top-actions">
+      <button
+        type="submit"
+        class="top-submit"
+        [disabled]="form.invalid || isLoading()"
+        [attr.aria-busy]="isLoading() ? 'true' : 'false'"
+      >
+        @if (isLoading()) {
+          Consultando…
+        } @else {
+          Consultar
+        }
+      </button>
+      <button
+        type="button"
+        class="top-cancel"
+        (click)="onReset()"
+        [disabled]="isLoading()"
+      >
+        Limpiar
+      </button>
+    </div>
+  </form>
+
+  @if (isLoading()) {
+    <p
+      class="top-status"
+      role="status"
+      aria-live="polite"
+      data-testid="top-loading"
+    >
+      Consultando escuelas líderes…
+    </p>
+  }
+
+  @if (hasError()) {
+    <div
+      class="top-error"
+      role="alert"
+      aria-live="assertive"
+      data-testid="top-error"
+    >
+      @if (errorProblem(); as problem) {
+        <p class="top-error-title">
+          <strong>{{ problem.title }}</strong>
+          <span class="top-error-status">(HTTP {{ problem.status }})</span>
+        </p>
+        @if (problem.detail) {
+          <p>{{ problem.detail }}</p>
+        }
+        @if (errorFields().length > 0) {
+          <ul class="top-error-fields">
+            @for (entry of errorFields(); track entry.field) {
+              @for (msg of entry.messages; track msg) {
+                <li><code>{{ entry.field }}</code>: {{ msg }}</li>
+              }
+            }
+          </ul>
+        }
+        <button type="button" (click)="onRetry()">Reintentar</button>
+      }
+    </div>
+  }
+
+  @if (isEmpty()) {
+    <div
+      class="top-empty"
+      role="status"
+      aria-live="polite"
+      data-testid="top-empty"
+    >
+      <p>
+        El año académico seleccionado no tiene inscripciones. No hay
+        escuelas líderes para mostrar.
+      </p>
+      <button type="button" (click)="onRetry()">Reintentar</button>
+    </div>
+  }
+
+  @if (successData(); as data) {
+    <div
+      class="top-results"
+      role="region"
+      aria-labelledby="top-results-title"
+      data-testid="top-results"
+    >
+      <h2 id="top-results-title">Escuelas líderes</h2>
+      <p class="top-context" aria-live="polite">
+        Año académico <strong>{{ data.academicYearId }}</strong>
+        · {{ data.schools.length }}
+        {{ data.schools.length === 1 ? 'escuela líder' : 'escuelas líderes' }}
+        @if (data.schools.length > 0) {
+          · {{ data.schools[0]?.enrollmentCount }} inscripciones por escuela
+        }
+      </p>
+
+      <table class="top-table">
+        <caption class="visually-hidden">
+          Escuelas líderes por matrícula. Lista en el orden estable del
+          backend (por school.name ascendente y luego school.id). Los
+          empates en el enrollmentCount máximo se conservan como
+          múltiples filas del mismo conteo.
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Escuela</th>
+            <th scope="col">Sector</th>
+            <th scope="col">Inscripciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (school of data.schools; track school.schoolId) {
+            <tr>
+              <td>{{ school.schoolName }}</td>
+              <td>{{ school.sectorLabel }}</td>
+              <td>{{ school.enrollmentCount }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

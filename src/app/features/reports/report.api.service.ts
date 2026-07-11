@@ -5,6 +5,7 @@ import { map } from 'rxjs';
 import { API_CONFIG } from '../../core/api/api-config';
 import type { AgeDistributionResponseDto } from '../../core/api/dtos/age-distribution.dto';
 import type { TeacherCountsBySectorResponseDto } from '../../core/api/dtos/sector-counts.dto';
+import type { TopSchoolResponseDto } from '../../core/api/dtos/top-schools.dto';
 
 /**
  * Parámetros de la operación canónica `getAgeDistribution`. Sólo
@@ -30,6 +31,18 @@ export interface GetAgeDistributionParams {
 export interface GetTeacherCountsBySectorParams {
   readonly periodStart?: string;
   readonly periodEnd?: string;
+}
+
+/**
+ * Parámetros de la operación canónica `getTopSchoolsByEnrollment`. Sólo
+ * `academicYearId` es obligatorio por contrato (declarado
+ * `required: true` en `paths/reports.yaml`). El endpoint responde con
+ * `TopSchoolResponseDto[]`: una lista de escuelas empatadas en el
+ * `enrollmentCount` máximo del año, o `[]` cuando el año no tiene
+ * inscripciones.
+ */
+export interface GetTopSchoolsByEnrollmentParams {
+  readonly academicYearId: number;
 }
 
 function toAgeDistributionHttpParams(
@@ -64,6 +77,15 @@ function toSectorHttpParams(
   return httpParams;
 }
 
+function toTopSchoolsHttpParams(
+  params: GetTopSchoolsByEnrollmentParams,
+): HttpParams {
+  return new HttpParams().set(
+    'academicYearId',
+    String(params.academicYearId),
+  );
+}
+
 /**
  * Servicio de transporte HTTP para las operaciones canónicas del slot P1
  * declaradas en `paths/reports.yaml`:
@@ -72,6 +94,8 @@ function toSectorHttpParams(
  *   `paths/reports.yaml#/api/reports/age-distribution.get`).
  * - `getDistinctTeacherCountsBySector` (operationId en
  *   `paths/reports.yaml#/api/reports/teacher-counts-by-sector.get`).
+ * - `getTopSchoolsByEnrollment` (operationId en
+ *   `paths/reports.yaml#/api/reports/top-schools.get`).
  *
  * Emite `GET` contra `${apiBaseUrl}/api/reports/...` con los filtros
  * como query string y devuelve los payloads canónicos del backend.
@@ -81,7 +105,8 @@ function toSectorHttpParams(
  * `operationId` declarado en `paths/reports.yaml`. El manejo uniforme
  * de errores 4xx/5xx queda delegado al `problemDetailsInterceptor`.
  *
- * La operación `getTopSchoolsByEnrollment` llega en WU09.
+ * Cada método clona el DTO recibido (`map((data) => ({ ...data }))`)
+ * para evitar fugas de referencia cruzada entre slots de la fachada.
  */
 @Injectable({ providedIn: 'root' })
 export class ReportApiService {
@@ -108,5 +133,23 @@ export class ReportApiService {
         params: toSectorHttpParams(params),
       })
       .pipe(map((data) => ({ ...data })));
+  }
+
+  /**
+   * `GET /api/reports/top-schools?academicYearId={id}` — devuelve la
+   * lista `TopSchoolResponseDto[]` con todas las escuelas empatadas en
+   * el `enrollmentCount` máximo, en el orden estable garantizado por el
+   * backend (`school.name` ASC, `school.id`). Una respuesta `200 []` se
+   * entrega como un array vacío.
+   */
+  getTopSchoolsByEnrollment(
+    params: GetTopSchoolsByEnrollmentParams,
+  ): Observable<readonly TopSchoolResponseDto[]> {
+    const url = `${this.config.apiBaseUrl}/api/reports/top-schools`;
+    return this.http
+      .get<readonly TopSchoolResponseDto[]>(url, {
+        params: toTopSchoolsHttpParams(params),
+      })
+      .pipe(map((data) => data.map((entry) => ({ ...entry, school: { ...entry.school } }))));
   }
 }

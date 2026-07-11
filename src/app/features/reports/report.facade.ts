@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import type { Subscription } from 'rxjs';
 import { ApiProblemError } from '../../core/api/api-problem-error';
 import {
+  empty as emptyState,
   errorState,
   idle,
   loading,
@@ -12,18 +13,23 @@ import {
   ReportApiService,
   type GetAgeDistributionParams,
   type GetTeacherCountsBySectorParams,
+  type GetTopSchoolsByEnrollmentParams,
 } from './report.api.service';
 import {
   ageDistributionFiltersToParams,
   ageDistributionResponseToVm,
   teacherCountsBySectorFiltersToParams,
   teacherCountsBySectorResponseToVm,
+  topSchoolsFiltersToParams,
+  topSchoolsResponseToVm,
 } from './report.mappers';
 import type {
   AgeDistributionFiltersVm,
   AgeDistributionVm,
   TeacherCountsBySectorFiltersVm,
   TeacherCountsBySectorVm,
+  TopSchoolsFiltersVm,
+  TopSchoolsVm,
 } from './report.vm';
 
 /**
@@ -34,11 +40,9 @@ import type {
  *
  * - WU07 — `getAgeDistribution` → slot `age`.
  * - WU08 — `getDistinctTeacherCountsBySector` → slot `sector`.
+ * - WU09 — `getTopSchoolsByEnrollment` → slot `top`.
  *
- * La operación `getTopSchoolsByEnrollment` se añade en WU09 como slot
- * adicional del mismo `ReportFacade`.
- *
- * Disciplina común a ambos slots:
+ * Disciplina común a los tres slots:
  *
  * - `RemoteState<T>` exclusivo (`idle|loading|success|empty|error`).
  * - Cancelación del envío previo ante un nuevo `load*()`.
@@ -48,9 +52,9 @@ import type {
  * - Mapeo de `ApiProblem` desde `problemDetailsInterceptor`. Códigos
  *   canónicos respetados: `invalid_request` (400), `resource_not_found`
  *   (404), `as_of_date_invalid` (422), `period_invalid` (422).
- * - Ningún recorrido emite `empty` cuando la respuesta canónica es
- *   estructuralmente no vacía; `age` devuelve siempre tres bandas y
- *   `sector` siempre dos sectores (con conteos posiblemente en `0`).
+ * - Los slots `age` y `sector` nunca emiten `empty` (sus DTOs son
+ *   estructuralmente no vacíos); el slot `top` sí emite `empty` cuando
+ *   el backend responde `200 []` (año académico sin inscripciones).
  *
  * La fachada se provee a nivel de componente (no en el inyector raíz)
  * para que cada instancia de la vista tenga sus propios slots.
@@ -67,6 +71,10 @@ export class ReportFacade {
   private sectorSubscription: Subscription | null = null;
   private sectorSequence = 0;
 
+  private readonly top = signal<RemoteState<TopSchoolsVm>>(idle());
+  private topSubscription: Subscription | null = null;
+  private topSequence = 0;
+
   /** Filtros vigentes del recorrido de edad. */
   private lastAgeFilters: AgeDistributionFiltersVm = {
     academicYearId: null,
@@ -81,11 +89,19 @@ export class ReportFacade {
     periodEnd: null,
   };
 
+  /** Filtros vigentes del recorrido de escuelas líderes. */
+  private lastTopFilters: TopSchoolsFiltersVm = {
+    academicYearId: null,
+  };
+
   /** Estado remoto del slot `age` (sólo lectura). */
   readonly ageState = this.age.asReadonly();
 
   /** Estado remoto del slot `sector` (sólo lectura). */
   readonly sectorState = this.sector.asReadonly();
+
+  /** Estado remoto del slot `top` (sólo lectura). */
+  readonly topState = this.top.asReadonly();
 
   /**
    * Indica si la VM actual es consultable. La UI usa este predicado para
@@ -102,6 +118,15 @@ export class ReportFacade {
    */
   canLoadSector(filters: TeacherCountsBySectorFiltersVm): boolean {
     return teacherCountsBySectorFiltersToParams(filters) !== null;
+  }
+
+  /**
+   * Indica si los filtros de escuelas líderes son consultables. La UI
+   * usa este predicado para activar/desactivar el botón "Consultar
+   * escuelas líderes" antes de invocar el endpoint.
+   */
+  canLoadTop(filters: TopSchoolsFiltersVm): boolean {
+    return topSchoolsFiltersToParams(filters) !== null;
   }
 
   /**
@@ -199,6 +224,59 @@ export class ReportFacade {
     };
   }
 
+  /**
+   * Carga las escuelas líderes por matrícula del año académico
+   * indicado. Si ya hay una consulta en curso, la cancela y descarta
+   * cualquier respuesta tardía. No-op cuando los filtros son inválidos
+   * (falta `academicYearId`).
+   *
+   * A diferencia de `loadAge`/`loadSector`, este recorrido emite el
+   * estado `empty` cuando el backend responde `200 []` (año sin
+   * inscripciones). La UI muestra un mensaje "Sin escuelas líderes"
+   * con un botón `Reintentar` para que la operadora pueda volver a
+   * intentar la consulta sin cambiar los filtros.
+   */
+  loadTop(filters: TopSchoolsFiltersVm): void {
+    const params = topSchoolsFiltersToParams(filters);
+    if (params === null) {
+      return;
+    }
+    this.lastTopFilters = filters;
+    this.dispatchTop(params);
+  }
+
+  /**
+   * Reintenta la última consulta de escuelas líderes con los filtros
+   * vigentes. No-op si el estado actual no es `error` o `empty` o si
+   * los filtros previos son inválidos.
+   */
+  retryTop(): void {
+    const current = this.top();
+    if (current.status !== 'error' && current.status !== 'empty') {
+      return;
+    }
+    const params = topSchoolsFiltersToParams(this.lastTopFilters);
+    if (params === null) {
+      return;
+    }
+    this.dispatchTop(params);
+  }
+
+  /**
+   * Cancela la consulta en curso del slot de escuelas líderes y vuelve
+   * el estado a `idle`. La UI debe llamar a este método antes de
+   * `form.reset()` para que la cancelación y la limpieza ocurran en
+   * orden.
+   */
+  resetTop(): void {
+    this.topSubscription?.unsubscribe();
+    this.topSubscription = null;
+    this.top.set(idle());
+    this.lastTopFilters = {
+      academicYearId: null,
+    };
+  }
+
   // -- Despacho interno ---------------------------------------------------
 
   private dispatchAge(params: GetAgeDistributionParams): void {
@@ -261,6 +339,41 @@ export class ReportFacade {
           this.sector.set(errorState<TeacherCountsBySectorVm>(problem));
         },
       });
+  }
+
+  private dispatchTop(params: GetTopSchoolsByEnrollmentParams): void {
+    this.topSubscription?.unsubscribe();
+    this.topSequence += 1;
+    const requestKey = `report-top#${this.topSequence}`;
+    this.top.set(loading<TopSchoolsVm>(requestKey));
+
+    this.topSubscription = this.api.getTopSchoolsByEnrollment(params).subscribe({
+      next: (dto) => {
+        if (this.isStale(this.top(), requestKey)) {
+          return;
+        }
+        // El DTO canónico admite `200 []` cuando el año académico no
+        // tiene inscripciones. La fachada mapea ese caso a `empty`
+        // (con `reason: 'noResults'`); una lista no vacía se mapea a
+        // `success` preservando el orden estable y los empates.
+        if (dto.length === 0) {
+          this.top.set(emptyState<TopSchoolsVm>('noResults'));
+          return;
+        }
+        const vm = topSchoolsResponseToVm(dto);
+        this.top.set(success(vm));
+      },
+      error: (err: unknown) => {
+        if (this.isStale(this.top(), requestKey)) {
+          return;
+        }
+        const problem = err instanceof ApiProblemError ? err.problem : null;
+        if (!problem) {
+          return;
+        }
+        this.top.set(errorState<TopSchoolsVm>(problem));
+      },
+    });
   }
 
   /**

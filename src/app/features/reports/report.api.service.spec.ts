@@ -19,15 +19,19 @@ import {
   apiProblemPeriodInvalidFixture,
   emptyAgeDistributionFixture,
   emptyTeacherCountsBySectorFixture,
+  emptyTopSchoolsFixture,
   teacherCountsBySectorFixture,
+  topSchoolsFixture,
 } from '../../../testing/fixtures';
 import {
   ReportApiService,
   type GetAgeDistributionParams,
+  type GetTopSchoolsByEnrollmentParams,
 } from './report.api.service';
 
 const ageUrl = `${DEFAULT_API_CONFIG.apiBaseUrl}/api/reports/age-distribution`;
 const sectorUrl = `${DEFAULT_API_CONFIG.apiBaseUrl}/api/reports/teacher-counts-by-sector`;
+const topUrl = `${DEFAULT_API_CONFIG.apiBaseUrl}/api/reports/top-schools`;
 
 describe('ReportApiService (ST-RPT-AGE)', () => {
   let service: ReportApiService;
@@ -338,6 +342,101 @@ describe('ReportApiService (ST-RPT-AGE)', () => {
       expect((error as { status: number }).status).toBe(422);
       expect((error as { problem: { code: string } }).problem.code).toBe(
         'period_invalid',
+      );
+    });
+  });
+
+  describe('getTopSchoolsByEnrollment() (ST-RPT-TOP)', () => {
+    it('invoca GET /api/reports/top-schools con academicYearId obligatorio', () => {
+      let received: unknown;
+      const params: GetTopSchoolsByEnrollmentParams = { academicYearId: 2 };
+      service.getTopSchoolsByEnrollment(params).subscribe((value) => (received = value));
+
+      const req = http.expectOne(
+        (r) => r.url === topUrl && r.method === 'GET',
+      );
+      expect(req.request.method).toBe('GET');
+      expect(req.request.params.get('academicYearId')).toBe('2');
+      req.flush(topSchoolsFixture);
+
+      expect(received).toEqual(topSchoolsFixture);
+    });
+
+    it('preserva el orden de las escuelas del backend (empates en count=12)', () => {
+      let received: unknown;
+      service
+        .getTopSchoolsByEnrollment({ academicYearId: 2 })
+        .subscribe((value) => (received = value));
+
+      http.expectOne((r) => r.url === topUrl).flush(topSchoolsFixture);
+
+      if (Array.isArray(received)) {
+        expect(received.map((entry: { school: { name: string } }) => entry.school.name)).toEqual([
+          'Escuela Río Claro',
+          'Instituto Horizonte',
+        ]);
+        expect(
+          received.map((entry: { enrollmentCount: number }) => entry.enrollmentCount),
+        ).toEqual([12, 12]);
+      } else {
+        expect.fail('received should be an array');
+      }
+    });
+
+    it('mapea 200 [] como lista vacía (no error)', () => {
+      let received: unknown;
+      service
+        .getTopSchoolsByEnrollment({ academicYearId: 2 })
+        .subscribe((value) => (received = value));
+
+      http.expectOne((r) => r.url === topUrl).flush(emptyTopSchoolsFixture);
+
+      expect(Array.isArray(received)).toBe(true);
+      expect(received).toEqual([]);
+      expect((received as unknown[]).length).toBe(0);
+    });
+
+    it('mapea 400 con ProblemDetails como error canónico', () => {
+      let error: unknown;
+      service.getTopSchoolsByEnrollment({ academicYearId: 0 }).subscribe({
+        next: () => undefined,
+        error: (err) => (error = err),
+      });
+
+      const req = http.expectOne((r) => r.url === topUrl && r.method === 'GET');
+      req.flush(apiProblemBadRequestFixture, {
+        status: 400,
+        statusText: 'Bad Request',
+        headers: new HttpHeaders({
+          'Content-Type': 'application/problem+json',
+        }),
+      });
+
+      expect((error as { status: number }).status).toBe(400);
+      expect((error as { problem: { code: string } }).problem.code).toBe(
+        'invalid_request',
+      );
+    });
+
+    it('mapea 404 con ProblemDetails (recurso no encontrado)', () => {
+      let error: unknown;
+      service.getTopSchoolsByEnrollment({ academicYearId: 9999 }).subscribe({
+        next: () => undefined,
+        error: (err) => (error = err),
+      });
+
+      const req = http.expectOne((r) => r.url === topUrl && r.method === 'GET');
+      req.flush(apiProblemNotFoundFixture, {
+        status: 404,
+        statusText: 'Not Found',
+        headers: new HttpHeaders({
+          'Content-Type': 'application/problem+json',
+        }),
+      });
+
+      expect((error as { status: number }).status).toBe(404);
+      expect((error as { problem: { code: string } }).problem.code).toBe(
+        'resource_not_found',
       );
     });
   });
