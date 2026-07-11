@@ -8,7 +8,7 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test -- --no-watch --no-progress",
+    "test": "ng test --no-watch --no-progress",
     "contract:verify": "node ./src/app/scripts/verify-openapi-contract.mjs"
   },
   "dependencies": {

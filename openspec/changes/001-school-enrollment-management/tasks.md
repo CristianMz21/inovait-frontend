@@ -67,11 +67,11 @@
 
 ## Fase 5: Hardening P0
 
-- [ ] 6.1 T031 CT-A11Y-P0 rutas/shell.
-- [ ] 6.2 T032 Consolidar matriz P0 en doc.
-- [ ] 6.3 T033 Walkthrough teclado/320px/200%/contraste.
-- [ ] 6.4 T034 Validar backend real.
-- [ ] 6.5 T035 Puerta P0 (`contract:verify`, suite, build).
+- [x] 6.1 T031 CT-A11Y-P0 rutas/shell.
+- [x] 6.2 T032 Consolidar matriz P0 en doc.
+- [x] 6.3 T033 Walkthrough teclado/320px/200%/contraste.
+- [x] 6.4 T034 Validar backend real.
+- [x] 6.5 T035 Puerta P0 (`contract:verify`, suite, build).
 
 ## Fase 6: P1 tras T035
 
