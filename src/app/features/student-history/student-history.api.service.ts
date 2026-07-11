@@ -13,7 +13,7 @@ import type {
  * viajan en el path; `asOfDate` (ISO date, opcional) viaja como query.
  *
  * El orden de los campos refleja la firma declarada en
- * `paths/enrollments.yaml#/api/enrollments/students/{documentType}/{documentNumber}/history`.
+ * `paths/enrollments.yaml#/api/students/{documentType}/{documentNumber}/history`.
  */
 export interface GetStudentHistoryParams {
   readonly documentType: string;
@@ -34,7 +34,7 @@ function toStudentHistoryHttpParams(
 /**
  * Servicio de transporte HTTP para la operación canónica `getStudentHistory`
  * (`paths/enrollments.yaml`). Emite un `GET` contra
- * `${apiBaseUrl}/api/enrollments/students/{documentType}/{documentNumber}/history`
+ * `${apiBaseUrl}/api/students/{documentType}/{documentNumber}/history`
  * con `asOfDate` opcional como query string y devuelve el payload canónico
  * del backend.
  *
@@ -49,7 +49,7 @@ export class StudentHistoryApiService {
   private readonly config = inject(API_CONFIG);
 
   /**
-   * `GET /api/enrollments/students/{documentType}/{documentNumber}/history`
+   * `GET /api/students/{documentType}/{documentNumber}/history`
    * — devuelve la `StudentHistoryResponseDto` con las inscripciones del
    * estudiante, ordenadas por `academicYear.startDate` descendente.
    *
@@ -61,7 +61,7 @@ export class StudentHistoryApiService {
     params: GetStudentHistoryParams,
   ): Observable<StudentHistoryResponseDto> {
     const url =
-      `${this.config.apiBaseUrl}/api/enrollments/students/` +
+      `${this.config.apiBaseUrl}/api/students/` +
       `${encodeURIComponent(params.documentType)}/` +
       `${encodeURIComponent(params.documentNumber)}/history`;
     return this.http

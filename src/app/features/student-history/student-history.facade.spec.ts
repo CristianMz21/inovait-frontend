@@ -34,7 +34,7 @@ const incompleteFilters: StudentHistoryFiltersVm = {
   asOfDate: null,
 };
 
-const historyUrl = `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments/students/${completeFilters.documentType}/${completeFilters.documentNumber}/history`;
+const historyUrl = `${DEFAULT_API_CONFIG.apiBaseUrl}/api/students/${completeFilters.documentType}/${completeFilters.documentNumber}/history`;
 
 describe('StudentHistoryFacade (CT-HIST-FAC)', () => {
   let facade: StudentHistoryFacade;
@@ -142,7 +142,7 @@ describe('StudentHistoryFacade (CT-HIST-FAC)', () => {
     const second = http.expectOne(
       (r) =>
         r.url ===
-        `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments/students/DNI/88.200.300/history`,
+        `${DEFAULT_API_CONFIG.apiBaseUrl}/api/students/DNI/88.200.300/history`,
     );
     expect(first.cancelled).toBe(true);
 
@@ -162,7 +162,7 @@ describe('StudentHistoryFacade (CT-HIST-FAC)', () => {
     const second = http.expectOne(
       (r) =>
         r.url ===
-        `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments/students/DNI/88.200.300/history`,
+        `${DEFAULT_API_CONFIG.apiBaseUrl}/api/students/DNI/88.200.300/history`,
     );
 
     // La primera suscripción se cancela — `flush` rechaza lanzar sobre

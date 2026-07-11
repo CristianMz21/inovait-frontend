@@ -23,7 +23,7 @@ import {
   studentHistorySecondYearFixture,
 } from '../../testing/fixtures';
 
-const historyUrl = `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments/students/DNI/99.001.101/history`;
+const historyUrl = `${DEFAULT_API_CONFIG.apiBaseUrl}/api/students/DNI/99.001.101/history`;
 
 /**
  * CT-A11Y-RPT-HIST — Hardening accesibilidad ruta de historial
@@ -213,7 +213,7 @@ describe('CT-A11Y-RPT-HIST — Hardening accesibilidad ruta historial', () => {
         .expectOne(
           (r) =>
             r.url ===
-            `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments/students/DNI/88.200.300/history`,
+            `${DEFAULT_API_CONFIG.apiBaseUrl}/api/students/DNI/88.200.300/history`,
         )
         .flush(emptyStudentHistoryFixture);
       fixture.detectChanges();

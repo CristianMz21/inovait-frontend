@@ -49,7 +49,7 @@ describe('StudentHistoryApiService (ST-HIST-GET)', () => {
     const req = http.expectOne(
       (r) =>
         r.url ===
-          `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments/students/DNI/99.001.101/history` &&
+          `${DEFAULT_API_CONFIG.apiBaseUrl}/api/students/DNI/99.001.101/history` &&
         r.method === 'GET',
     );
     expect(req.request.params.has('asOfDate')).toBe(false);
@@ -69,7 +69,7 @@ describe('StudentHistoryApiService (ST-HIST-GET)', () => {
     const req = http.expectOne(
       (r) =>
         r.url ===
-          `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments/students/DNI%20Extranjero/88%2F001%20002/history`,
+          `${DEFAULT_API_CONFIG.apiBaseUrl}/api/students/DNI%20Extranjero/88%2F001%20002/history`,
     );
     expect(req.request.method).toBe('GET');
     req.flush(studentHistoryFixture);
@@ -84,7 +84,7 @@ describe('StudentHistoryApiService (ST-HIST-GET)', () => {
     const req = http.expectOne(
       (r) =>
         r.url ===
-        `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments/students/DNI/99.001.101/history`,
+        `${DEFAULT_API_CONFIG.apiBaseUrl}/api/students/DNI/99.001.101/history`,
     );
     expect(req.request.params.get('asOfDate')).toBe('2026-07-10');
     req.flush(studentHistoryFixture);

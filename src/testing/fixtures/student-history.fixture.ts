@@ -228,7 +228,7 @@ export const apiProblemHistoryBadRequestFixture: ApiProblem = {
   status: 400,
   code: 'invalid_request',
   detail: 'documentType debe tener entre 1 y 20 caracteres.',
-  instance: '/api/enrollments/students//history',
+  instance: '/api/students//history',
   errors: {
     documentType: ['El campo es obligatorio.'],
   },

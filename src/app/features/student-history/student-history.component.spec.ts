@@ -23,7 +23,7 @@ import {
 } from '../../../testing/fixtures';
 import { StudentHistoryComponent } from './student-history.component';
 
-const baseUrl = `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments/students/DNI/99.001.101/history`;
+const baseUrl = `${DEFAULT_API_CONFIG.apiBaseUrl}/api/students/DNI/99.001.101/history`;
 
 describe('StudentHistoryComponent (CT-HIST-COMP)', () => {
   let http: HttpTestingController;
@@ -148,7 +148,7 @@ describe('StudentHistoryComponent (CT-HIST-COMP)', () => {
       .expectOne(
         (r) =>
           r.url ===
-          `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments/students/DNI/88.200.300/history`,
+          `${DEFAULT_API_CONFIG.apiBaseUrl}/api/students/DNI/88.200.300/history`,
       )
       .flush(studentHistoryNoAssignmentsFixture);
     fixture.detectChanges();
@@ -169,7 +169,7 @@ describe('StudentHistoryComponent (CT-HIST-COMP)', () => {
       .expectOne(
         (r) =>
           r.url ===
-          `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments/students/DNI/88.200.300/history`,
+          `${DEFAULT_API_CONFIG.apiBaseUrl}/api/students/DNI/88.200.300/history`,
       )
       .flush(emptyStudentHistoryFixture);
     fixture.detectChanges();
@@ -256,7 +256,7 @@ describe('StudentHistoryComponent (CT-HIST-COMP)', () => {
       .expectOne(
         (r) =>
           r.url ===
-          `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments/students/DNI/88.200.300/history`,
+          `${DEFAULT_API_CONFIG.apiBaseUrl}/api/students/DNI/88.200.300/history`,
       )
       .flush(emptyStudentHistoryFixture);
     fixture.detectChanges();
@@ -268,7 +268,7 @@ describe('StudentHistoryComponent (CT-HIST-COMP)', () => {
       .expectOne(
         (r) =>
           r.url ===
-          `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments/students/DNI/88.200.300/history`,
+          `${DEFAULT_API_CONFIG.apiBaseUrl}/api/students/DNI/88.200.300/history`,
       )
       .flush(studentHistoryFixture);
     fixture.detectChanges();
@@ -309,7 +309,7 @@ describe('StudentHistoryComponent (CT-HIST-COMP)', () => {
     const second = http.expectOne(
       (r) =>
         r.url ===
-        `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments/students/DNI/88.200.300/history`,
+        `${DEFAULT_API_CONFIG.apiBaseUrl}/api/students/DNI/88.200.300/history`,
     );
     expect(first.cancelled).toBe(true);
 
