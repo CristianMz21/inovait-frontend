@@ -2,14 +2,22 @@ import { describe, expect, it } from 'vitest';
 import {
   ageDistributionFixture,
   emptyAgeDistributionFixture,
+  emptyTeacherCountsBySectorFixture,
+  teacherCountsBySectorFixture,
 } from '../../../testing/fixtures';
 import type { AgeDistributionResponseDto } from '../../core/api/dtos/age-distribution.dto';
 import {
   ageDistributionFiltersAreValid,
   ageDistributionFiltersToParams,
   ageDistributionResponseToVm,
+  teacherCountsBySectorFiltersAreValid,
+  teacherCountsBySectorFiltersToParams,
+  teacherCountsBySectorResponseToVm,
 } from './report.mappers';
-import type { AgeDistributionFiltersVm } from './report.vm';
+import type {
+  AgeDistributionFiltersVm,
+  TeacherCountsBySectorFiltersVm,
+} from './report.vm';
 
 const validFilters: AgeDistributionFiltersVm = {
   academicYearId: 2,
@@ -164,6 +172,153 @@ describe('ReportMappers (CT-AGE-MAP)', () => {
       const original = JSON.stringify(ageDistributionFixture);
       ageDistributionResponseToVm(ageDistributionFixture);
       expect(JSON.stringify(ageDistributionFixture)).toBe(original);
+    });
+  });
+
+  describe('teacherCountsBySectorFiltersAreValid()', () => {
+    it('acepta ambos extremos en null (backend usa fecha actual)', () => {
+      expect(
+        teacherCountsBySectorFiltersAreValid({
+          periodStart: null,
+          periodEnd: null,
+        }),
+      ).toBe(true);
+    });
+
+    it('acepta ambos extremos definidos', () => {
+      expect(
+        teacherCountsBySectorFiltersAreValid({
+          periodStart: '2026-07-01',
+          periodEnd: '2026-07-10',
+        }),
+      ).toBe(true);
+    });
+
+    it('rechaza cuando sólo periodStart está definido', () => {
+      expect(
+        teacherCountsBySectorFiltersAreValid({
+          periodStart: '2026-07-01',
+          periodEnd: null,
+        }),
+      ).toBe(false);
+    });
+
+    it('rechaza cuando sólo periodEnd está definido', () => {
+      expect(
+        teacherCountsBySectorFiltersAreValid({
+          periodStart: null,
+          periodEnd: '2026-07-10',
+        }),
+      ).toBe(false);
+    });
+  });
+
+  describe('teacherCountsBySectorFiltersToParams()', () => {
+    it('produce el payload canónico mínimo (sin query)', () => {
+      expect(
+        teacherCountsBySectorFiltersToParams({
+          periodStart: null,
+          periodEnd: null,
+        }),
+      ).toEqual({});
+    });
+
+    it('envía ambos extremos cuando están definidos', () => {
+      expect(
+        teacherCountsBySectorFiltersToParams({
+          periodStart: '2026-07-01',
+          periodEnd: '2026-07-10',
+        }),
+      ).toEqual({ periodStart: '2026-07-01', periodEnd: '2026-07-10' });
+    });
+
+    it('recorta espacios en los extremos antes de enviar', () => {
+      expect(
+        teacherCountsBySectorFiltersToParams({
+          periodStart: '  2026-07-01  ',
+          periodEnd: '  2026-07-10  ',
+        }),
+      ).toEqual({ periodStart: '2026-07-01', periodEnd: '2026-07-10' });
+    });
+
+    it('omite extremos vacíos o sólo espacios', () => {
+      expect(
+        teacherCountsBySectorFiltersToParams({
+          periodStart: '',
+          periodEnd: '   ',
+        }),
+      ).toEqual({});
+    });
+
+    it('devuelve null cuando los filtros son asimétricos', () => {
+      expect(
+        teacherCountsBySectorFiltersToParams({
+          periodStart: '2026-07-01',
+          periodEnd: null,
+        }),
+      ).toBeNull();
+      expect(
+        teacherCountsBySectorFiltersToParams({
+          periodStart: null,
+          periodEnd: '2026-07-10',
+        }),
+      ).toBeNull();
+    });
+  });
+
+  describe('teacherCountsBySectorResponseToVm() (CT-SECTOR-MAP)', () => {
+    it('aplana la respuesta canónica a la VM de presentación', () => {
+      const vm = teacherCountsBySectorResponseToVm(teacherCountsBySectorFixture);
+      expect(vm.periodStart).toBe('2026-07-10');
+      expect(vm.periodEnd).toBe('2026-07-10');
+      expect(vm.sectors).toHaveLength(2);
+    });
+
+    it('preserva el orden fijo de sectores (público, privado)', () => {
+      const vm = teacherCountsBySectorResponseToVm(teacherCountsBySectorFixture);
+      expect(vm.sectors.map((s) => s.id)).toEqual(['public', 'private']);
+    });
+
+    it('preserva los conteos exactos del DTO sin recalcular ni deduplicar', () => {
+      const vm = teacherCountsBySectorResponseToVm(teacherCountsBySectorFixture);
+      expect(vm.sectors[0]).toMatchObject({
+        id: 'public',
+        distinctTeacherCount: 3,
+      });
+      expect(vm.sectors[1]).toMatchObject({
+        id: 'private',
+        distinctTeacherCount: 2,
+      });
+    });
+
+    it('asigna etiquetas legibles por sector', () => {
+      const vm = teacherCountsBySectorResponseToVm(teacherCountsBySectorFixture);
+      expect(vm.sectors[0].label).toBe('Público');
+      expect(vm.sectors[1].label).toBe('Privado');
+    });
+
+    it('calcula totalDistinctTeacherCount como la suma de los dos sectores', () => {
+      const vm = teacherCountsBySectorResponseToVm(teacherCountsBySectorFixture);
+      expect(vm.totalDistinctTeacherCount).toBe(3 + 2);
+    });
+
+    it('preserva conteos en 0 sin mapearlos a error (escenario sin docentes)', () => {
+      const vm = teacherCountsBySectorResponseToVm(emptyTeacherCountsBySectorFixture);
+      expect(vm.sectors[0].distinctTeacherCount).toBe(0);
+      expect(vm.sectors[1].distinctTeacherCount).toBe(0);
+      expect(vm.totalDistinctTeacherCount).toBe(0);
+    });
+
+    it('no muta el DTO de entrada', () => {
+      const original = JSON.stringify(teacherCountsBySectorFixture);
+      teacherCountsBySectorResponseToVm(teacherCountsBySectorFixture);
+      expect(JSON.stringify(teacherCountsBySectorFixture)).toBe(original);
+    });
+
+    it('preserva el período verbatim (no recalcula ni ajusta)', () => {
+      const vm = teacherCountsBySectorResponseToVm(teacherCountsBySectorFixture);
+      expect(vm.periodStart).toBe(teacherCountsBySectorFixture.periodStart);
+      expect(vm.periodEnd).toBe(teacherCountsBySectorFixture.periodEnd);
     });
   });
 });

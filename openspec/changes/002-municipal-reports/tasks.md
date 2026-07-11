@@ -30,12 +30,12 @@ Estimated: ~1.4k LOC en 4 PR stacked; split PR2→PR3→PR4→PR5; delivery on-r
 
 ## Fase 2: WU08-RPT — sector-report (PR3)
 
-- [ ] T054 Crear `sector-counts.dto.ts` + fixture happy/empty/422 + spec.
-- [ ] T055 Añadir `getDistinctTeacherCountsBySector(periodStart, periodEnd)` al servicio + spec ST-RPT-SECTOR.
-- [ ] T056 Mapper `teacherCountsBySectorToVm()` sin dedupe cliente + spec.
-- [ ] T057 Añadir slot `sectorState` al facade con `requestKey` independiente + spec.
-- [ ] T058 Crear `teacher-counts-by-sector.component.{ts,html,scss,spec.ts}` con fieldset y estados a11y.
-- [ ] T059 Evidencia WU08 + commit `feat(002): sector counts report preserving backend dedupe (WU08)`.
+- [x] T054 Crear `sector-counts.dto.ts` + fixture happy/empty/422 + spec.
+- [x] T055 Añadir `getDistinctTeacherCountsBySector(periodStart, periodEnd)` al servicio + spec ST-RPT-SECTOR.
+- [x] T056 Mapper `teacherCountsBySectorToVm()` sin dedupe cliente + spec.
+- [x] T057 Añadir slot `sectorState` al facade con `requestKey` independiente + spec.
+- [x] T058 Crear `teacher-counts-by-sector.component.{ts,html,scss,spec.ts}` con fieldset y estados a11y.
+- [x] T059 Evidencia WU08 + commit `feat(002): sector counts report preserving backend dedupe (WU08)`.
 
 ## Fase 3: WU09-RPT — top-schools-report (PR4)
 

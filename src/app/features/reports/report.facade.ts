@@ -11,39 +11,49 @@ import {
 import {
   ReportApiService,
   type GetAgeDistributionParams,
+  type GetTeacherCountsBySectorParams,
 } from './report.api.service';
 import {
   ageDistributionFiltersToParams,
   ageDistributionResponseToVm,
+  teacherCountsBySectorFiltersToParams,
+  teacherCountsBySectorResponseToVm,
 } from './report.mappers';
 import type {
   AgeDistributionFiltersVm,
   AgeDistributionVm,
+  TeacherCountsBySectorFiltersVm,
+  TeacherCountsBySectorVm,
 } from './report.vm';
 
 /**
- * Fachada reactiva del recorrido **Distribución por edad** dentro del
- * shell de reportes municipales.
+ * Fachada reactiva de los recorridos de **Reportes municipales** dentro
+ * del shell `/reports`.
  *
- * Coordina la única operación P1 implementada en WU07:
- * `getAgeDistribution`. Las operaciones `getDistinctTeacherCountsBySector`
- * y `getTopSchoolsByEnrollment` se añaden en WU08 y WU09 como slots
- * adicionales del mismo `ReportFacade`.
+ * Coordina las operaciones P1 habilitadas hasta el momento:
  *
- * Disciplina:
+ * - WU07 — `getAgeDistribution` → slot `age`.
+ * - WU08 — `getDistinctTeacherCountsBySector` → slot `sector`.
  *
- * - `RemoteState<AgeDistributionVm>` exclusivo (`idle|loading|success|
- *   empty|error`).
- * - Cancelación del envío previo ante un nuevo `loadAge()`.
+ * La operación `getTopSchoolsByEnrollment` se añade en WU09 como slot
+ * adicional del mismo `ReportFacade`.
+ *
+ * Disciplina común a ambos slots:
+ *
+ * - `RemoteState<T>` exclusivo (`idle|loading|success|empty|error`).
+ * - Cancelación del envío previo ante un nuevo `load*()`.
  * - Descarte de respuesta tardía por `requestKey`: si la operadora
- *   cambia `academicYearId` mientras hay una consulta en curso, sólo la
+ *   cambia los filtros mientras hay una consulta en curso, sólo la
  *   última respuesta muta el estado.
  * - Mapeo de `ApiProblem` desde `problemDetailsInterceptor`. Códigos
  *   canónicos respetados: `invalid_request` (400), `resource_not_found`
- *   (404), `as_of_date_invalid` (422), `business_rule_violation` (422).
+ *   (404), `as_of_date_invalid` (422), `period_invalid` (422).
+ * - Ningún recorrido emite `empty` cuando la respuesta canónica es
+ *   estructuralmente no vacía; `age` devuelve siempre tres bandas y
+ *   `sector` siempre dos sectores (con conteos posiblemente en `0`).
  *
  * La fachada se provee a nivel de componente (no en el inyector raíz)
- * para que cada instancia de la vista tenga su propio slot.
+ * para que cada instancia de la vista tenga sus propios slots.
  */
 @Injectable()
 export class ReportFacade {
@@ -53,6 +63,10 @@ export class ReportFacade {
   private ageSubscription: Subscription | null = null;
   private ageSequence = 0;
 
+  private readonly sector = signal<RemoteState<TeacherCountsBySectorVm>>(idle());
+  private sectorSubscription: Subscription | null = null;
+  private sectorSequence = 0;
+
   /** Filtros vigentes del recorrido de edad. */
   private lastAgeFilters: AgeDistributionFiltersVm = {
     academicYearId: null,
@@ -61,8 +75,17 @@ export class ReportFacade {
     gradeId: null,
   };
 
+  /** Filtros vigentes del recorrido de sector. */
+  private lastSectorFilters: TeacherCountsBySectorFiltersVm = {
+    periodStart: null,
+    periodEnd: null,
+  };
+
   /** Estado remoto del slot `age` (sólo lectura). */
   readonly ageState = this.age.asReadonly();
+
+  /** Estado remoto del slot `sector` (sólo lectura). */
+  readonly sectorState = this.sector.asReadonly();
 
   /**
    * Indica si la VM actual es consultable. La UI usa este predicado para
@@ -70,6 +93,15 @@ export class ReportFacade {
    */
   canLoadAge(filters: AgeDistributionFiltersVm): boolean {
     return ageDistributionFiltersToParams(filters) !== null;
+  }
+
+  /**
+   * Indica si los filtros del sector son consultables. La UI usa este
+   * predicado para activar/desactivar el botón "Consultar sector" antes
+   * de invocar el endpoint.
+   */
+  canLoadSector(filters: TeacherCountsBySectorFiltersVm): boolean {
+    return teacherCountsBySectorFiltersToParams(filters) !== null;
   }
 
   /**
@@ -120,6 +152,53 @@ export class ReportFacade {
     };
   }
 
+  /**
+   * Carga el conteo de docentes distintos por sector con los filtros
+   * indicados. Si ya hay una consulta en curso, la cancela y descarta
+   * cualquier respuesta tardía. No-op cuando los filtros son
+   * asimétricos (sólo uno de los dos extremos del período definido).
+   */
+  loadSector(filters: TeacherCountsBySectorFiltersVm): void {
+    const params = teacherCountsBySectorFiltersToParams(filters);
+    if (params === null) {
+      return;
+    }
+    this.lastSectorFilters = filters;
+    this.dispatchSector(params);
+  }
+
+  /**
+   * Reintenta la última consulta de sector con los filtros vigentes.
+   * No-op si el estado actual no es `error` o si los filtros previos
+   * son inválidos.
+   */
+  retrySector(): void {
+    const current = this.sector();
+    if (current.status !== 'error') {
+      return;
+    }
+    const params = teacherCountsBySectorFiltersToParams(this.lastSectorFilters);
+    if (params === null) {
+      return;
+    }
+    this.dispatchSector(params);
+  }
+
+  /**
+   * Cancela la consulta en curso del slot de sector y vuelve el estado a
+   * `idle`. La UI debe llamar a este método antes de `form.reset()` para
+   * que la cancelación y la limpieza ocurran en orden.
+   */
+  resetSector(): void {
+    this.sectorSubscription?.unsubscribe();
+    this.sectorSubscription = null;
+    this.sector.set(idle());
+    this.lastSectorFilters = {
+      periodStart: null,
+      periodEnd: null,
+    };
+  }
+
   // -- Despacho interno ---------------------------------------------------
 
   private dispatchAge(params: GetAgeDistributionParams): void {
@@ -150,6 +229,38 @@ export class ReportFacade {
         this.age.set(errorState<AgeDistributionVm>(problem));
       },
     });
+  }
+
+  private dispatchSector(params: GetTeacherCountsBySectorParams): void {
+    this.sectorSubscription?.unsubscribe();
+    this.sectorSequence += 1;
+    const requestKey = `report-sector#${this.sectorSequence}`;
+    this.sector.set(loading<TeacherCountsBySectorVm>(requestKey));
+
+    this.sectorSubscription = this.api
+      .getDistinctTeacherCountsBySector(params)
+      .subscribe({
+        next: (dto) => {
+          if (this.isStale(this.sector(), requestKey)) {
+            return;
+          }
+          // El DTO canónico siempre devuelve los dos sectores con
+          // conteos (incluido `0`); no existe estado `empty` para este
+          // recorrido — se mapea directo a `success`.
+          const vm = teacherCountsBySectorResponseToVm(dto);
+          this.sector.set(success(vm));
+        },
+        error: (err: unknown) => {
+          if (this.isStale(this.sector(), requestKey)) {
+            return;
+          }
+          const problem = err instanceof ApiProblemError ? err.problem : null;
+          if (!problem) {
+            return;
+          }
+          this.sector.set(errorState<TeacherCountsBySectorVm>(problem));
+        },
+      });
   }
 
   /**

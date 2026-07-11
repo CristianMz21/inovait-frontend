@@ -1,0 +1,220 @@
+.sector {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 1100px;
+}
+
+.sector-lede {
+  margin: 0;
+  color: var(--app-muted);
+  max-width: 70ch;
+}
+
+.sector-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.sector-form fieldset {
+  border: 1px solid var(--app-border);
+  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  background: var(--app-header-bg);
+}
+
+.sector-form legend {
+  padding: 0 0.5rem;
+  font-weight: 600;
+}
+
+.sector-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.sector-field span {
+  color: var(--app-muted);
+}
+
+.sector-field input {
+  font: inherit;
+  padding: 0.45rem 0.6rem;
+  border-radius: 4px;
+  border: 1px solid var(--app-border);
+  background: var(--app-bg);
+  color: inherit;
+}
+
+.sector-field input:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: 2px;
+}
+
+.sector-field input[disabled] {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.sector-help {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--app-muted);
+  font-size: 0.8rem;
+}
+
+.sector-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.sector-submit,
+.sector-cancel {
+  font: inherit;
+  padding: 0.55rem 1.1rem;
+  border-radius: 4px;
+  border: 1px solid var(--app-accent);
+  cursor: pointer;
+}
+
+.sector-submit {
+  background: var(--app-accent);
+  color: #ffffff;
+}
+
+.sector-cancel {
+  background: transparent;
+  color: var(--app-accent);
+}
+
+.sector-submit[disabled],
+.sector-cancel[disabled] {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.sector-status {
+  margin: 0;
+  color: var(--app-muted);
+  font-size: 0.95rem;
+}
+
+.sector-error {
+  background: var(--app-error-soft);
+  border: 1px solid var(--app-error);
+  border-radius: 6px;
+  padding: 0.9rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  color: var(--app-error);
+}
+
+.sector-error-title {
+  margin: 0;
+}
+
+.sector-error-status {
+  margin-left: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--app-muted);
+}
+
+.sector-error-fields {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.sector-error button {
+  align-self: flex-start;
+  font: inherit;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  border: 1px solid var(--app-error);
+  background: transparent;
+  color: var(--app-error);
+  cursor: pointer;
+}
+
+.sector-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-x: auto;
+}
+
+.sector-results h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.sector-context {
+  margin: 0;
+  color: var(--app-muted);
+  font-size: 0.9rem;
+}
+
+.sector-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  background: var(--app-header-bg);
+  border: 1px solid var(--app-border);
+}
+
+.sector-table th,
+.sector-table td {
+  text-align: left;
+  padding: 0.5rem 0.65rem;
+  border-bottom: 1px solid var(--app-border);
+  vertical-align: top;
+}
+
+.sector-table th {
+  background: var(--app-accent-soft);
+  font-weight: 600;
+}
+
+.sector-table tr:last-child td {
+  border-bottom: none;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 320px) {
+  .sector-form fieldset {
+    grid-template-columns: 1fr;
+  }
+
+  .sector-table {
+    font-size: 0.8rem;
+  }
+
+  .sector-table th,
+  .sector-table td {
+    padding: 0.35rem 0.45rem;
+  }
+
+  .sector-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

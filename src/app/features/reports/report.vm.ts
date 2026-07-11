@@ -68,3 +68,67 @@ export interface AgeDistributionFieldVm<TValue extends number | string> {
   readonly value: TValue;
   readonly label: string;
 }
+
+/**
+ * Tipos de la capa de vista del recorrido de **Docentes distintos por
+ * sector** (FR-RPT-003, WU08).
+ *
+ * El DTO canónico no devuelve un array: expone dos campos escalares
+ * por sector (`publicDistinctTeacherCount`, `privateDistinctTeacherCount`).
+ * La VM los conserva como dos entradas ordenadas del sector
+ * correspondiente, lo que simplifica el render del template y la
+ * internacionalización sin perder el shape canónico.
+ */
+export type SectorId = 'public' | 'private';
+
+/**
+ * Vista normalizada de un sector reportada por
+ * `getDistinctTeacherCountsBySector`. Aplana el conteo canónico
+ * (`publicDistinctTeacherCount` / `privateDistinctTeacherCount`) en una
+ * entrada por sector con etiqueta legible para el template.
+ */
+export interface SectorCountVm {
+  readonly id: SectorId;
+  readonly label: string;
+  readonly distinctTeacherCount: number;
+}
+
+/**
+ * Estado mutable del formulario de consulta por sector. Ambos extremos
+ * del período son opcionales: si la operadora los omite, el backend usa
+ * la fecha actual. El backend rechaza el envío con sólo uno de los dos
+ * (`400 invalid_request`).
+ */
+export interface TeacherCountsBySectorFiltersVm {
+  readonly periodStart: string | null;
+  readonly periodEnd: string | null;
+}
+
+/**
+ * Forma aplanada del DTO canónico para la presentación. Conserva
+ * exactamente `periodStart`, `periodEnd` y los dos conteos por sector; la
+ * UI los etiqueta y los ordena sin recalcular ni deduplicar — la
+ * deduplicación por `teacherId` la realiza el backend.
+ */
+export interface TeacherCountsBySectorVm {
+  readonly periodStart: string;
+  readonly periodEnd: string;
+  readonly sectors: readonly SectorCountVm[];
+  readonly totalDistinctTeacherCount: number;
+}
+
+/**
+ * Etiquetas legibles para los dos sectores canónicos del reporte. Se
+ * centralizan aquí para que la UI no duplique literales.
+ */
+export const SECTOR_LABELS: Readonly<Record<SectorId, string>> = {
+  public: 'Público',
+  private: 'Privado',
+};
+
+/**
+ * Orden fijo de los sectores en el DTO canónico. El backend garantiza
+ * "dos sectores en orden fijo" (`paths/reports.yaml` descripción del
+ * response `200`); la UI debe respetar ese orden sin reordenar.
+ */
+export const SECTOR_ORDER: readonly SectorId[] = ['public', 'private'];

@@ -6,6 +6,7 @@ export * from './enrollment-create-response.fixture';
 export * from './enrollments-list.fixture';
 export * from './grades.fixture';
 export * from './schools.fixture';
+export * from './sector-counts.fixture';
 export * from './subjects.fixture';
 export * from './teacher-contracts.fixture';
 export * from './teachers.fixture';

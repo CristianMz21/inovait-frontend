@@ -10,6 +10,7 @@ export * from './enrollment-list-item.dto';
 export * from './grade-summary.dto';
 export * from './school-summary.dto';
 export * from './school-teacher-summary.dto';
+export * from './sector-counts.dto';
 export * from './student-identity-input.dto';
 export * from './subject-summary.dto';
 export * from './teacher-contract-response.dto';

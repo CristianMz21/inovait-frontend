@@ -16,13 +16,20 @@ import {
   apiProblemAsOfDateInvalidFixture,
   apiProblemBadRequestFixture,
   apiProblemNotFoundFixture,
+  apiProblemPeriodInvalidFixture,
   emptyAgeDistributionFixture,
+  emptyTeacherCountsBySectorFixture,
+  teacherCountsBySectorFixture,
 } from '../../../testing/fixtures';
 import { ReportApiService } from './report.api.service';
 import { ReportFacade } from './report.facade';
-import type { AgeDistributionFiltersVm } from './report.vm';
+import type {
+  AgeDistributionFiltersVm,
+  TeacherCountsBySectorFiltersVm,
+} from './report.vm';
 
 const ageUrl = `${DEFAULT_API_CONFIG.apiBaseUrl}/api/reports/age-distribution`;
+const sectorUrl = `${DEFAULT_API_CONFIG.apiBaseUrl}/api/reports/teacher-counts-by-sector`;
 
 const validFilters: AgeDistributionFiltersVm = {
   academicYearId: 2,
@@ -36,6 +43,21 @@ const invalidFilters: AgeDistributionFiltersVm = {
   asOfDate: null,
   schoolId: null,
   gradeId: null,
+};
+
+const emptySectorFilters: TeacherCountsBySectorFiltersVm = {
+  periodStart: null,
+  periodEnd: null,
+};
+
+const validSectorFilters: TeacherCountsBySectorFiltersVm = {
+  periodStart: '2026-07-01',
+  periodEnd: '2026-07-10',
+};
+
+const asymmetricSectorFilters: TeacherCountsBySectorFiltersVm = {
+  periodStart: '2026-07-01',
+  periodEnd: null,
 };
 
 describe('ReportFacade (CT-AGE-AGE)', () => {
@@ -267,5 +289,242 @@ describe('ReportFacade (CT-AGE-AGE)', () => {
     facade.retryAge();
     expect(facade.ageState().status).toBe('idle');
     http.expectNone((r) => r.url === ageUrl);
+  });
+
+  // -- canLoadSector -----------------------------------------------------
+
+  it('canLoadSector() acepta filtros vacíos (backend usa fecha actual)', () => {
+    expect(facade.canLoadSector(emptySectorFilters)).toBe(true);
+  });
+
+  it('canLoadSector() rechaza cuando los filtros son asimétricos', () => {
+    expect(facade.canLoadSector(asymmetricSectorFilters)).toBe(false);
+  });
+
+  // -- loadSector: validación ------------------------------------------
+
+  it('loadSector() con VM asimétrica es no-op y conserva el estado idle', () => {
+    facade.loadSector(asymmetricSectorFilters);
+    expect(facade.sectorState().status).toBe('idle');
+    http.expectNone((r) => r.url === sectorUrl);
+  });
+
+  // -- loadSector: success ----------------------------------------------
+
+  it('loadSector() expone loading y luego success con la VM aplanada', () => {
+    facade.loadSector(validSectorFilters);
+    expect(facade.sectorState().status).toBe('loading');
+
+    const req = http.expectOne(
+      (r) => r.url === sectorUrl && r.method === 'GET',
+    );
+    expect(req.request.params.get('periodStart')).toBe('2026-07-01');
+    expect(req.request.params.get('periodEnd')).toBe('2026-07-10');
+    req.flush(teacherCountsBySectorFixture);
+
+    const state = facade.sectorState();
+    expect(state.status).toBe('success');
+    if (state.status === 'success') {
+      expect(state.data.periodStart).toBe('2026-07-10');
+      expect(state.data.periodEnd).toBe('2026-07-10');
+      expect(state.data.sectors).toHaveLength(2);
+      expect(state.data.sectors.map((s) => s.id)).toEqual(['public', 'private']);
+      expect(state.data.sectors[0]?.distinctTeacherCount).toBe(3);
+      expect(state.data.sectors[1]?.distinctTeacherCount).toBe(2);
+      expect(state.data.totalDistinctTeacherCount).toBe(5);
+    }
+  });
+
+  it('loadSector() con filtros vacíos envía GET sin query string', () => {
+    facade.loadSector(emptySectorFilters);
+    const req = http.expectOne(
+      (r) => r.url === sectorUrl && r.method === 'GET',
+    );
+    expect(req.request.params.has('periodStart')).toBe(false);
+    expect(req.request.params.has('periodEnd')).toBe(false);
+    req.flush(teacherCountsBySectorFixture);
+
+    expect(facade.sectorState().status).toBe('success');
+  });
+
+  it('loadSector() mapea 200 con conteos en 0 a success (no error)', () => {
+    facade.loadSector(validSectorFilters);
+    http
+      .expectOne((r) => r.url === sectorUrl && r.method === 'GET')
+      .flush(emptyTeacherCountsBySectorFixture);
+
+    const state = facade.sectorState();
+    expect(state.status).toBe('success');
+    if (state.status === 'success') {
+      expect(state.data.totalDistinctTeacherCount).toBe(0);
+      expect(
+        state.data.sectors.every((s) => s.distinctTeacherCount === 0),
+      ).toBe(true);
+    }
+  });
+
+  // -- loadSector: errores canónicos -----------------------------------
+
+  it('loadSector() mapea 400 con ProblemDetails a error', () => {
+    facade.loadSector({
+      periodStart: '2026-07-10',
+      periodEnd: '2026-07-10',
+    });
+    const req = http.expectOne(
+      (r) => r.url === sectorUrl && r.method === 'GET',
+    );
+    req.flush(apiProblemBadRequestFixture, {
+      status: 400,
+      statusText: 'Bad Request',
+      headers: new HttpHeaders({
+        'Content-Type': 'application/problem+json',
+      }),
+    });
+
+    const state = facade.sectorState();
+    expect(state.status).toBe('error');
+    if (state.status === 'error') {
+      expect(state.problem.status).toBe(400);
+      expect(state.problem.code).toBe('invalid_request');
+    }
+  });
+
+  it('loadSector() mapea 422 period_invalid a error conservando los filtros', () => {
+    facade.loadSector({
+      periodStart: '2026-07-10',
+      periodEnd: '2026-07-01',
+    });
+    const req = http.expectOne(
+      (r) => r.url === sectorUrl && r.method === 'GET',
+    );
+    req.flush(apiProblemPeriodInvalidFixture, {
+      status: 422,
+      statusText: 'Unprocessable Entity',
+      headers: new HttpHeaders({
+        'Content-Type': 'application/problem+json',
+      }),
+    });
+
+    const state = facade.sectorState();
+    expect(state.status).toBe('error');
+    if (state.status === 'error') {
+      expect(state.problem.status).toBe(422);
+      expect(state.problem.code).toBe('period_invalid');
+    }
+  });
+
+  // -- loadSector: cancel-on-switch ------------------------------------
+
+  it('loadSector() cancela el envío previo cuando cambia el período', () => {
+    facade.loadSector({
+      periodStart: '2026-07-01',
+      periodEnd: '2026-07-10',
+    });
+    const first = http.expectOne(
+      (r) =>
+        r.url === sectorUrl &&
+        r.method === 'GET' &&
+        r.params.get('periodStart') === '2026-07-01',
+    );
+    expect(facade.sectorState().status).toBe('loading');
+
+    facade.loadSector({
+      periodStart: '2026-08-01',
+      periodEnd: '2026-08-10',
+    });
+    const second = http.expectOne(
+      (r) =>
+        r.url === sectorUrl &&
+        r.method === 'GET' &&
+        r.params.get('periodStart') === '2026-08-01',
+    );
+    // El primer GET fue cancelado al despachar el segundo; su
+    // respuesta tardía se descarta sin mutar el estado.
+    expect(first.cancelled).toBe(true);
+
+    second.flush(teacherCountsBySectorFixture);
+    const fresh = facade.sectorState();
+    expect(fresh.status).toBe('success');
+    if (fresh.status === 'success') {
+      expect(fresh.data.periodStart).toBe('2026-07-10');
+    }
+  });
+
+  // -- resetSector ------------------------------------------------------
+
+  it('resetSector() cancela el envío en curso y vuelve a idle', () => {
+    facade.loadSector(validSectorFilters);
+    const req = http.expectOne(
+      (r) => r.url === sectorUrl && r.method === 'GET',
+    );
+    expect(facade.sectorState().status).toBe('loading');
+
+    facade.resetSector();
+    expect(req.cancelled).toBe(true);
+    expect(facade.sectorState().status).toBe('idle');
+  });
+
+  // -- retrySector ------------------------------------------------------
+
+  it('retrySector() reenvía tras un error con los filtros previos', () => {
+    facade.loadSector(validSectorFilters);
+    http
+      .expectOne((r) => r.url === sectorUrl && r.method === 'GET')
+      .flush(apiProblemPeriodInvalidFixture, {
+        status: 422,
+        statusText: 'Unprocessable Entity',
+        headers: new HttpHeaders({
+          'Content-Type': 'application/problem+json',
+        }),
+      });
+    expect(facade.sectorState().status).toBe('error');
+
+    facade.retrySector();
+    const retryReq = http.expectOne(
+      (r) => r.url === sectorUrl && r.method === 'GET',
+    );
+    expect(retryReq.request.params.get('periodStart')).toBe('2026-07-01');
+    retryReq.flush(teacherCountsBySectorFixture);
+
+    const state = facade.sectorState();
+    expect(state.status).toBe('success');
+  });
+
+  it('retrySector() no hace nada si el estado vigente no es error', () => {
+    facade.loadSector(validSectorFilters);
+    http.expectOne((r) => r.url === sectorUrl && r.method === 'GET');
+
+    facade.retrySector();
+    expect(facade.sectorState().status).toBe('loading');
+    http.expectNone((r) => r.url === sectorUrl);
+  });
+
+  it('retrySector() no hace nada si los filtros previos son inválidos', () => {
+    facade.retrySector();
+    expect(facade.sectorState().status).toBe('idle');
+    http.expectNone((r) => r.url === sectorUrl);
+  });
+
+  // -- Independencia entre slots --------------------------------------
+
+  it('loadAge() no afecta el estado del slot sector ni viceversa', () => {
+    facade.loadSector(validSectorFilters);
+    expect(facade.sectorState().status).toBe('loading');
+    expect(facade.ageState().status).toBe('idle');
+
+    http
+      .expectOne((r) => r.url === sectorUrl && r.method === 'GET')
+      .flush(teacherCountsBySectorFixture);
+
+    facade.loadAge(validFilters);
+    expect(facade.ageState().status).toBe('loading');
+    expect(facade.sectorState().status).toBe('success');
+
+    http
+      .expectOne((r) => r.url === ageUrl && r.method === 'GET')
+      .flush(ageDistributionFixture);
+
+    expect(facade.ageState().status).toBe('success');
+    expect(facade.sectorState().status).toBe('success');
   });
 });

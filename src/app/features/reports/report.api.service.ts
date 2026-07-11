@@ -4,6 +4,7 @@ import type { Observable } from 'rxjs';
 import { map } from 'rxjs';
 import { API_CONFIG } from '../../core/api/api-config';
 import type { AgeDistributionResponseDto } from '../../core/api/dtos/age-distribution.dto';
+import type { TeacherCountsBySectorResponseDto } from '../../core/api/dtos/sector-counts.dto';
 
 /**
  * Parámetros de la operación canónica `getAgeDistribution`. Sólo
@@ -19,7 +20,21 @@ export interface GetAgeDistributionParams {
   readonly gradeId?: number;
 }
 
-function toHttpParams(params: GetAgeDistributionParams): HttpParams {
+/**
+ * Parámetros de la operación canónica `getDistinctTeacherCountsBySector`.
+ * `periodStart` y `periodEnd` son opcionales: cuando la operadora los
+ * omite ambos, el backend usa la fecha actual y replica ese valor en
+ * ambos extremos del DTO de respuesta. Si sólo se envía uno de los dos,
+ * se invoca igual y el backend devuelve 400 `invalid_request`.
+ */
+export interface GetTeacherCountsBySectorParams {
+  readonly periodStart?: string;
+  readonly periodEnd?: string;
+}
+
+function toAgeDistributionHttpParams(
+  params: GetAgeDistributionParams,
+): HttpParams {
   let httpParams = new HttpParams().set(
     'academicYearId',
     String(params.academicYearId),
@@ -36,22 +51,37 @@ function toHttpParams(params: GetAgeDistributionParams): HttpParams {
   return httpParams;
 }
 
+function toSectorHttpParams(
+  params: GetTeacherCountsBySectorParams,
+): HttpParams {
+  let httpParams = new HttpParams();
+  if (params.periodStart) {
+    httpParams = httpParams.set('periodStart', params.periodStart);
+  }
+  if (params.periodEnd) {
+    httpParams = httpParams.set('periodEnd', params.periodEnd);
+  }
+  return httpParams;
+}
+
 /**
- * Servicio de transporte HTTP para la operación canónica
- * `getAgeDistribution` (operationId declarado en
- * `paths/reports.yaml#/api/reports/age-distribution.get`). Emite un
- * `GET` contra `${apiBaseUrl}/api/reports/age-distribution` con los
- * filtros académicos como query string y devuelve el payload canónico
- * del backend.
+ * Servicio de transporte HTTP para las operaciones canónicas del slot P1
+ * declaradas en `paths/reports.yaml`:
+ *
+ * - `getAgeDistribution` (operationId en
+ *   `paths/reports.yaml#/api/reports/age-distribution.get`).
+ * - `getDistinctTeacherCountsBySector` (operationId en
+ *   `paths/reports.yaml#/api/reports/teacher-counts-by-sector.get`).
+ *
+ * Emite `GET` contra `${apiBaseUrl}/api/reports/...` con los filtros
+ * como query string y devuelve los payloads canónicos del backend.
  *
  * Esta clase no aplica reglas de UI ni mutación de estado: su única
- * responsabilidad es mantener la trazabilidad exacta con el
+ * responsabilidad es mantener la trazabilidad exacta con cada
  * `operationId` declarado en `paths/reports.yaml`. El manejo uniforme
  * de errores 4xx/5xx queda delegado al `problemDetailsInterceptor`.
  *
- * Las otras dos operaciones del slot P1 (`getDistinctTeacherCountsBySector`
- * y `getTopSchoolsByEnrollment`) llegan en WU08 y WU09; este servicio
- * sólo expone la operación de WU07.
+ * La operación `getTopSchoolsByEnrollment` llega en WU09.
  */
 @Injectable({ providedIn: 'root' })
 export class ReportApiService {
@@ -63,7 +93,20 @@ export class ReportApiService {
   ): Observable<AgeDistributionResponseDto> {
     const url = `${this.config.apiBaseUrl}/api/reports/age-distribution`;
     return this.http
-      .get<AgeDistributionResponseDto>(url, { params: toHttpParams(params) })
+      .get<AgeDistributionResponseDto>(url, {
+        params: toAgeDistributionHttpParams(params),
+      })
+      .pipe(map((data) => ({ ...data })));
+  }
+
+  getDistinctTeacherCountsBySector(
+    params: GetTeacherCountsBySectorParams = {},
+  ): Observable<TeacherCountsBySectorResponseDto> {
+    const url = `${this.config.apiBaseUrl}/api/reports/teacher-counts-by-sector`;
+    return this.http
+      .get<TeacherCountsBySectorResponseDto>(url, {
+        params: toSectorHttpParams(params),
+      })
       .pipe(map((data) => ({ ...data })));
   }
 }

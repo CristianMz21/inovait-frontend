@@ -1,10 +1,17 @@
 import type { AgeBandResponse, AgeDistributionResponseDto } from '../../core/api/dtos/age-distribution.dto';
+import type { TeacherCountsBySectorResponseDto } from '../../core/api/dtos/sector-counts.dto';
 import {
   AGE_BAND_LABELS,
+  SECTOR_LABELS,
+  SECTOR_ORDER,
   type AgeBandId,
   type AgeBandVm,
   type AgeDistributionFiltersVm,
   type AgeDistributionVm,
+  type SectorCountVm,
+  type SectorId,
+  type TeacherCountsBySectorFiltersVm,
+  type TeacherCountsBySectorVm,
 } from './report.vm';
 
 /**
@@ -108,5 +115,100 @@ export function ageDistributionResponseToVm(
     asOfDate: dto.asOfDate,
     bands,
     totalCount: bands.reduce((sum, band) => sum + band.count, 0),
+  };
+}
+
+/**
+ * Determina si los filtros del período permiten invocar
+ * `getDistinctTeacherCountsBySector`. El contrato declara `periodStart`
+ * y `periodEnd` como opcionales pero **simétricos**: si se envía uno, el
+ * backend rechaza con `400 invalid_request`. La UI bloquea el envío
+ * cuando sólo uno de los dos extremos está definido, para mantener el
+ * shape canónico de la solicitud.
+ *
+ * Reglas alineadas con el contrato:
+ *
+ * - Ambos `null` → válido (el backend usa la fecha actual).
+ * - Ambos definidos → válido (la regla de rango
+ *   `periodEnd >= periodStart` la aplica el backend como `422
+ *   period_invalid`; la UI la delega para no reinventar el código de
+ *   error).
+ * - Sólo uno definido → inválido (la UI bloquea la consulta).
+ */
+export function teacherCountsBySectorFiltersAreValid(
+  vm: TeacherCountsBySectorFiltersVm,
+): boolean {
+  const startDefined = vm.periodStart !== null;
+  const endDefined = vm.periodEnd !== null;
+  return startDefined === endDefined;
+}
+
+/**
+ * Convierte la `TeacherCountsBySectorFiltersVm` a los parámetros
+ * canónicos del endpoint `getDistinctTeacherCountsBySector`. Devuelve
+ * `null` cuando los filtros son asimétricos (uno definido y el otro
+ * `null`); el llamador debe bloquear el envío en ese caso.
+ *
+ * Los strings vacíos o sólo espacios se canonicalizan a `null` para no
+ * contaminar la URL con valores triviales. El orden de inserción
+ * coincide con la firma de `paths/reports.yaml` y se preserva verbatim
+ * por `HttpParams`.
+ */
+export function teacherCountsBySectorFiltersToParams(
+  vm: TeacherCountsBySectorFiltersVm,
+): { periodStart?: string; periodEnd?: string } | null {
+  if (!teacherCountsBySectorFiltersAreValid(vm)) {
+    return null;
+  }
+  const params: { periodStart?: string; periodEnd?: string } = {};
+  const trimmedStart = vm.periodStart?.trim();
+  const trimmedEnd = vm.periodEnd?.trim();
+  if (trimmedStart) {
+    params.periodStart = trimmedStart;
+  }
+  if (trimmedEnd) {
+    params.periodEnd = trimmedEnd;
+  }
+  return params;
+}
+
+/**
+ * Aplana `TeacherCountsBySectorResponseDto` (DTO canónico) a
+ * `TeacherCountsBySectorVm` (VM de presentación).
+ *
+ * Transformación estructural:
+ *
+ * - Conserva `periodStart` y `periodEnd` exactamente como los emite el
+ *   backend, sin reordenar ni ajustar.
+ * - Convierte los dos conteos escalares (`publicDistinctTeacherCount`,
+ *   `privateDistinctTeacherCount`) en una lista ordenada por sector,
+ *   respetando el orden fijo declarado en el contrato (público,
+ *   privado).
+ * - `totalDistinctTeacherCount` se calcula como la suma de los dos
+ *   sectores. No es recálculo del backend — es sólo la agregación de
+ *   los dos conteos que el DTO ya expone. El backend **no** devuelve un
+ *   `total` canónico; la UI lo deriva de los dos campos disponibles.
+ *
+ * El mapper **no** deduplica por `teacherId`: la deduplicación está
+ * delegada al backend (per `proposal.md`).
+ */
+export function teacherCountsBySectorResponseToVm(
+  dto: TeacherCountsBySectorResponseDto,
+): TeacherCountsBySectorVm {
+  const sectorCounts: Record<SectorId, number> = {
+    public: dto.publicDistinctTeacherCount,
+    private: dto.privateDistinctTeacherCount,
+  };
+  const sectors: readonly SectorCountVm[] = SECTOR_ORDER.map((id) => ({
+    id,
+    label: SECTOR_LABELS[id],
+    distinctTeacherCount: sectorCounts[id],
+  }));
+  return {
+    periodStart: dto.periodStart,
+    periodEnd: dto.periodEnd,
+    sectors,
+    totalDistinctTeacherCount:
+      dto.publicDistinctTeacherCount + dto.privateDistinctTeacherCount,
   };
 }

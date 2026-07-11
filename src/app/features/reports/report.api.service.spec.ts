@@ -16,7 +16,10 @@ import {
   apiProblemAsOfDateInvalidFixture,
   apiProblemBadRequestFixture,
   apiProblemNotFoundFixture,
+  apiProblemPeriodInvalidFixture,
   emptyAgeDistributionFixture,
+  emptyTeacherCountsBySectorFixture,
+  teacherCountsBySectorFixture,
 } from '../../../testing/fixtures';
 import {
   ReportApiService,
@@ -24,6 +27,7 @@ import {
 } from './report.api.service';
 
 const ageUrl = `${DEFAULT_API_CONFIG.apiBaseUrl}/api/reports/age-distribution`;
+const sectorUrl = `${DEFAULT_API_CONFIG.apiBaseUrl}/api/reports/teacher-counts-by-sector`;
 
 describe('ReportApiService (ST-RPT-AGE)', () => {
   let service: ReportApiService;
@@ -199,6 +203,141 @@ describe('ReportApiService (ST-RPT-AGE)', () => {
       expect((error as { status: number }).status).toBe(422);
       expect((error as { problem: { code: string } }).problem.code).toBe(
         'as_of_date_invalid',
+      );
+    });
+  });
+
+  describe('getDistinctTeacherCountsBySector() (ST-RPT-SECTOR)', () => {
+    it('invoca GET /api/reports/teacher-counts-by-sector sin query cuando se omite todo', () => {
+      let received: unknown;
+      service
+        .getDistinctTeacherCountsBySector()
+        .subscribe((value) => (received = value));
+
+      const req = http.expectOne(
+        (r) => r.url === sectorUrl && r.method === 'GET',
+      );
+      expect(req.request.method).toBe('GET');
+      expect(req.request.params.has('periodStart')).toBe(false);
+      expect(req.request.params.has('periodEnd')).toBe(false);
+      req.flush(teacherCountsBySectorFixture);
+
+      expect(received).toEqual(teacherCountsBySectorFixture);
+    });
+
+    it('envía periodStart y periodEnd cuando la operadora los define', () => {
+      let received: unknown;
+      service
+        .getDistinctTeacherCountsBySector({
+          periodStart: '2026-07-01',
+          periodEnd: '2026-07-10',
+        })
+        .subscribe((value) => (received = value));
+
+      const req = http.expectOne(
+        (r) => r.url === sectorUrl && r.method === 'GET',
+      );
+      expect(req.request.params.get('periodStart')).toBe('2026-07-01');
+      expect(req.request.params.get('periodEnd')).toBe('2026-07-10');
+      req.flush(teacherCountsBySectorFixture);
+
+      expect(received).toEqual(teacherCountsBySectorFixture);
+    });
+
+    it('envía sólo periodStart si la operadora omitió periodEnd', () => {
+      let received: unknown;
+      service
+        .getDistinctTeacherCountsBySector({ periodStart: '2026-07-01' })
+        .subscribe((value) => (received = value));
+
+      const req = http.expectOne(
+        (r) => r.url === sectorUrl && r.method === 'GET',
+      );
+      expect(req.request.params.get('periodStart')).toBe('2026-07-01');
+      expect(req.request.params.has('periodEnd')).toBe(false);
+      req.flush(teacherCountsBySectorFixture);
+
+      expect(received).toEqual(teacherCountsBySectorFixture);
+    });
+
+    it('mapea 200 con conteos en 0 a la forma canónica (no error)', () => {
+      let received: unknown;
+      service
+        .getDistinctTeacherCountsBySector({
+          periodStart: '2026-07-10',
+          periodEnd: '2026-07-10',
+        })
+        .subscribe((value) => (received = value));
+
+      const req = http.expectOne(
+        (r) => r.url === sectorUrl && r.method === 'GET',
+      );
+      req.flush(emptyTeacherCountsBySectorFixture);
+
+      expect(received).toEqual(emptyTeacherCountsBySectorFixture);
+      if (
+        received &&
+        typeof received === 'object' &&
+        'publicDistinctTeacherCount' in received
+      ) {
+        const dto = received as typeof emptyTeacherCountsBySectorFixture;
+        expect(dto.publicDistinctTeacherCount).toBe(0);
+        expect(dto.privateDistinctTeacherCount).toBe(0);
+      }
+    });
+
+    it('mapea 400 con ProblemDetails como error canónico', () => {
+      let error: unknown;
+      service
+        .getDistinctTeacherCountsBySector({ periodStart: '2026-07-10' })
+        .subscribe({
+          next: () => undefined,
+          error: (err) => (error = err),
+        });
+
+      const req = http.expectOne(
+        (r) => r.url === sectorUrl && r.method === 'GET',
+      );
+      req.flush(apiProblemBadRequestFixture, {
+        status: 400,
+        statusText: 'Bad Request',
+        headers: new HttpHeaders({
+          'Content-Type': 'application/problem+json',
+        }),
+      });
+
+      expect((error as { status: number }).status).toBe(400);
+      expect((error as { problem: { code: string } }).problem.code).toBe(
+        'invalid_request',
+      );
+    });
+
+    it('mapea 422 period_invalid como error canónico', () => {
+      let error: unknown;
+      service
+        .getDistinctTeacherCountsBySector({
+          periodStart: '2026-07-10',
+          periodEnd: '2026-07-01',
+        })
+        .subscribe({
+          next: () => undefined,
+          error: (err) => (error = err),
+        });
+
+      const req = http.expectOne(
+        (r) => r.url === sectorUrl && r.method === 'GET',
+      );
+      req.flush(apiProblemPeriodInvalidFixture, {
+        status: 422,
+        statusText: 'Unprocessable Entity',
+        headers: new HttpHeaders({
+          'Content-Type': 'application/problem+json',
+        }),
+      });
+
+      expect((error as { status: number }).status).toBe(422);
+      expect((error as { problem: { code: string } }).problem.code).toBe(
+        'period_invalid',
       );
     });
   });
