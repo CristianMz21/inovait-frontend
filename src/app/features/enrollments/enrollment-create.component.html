@@ -1,0 +1,258 @@
+<section class="enrollment" aria-labelledby="enrollment-title">
+  <h1 id="enrollment-title" tabindex="-1">Nueva matrícula</h1>
+  <p class="enrollment-lede">
+    Complete los datos del estudiante y la cadena académica. Los selectores
+    se desbloquean en orden: primero <strong>Escuela</strong>, luego
+    <strong>Año</strong>, <strong>Grado</strong> y por último
+    <strong>Grupo</strong>. Cambiar un nivel superior limpia los inferiores.
+  </p>
+
+  @if (isSuccess()) {
+    <div
+      class="enrollment-success"
+      role="status"
+      aria-live="polite"
+      data-testid="enrollment-success"
+    >
+      <h2>Inscripción registrada</h2>
+      @if (result().status === 'success') {
+        <dl class="enrollment-summary">
+          <div>
+            <dt>Identificador de inscripción</dt>
+            <dd>{{ result().data.enrollmentId }}</dd>
+          </div>
+          <div>
+            <dt>Identificador de estudiante</dt>
+            <dd>{{ result().data.studentId }}</dd>
+          </div>
+          <div>
+            <dt>Estudiante</dt>
+            <dd>{{ result().data.fullName }} ({{ result().data.age }} años)</dd>
+          </div>
+          <div>
+            <dt>Identidad reutilizada</dt>
+            <dd>{{ result().data.studentReused ? 'Sí' : 'No' }}</dd>
+          </div>
+          <div>
+            <dt>Escuela</dt>
+            <dd>{{ result().data.schoolName }}</dd>
+          </div>
+          <div>
+            <dt>Año académico</dt>
+            <dd>{{ result().data.academicYearName }}</dd>
+          </div>
+          <div>
+            <dt>Grado</dt>
+            <dd>{{ result().data.gradeName }}</dd>
+          </div>
+          <div>
+            <dt>Grupo</dt>
+            <dd>{{ result().data.classGroupCode }}</dd>
+          </div>
+        </dl>
+      }
+      <button type="button" class="enrollment-reset" (click)="onReset()">
+        Registrar otra matrícula
+      </button>
+    </div>
+  } @else {
+    <form
+      class="enrollment-form"
+      [formGroup]="form"
+      (ngSubmit)="onSubmit()"
+      novalidate
+      aria-describedby="enrollment-lede"
+    >
+      <fieldset [disabled]="isSubmitting()">
+        <legend>Datos del estudiante</legend>
+
+        <label class="enrollment-field">
+          <span>Tipo de documento</span>
+          <select
+            formControlName="documentType"
+            required
+            aria-required="true"
+          >
+            <option value="" disabled>Seleccione…</option>
+            @for (opt of documentTypes; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        </label>
+
+        <label class="enrollment-field">
+          <span>Número de documento</span>
+          <input
+            type="text"
+            formControlName="documentNumber"
+            required
+            aria-required="true"
+            autocomplete="off"
+            inputmode="text"
+            maxlength="32"
+          />
+        </label>
+
+        <label class="enrollment-field">
+          <span>Nombres</span>
+          <input
+            type="text"
+            formControlName="firstNames"
+            required
+            aria-required="true"
+            autocomplete="off"
+            maxlength="120"
+          />
+        </label>
+
+        <label class="enrollment-field">
+          <span>Apellidos</span>
+          <input
+            type="text"
+            formControlName="lastNames"
+            required
+            aria-required="true"
+            autocomplete="off"
+            maxlength="120"
+          />
+        </label>
+
+        <label class="enrollment-field">
+          <span>Fecha de nacimiento</span>
+          <input
+            type="date"
+            formControlName="birthDate"
+            required
+            aria-required="true"
+          />
+        </label>
+      </fieldset>
+
+      <fieldset [disabled]="isSubmitting()">
+        <legend>Cadena académica</legend>
+
+        <label class="enrollment-field">
+          <span>Escuela</span>
+          <select
+            formControlName="schoolId"
+            required
+            aria-required="true"
+          >
+            <option [ngValue]="null" disabled>Seleccione…</option>
+            @for (opt of schoolOptions(); track opt.value) {
+              <option [ngValue]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        </label>
+
+        <label class="enrollment-field">
+          <span>Año académico</span>
+          <select
+            formControlName="academicYearId"
+            required
+            aria-required="true"
+            [attr.aria-disabled]="isAcademicYearDisabled() ? 'true' : null"
+            [disabled]="isAcademicYearDisabled()"
+          >
+            <option [ngValue]="null" disabled>Seleccione…</option>
+            @for (opt of academicYearOptions(); track opt.value) {
+              <option [ngValue]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        </label>
+
+        <label class="enrollment-field">
+          <span>Grado</span>
+          <select
+            formControlName="gradeId"
+            required
+            aria-required="true"
+            [attr.aria-disabled]="isGradeDisabled() ? 'true' : null"
+            [disabled]="isGradeDisabled()"
+          >
+            <option [ngValue]="null" disabled>Seleccione…</option>
+            @for (opt of gradeOptions(); track opt.value) {
+              <option [ngValue]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        </label>
+
+        <label class="enrollment-field">
+          <span>Grupo</span>
+          <select
+            formControlName="classGroupId"
+            required
+            aria-required="true"
+            [attr.aria-disabled]="isClassGroupDisabled() ? 'true' : null"
+            [disabled]="isClassGroupDisabled()"
+          >
+            <option [ngValue]="null" disabled>Seleccione…</option>
+            @for (opt of classGroupOptions(); track opt.value) {
+              <option [ngValue]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        </label>
+
+        @if (classGroupStatusMessage(); as cgMsg) {
+          <p class="enrollment-help" role="status" aria-live="polite">
+            {{ cgMsg }}
+          </p>
+        }
+      </fieldset>
+
+      <div class="enrollment-actions">
+        <button
+          type="submit"
+          class="enrollment-submit"
+          [disabled]="form.invalid || isSubmitting()"
+          [attr.aria-busy]="isSubmitting() ? 'true' : 'false'"
+        >
+          @if (isSubmitting()) {
+            Enviando…
+          } @else {
+            Confirmar matrícula
+          }
+        </button>
+        <button
+          type="button"
+          class="enrollment-cancel"
+          (click)="onReset()"
+          [disabled]="isSubmitting()"
+        >
+          Cancelar
+        </button>
+      </div>
+
+      @if (hasError()) {
+        <div
+          class="enrollment-error"
+          role="alert"
+          aria-live="assertive"
+          data-testid="enrollment-error"
+        >
+          @if (errorProblem(); as problem) {
+            <p class="enrollment-error-title">
+              <strong>{{ problem.title }}</strong>
+              <span class="enrollment-error-status">
+                (HTTP {{ problem.status }})
+              </span>
+            </p>
+            @if (problem.detail) {
+              <p>{{ problem.detail }}</p>
+            }
+            @if (errorFields().length > 0) {
+              <ul class="enrollment-error-fields">
+                @for (entry of errorFields(); track entry.field) {
+                  @for (msg of entry.messages; track msg) {
+                    <li><code>{{ entry.field }}</code>: {{ msg }}</li>
+                  }
+                }
+              </ul>
+            }
+            <button type="button" (click)="onRetry()">Reintentar</button>
+          }
+        </div>
+      }
+    </form>
+  }
+</section>

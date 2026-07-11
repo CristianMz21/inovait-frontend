@@ -1,12 +1,12 @@
-# Registro de ejecución del evaluador: WU00 (Governance / prereq)
+# Registro de ejecución del evaluador: WU00 → WU01 → WU02 (US1 Matrículas)
 
 ## Alcance y estado
 
 - Cambio: `001-school-enrollment-management`
-- Slice objetivo: `WU00` (Governance + prereq)
+- Slice objetivo: `WU02` (US1 Matrículas) sobre `WU01` foundation
 - Modo: Frontend-only
-- Estado: **Baseline creado (pre-ejecución)**
-- Fecha: 2026-07-11
+- Estado: **WU02 implementado (PR3 stacked-to-main sobre WU01)**
+- Fecha WU02: 2026-07-11
 
 ## Referencia contractual (inmutable)
 
@@ -40,10 +40,10 @@ sha256sum openapi.yaml \
 
 | Escenario | Estado remoto esperado | Errores canónicos | Indicador de evidencia |
 |---|---|---|---|
-| Alta válida de nuevo estudiante | loading / success | 400/404/409/422 (según contrato) | [ ] Pendiente |
-| Identidad reutilizable por año distinto | loading / success | 400/404/409/422 (según contrato) | [ ] Pendiente |
-| Segundo alta del mismo año | error canónico, no mutación parcial | 409 + ProblemDetails | [ ] Pendiente |
-| Selectores dependientes | estados excluyentes + limpieza descendente | 400/404/409/422 si aplica | [ ] Pendiente |
+| Alta válida de nuevo estudiante | loading / success | 400/404/409/422 (según contrato) | [x] WU02: `EnrollmentCreateComponent` + `EnrollmentCreateFacade.submit()` |
+| Identidad reutilizable por año distinto | loading / success | 400/404/409/422 (según contrato) | [x] WU02: `createEnrollmentReusedResponseFixture` + mapper conserva `studentReused` |
+| Segundo alta del mismo año | error canónico, no mutación parcial | 409 + ProblemDetails | [x] WU02: `enrollment-create.facade.spec.ts` cubre 409 sin mutación |
+| Selectores dependientes | estados excluyentes + limpieza descendente | 400/404/409/422 si aplica | [x] WU02: `CatalogFacade` con cancelación + stale + `onParentChange()` limpia descendientes |
 
 ### 2) Consulta (`/student-search`)
 
@@ -68,19 +68,22 @@ sha256sum openapi.yaml \
 
 ### E01 — Estados remotos y consistencia
 
-- [ ] Enlace de evidencia pendiente.
+- [x] WU02: catálogos + `createEnrollment` con `RemoteState` exclusivo (`idle|loading|success|empty|error`); respuestas obsoletas descartadas por `requestKey`.
+- [ ] Walkthrough manual con backend real pendiente (T034).
 
 ### E02 — Accesibilidad y usabilidad P0
 
-- [ ] Enlace de evidencia pendiente.
+- [x] WU02: `EnrollmentCreateComponent` con selects dependientes, `aria-required`, `aria-disabled`, `aria-busy`, regiones `role="status"` (carga/éxito) y `role="alert"` (errores), h1 enfocable.
+- [ ] Walkthrough teclado/320px/200% pendiente (T033).
 
 ### E03 — Contract + contrato canónico
 
-- [ ] Enlace de evidencia pendiente.
+- [x] WU01: `verify-openapi-contract.mjs` ejecutado en CI valida los 10 YAML, commit autorizado y `operationId` canónicos; `createEnrollment` listado.
+- [ ] Contract verify ejecutado en gate P0 pendiente (T035).
 
 ### E04 — Integración con backend real / CORS
 
-- [ ] Enlace de evidencia pendiente.
+- [ ] Pendiente (T034).
 
 ## Notas operativas
 

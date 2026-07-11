@@ -3,9 +3,10 @@
 ## Cambio
 
 - `001-school-enrollment-management`
-- Slice ejecutado: `WU01 Foundation (PR2)`
+- Slice ejecutado: `WU02 US1 Matrículas (PR3)` sobre `WU01 Foundation (PR2)`
 - Timestamp: 2026-07-11
-- Delivery: chained PR slice, stacked-to-main sobre WU00
+- Delivery: chained PR slice, `stacked-to-main` sobre WU01
+- Modo TDD estricto: **deshabilitado** (test runner no instalado; pruebas escritas como contrato pero no ejecutadas)
 
 ## Tareas completadas (cumulativo)
 
@@ -28,14 +29,17 @@
 - [x] 2.8 T012 Implementar catálogo con cancelación y stale.
 - [x] 2.9 T013 Configurar app config, routes y estilos.
 
+### WU02 — US1 Matrículas (PR3)
+
+- [x] 3.1 T014 `EnrollmentApiService` con `createEnrollment` (operationId del contrato, `POST /api/enrollments`).
+- [x] 3.2 T015 `EnrollmentCreateFacade` + mappers (`enrollmentFormToRequest`, `enrollmentResponseToResult`) + VM types.
+- [x] 3.3 T016 Pruebas de dependencias, stale y rollback: `enrollment-create.facade.spec.ts` cubre cancelación de POST previo, descarte de respuestas obsoletas por `requestKey`, retry tras error, reset.
+- [x] 3.4 T017 `EnrollmentCreateComponent` con selects dependientes `School → AcademicYear → Grade → ClassGroup` (cascada reactiva limpia descendientes y deshabilita niveles inferiores).
+- [x] 3.5 T018 Integración de submit, retry y reset con `ProblemDetails` (errores canónicos 400/404/409/422), `aria-busy`, regiones `role="status"` / `role="alert"` y formulario accesible.
+- [x] 3.6 T019 Evidencia P0 consolidada en `docs/evaluator-execution.md` (matriz US1 marcada) + este `apply-progress`.
+
 ## Tareas pendientes
 
-- [ ] 3.1 T014 ST-ENR-CREATE para `createEnrollment`.
-- [ ] 3.2 T015 Implementar `CreateEnrollment` y mappers.
-- [ ] 3.3 T016 CT dependencias/stale/rollback.
-- [ ] 3.4 T017 Formulario con selects dependientes.
-- [ ] 3.5 T018 Integrar submit, retry y reset.
-- [ ] 3.6 T019 WU02 + evidencia P0.
 - [ ] 4.1 T020 ST-SEARCH-QUERY + CTs `SEARCH`.
 - [ ] 4.2 T021 Implementar filtros y `listEnrollments`.
 - [ ] 4.3 T022 Renderizar resultados.
@@ -53,67 +57,71 @@
 - [ ] 6.4 T034 Validar backend real.
 - [ ] 6.5 T035 Puerta P0 (`contract:verify`, suite, build).
 
-## Artefactos escritos en este slice
+## Artefactos escritos en este slice (WU02)
 
 ### Nuevos
 
-- `package.json` (reparado: scripts duplicados consolidados)
-- `angular.json` (preservado de scaffold; ajustes posteriores)
-- `tsconfig.json`, `tsconfig.app.json`, `tsconfig.spec.json`
-- `src/index.html`
-- `src/main.ts`
-- `src/styles.scss`
-- `src/app/app.component.{ts,html,scss,spec.ts}`
-- `src/app/app.config.ts`
-- `src/app/app.routes.ts`
-- `src/app/layout/placeholders/*.ts` (×4)
-- `src/app/core/api/api-config.ts`
-- `src/app/core/api/api-problem-error.ts`
-- `src/app/core/api/problem-details.interceptor.ts`
-- `src/app/core/api/problem-details.interceptor.spec.ts`
-- `src/app/core/api/provide-api-http-client.ts`
-- `src/app/core/api/remote-state.ts`
-- `src/app/core/api/to-api-problem.ts`
-- `src/app/core/api/to-api-problem.spec.ts`
-- `src/app/core/api/dtos/*.ts` (×15)
-- `src/app/core/api/index.ts`
-- `src/app/core/catalogs/catalog-api.service.ts`
-- `src/app/core/catalogs/catalog-api.service.spec.ts`
-- `src/app/core/catalogs/catalog.facade.ts`
-- `src/app/core/catalogs/catalog.facade.spec.ts`
-- `src/app/scripts/verify-openapi-contract.mjs`
-- `src/testing/fixtures/*.ts` (×7)
+- `src/app/features/enrollments/enrollment.api.service.ts`
+- `src/app/features/enrollments/enrollment.api.service.spec.ts`
+- `src/app/features/enrollments/enrollment.mappers.ts`
+- `src/app/features/enrollments/enrollment.mappers.spec.ts`
+- `src/app/features/enrollments/enrollment-create.vm.ts`
+- `src/app/features/enrollments/enrollment-create.facade.ts`
+- `src/app/features/enrollments/enrollment-create.facade.spec.ts`
+- `src/app/features/enrollments/enrollment-create.component.ts`
+- `src/app/features/enrollments/enrollment-create.component.html`
+- `src/app/features/enrollments/enrollment-create.component.scss`
+- `src/app/features/enrollments/enrollment-create.component.spec.ts`
+- `src/app/features/enrollments/index.ts`
+- `src/testing/fixtures/enrollment-create-response.fixture.ts`
 
 ### Modificados
 
-- `openspec/changes/001-school-enrollment-management/tasks.md` (T005–T013 marcados)
+- `src/app/app.routes.ts` — carga `EnrollmentCreateComponent` para `/enrollments`.
+- `src/app/app.component.html` — footer anuncia WU02.
+- `src/testing/fixtures/index.ts` — exporta `enrollment-create-response.fixture`.
+- `openspec/changes/001-school-enrollment-management/tasks.md` — T014–T019 marcados.
+- `docs/evaluator-execution.md` — matriz US1 con marcas de evidencia WU02.
 
-## Registro de evidencia WU01
+## Registro de evidencia WU02
 
-- **T005 preflight**: `test -d .git && test -d .specify && test -d .agents && test -d docs && test -d specs && test -f README.md` → OK. Los untracked `angular.json`/`package.json`/`src`/`public` ya estaban staged por una sesión previa; la transferencia desde `.angular-scaffold/` se considera cumplida.
-- **T006 transferencia**: estructura actual preserva `.git`, `.specify`, `.agents`, `docs`, `specs`, `README.md`. No se invocó `ng new .` ni `--force`. Scaffold transferido sin colisiones.
-- **T007 deps/scripts**: `package.json` consolidado (scripts duplicados reparados). Scripts: `ng`, `start`, `build`, `watch`, `test`, `contract:verify`. Deps: `@angular/*@21.2.18`, `@angular/cdk@21.2.14`, `@angular/material@21.2.14`, `rxjs@7.8.2`, `zone.js@0.15.0`. DevDeps: `@angular/build@21.2.19`, `@angular/cli@21.2.19`, `vitest@^4.0.8`, `jsdom@^28.0.0`, `prettier@^3.8.1`, `typescript@5.9.3`.
-- **T008 contract:verify**: `src/app/scripts/verify-openapi-contract.mjs` valida (1) 10 archivos tracked, (2) dir limpio, (3) commit `1223630ab99bf1bfaa4f5919fccf5ff539379c8e` o sucesor, (4) checksum `802c13b91bf5c6425d24c540b6841a2abe134e084ea310fc2b7041e32c24a81a`, (5) `operationId` canónicos. Sin copia local de OpenAPI. Ejecutado: falla correctamente por HEAD backend no autorizado (`e43c032c...` ≠ `1223630ab...`) — esperado, en CI el backend estará en el commit correcto.
-- **T009 DTOs/fixtures**: 15 DTOs en `src/app/core/api/dtos/` mapean `components/*.yaml` del OpenAPI. 7 fixtures P0 en `src/testing/fixtures/` (escuelas, grados, años, grupos, docentes, materias, errores `ProblemDetails`).
-- **T010 ProblemDetails**: `problemDetailsInterceptor` funcional (`HttpInterceptorFn`) + `ApiProblemError` + `toApiProblem` (preserva payload canónico o deriva por estado HTTP). Helpers `withApiProblemDetails` / `provideApiHttpClient`.
-- **T011 tests catálogo remoto**: `catalog-api.service.spec.ts` cubre 8 invocaciones HTTP con `HttpTestingController`. `problem-details.interceptor.spec.ts` cubre casos 2xx, 400 canónico y 500 fallback. `to-api-problem.spec.ts` cubre derivación por estado.
-- **T012 catálogo con cancelación y stale**: `CatalogFacade` expone Signals por slot (`schoolsState`, `classGroupsState`, …). Cada `load*` incrementa una `sequence`, genera `requestKey`, cancela la suscripción previa (HTTP cancelado vía `unsubscribe()`), y descarta respuestas obsoletas comparando `requestKey`. Estado remoto `RemoteState<T>` con `idle|loading|success|empty|error` y `requestKey` para evitar pisar respuestas tardías.
-- **T013 app config/routes/styles**: `app.config.ts` provee `provideRouter` con `withComponentInputBinding` + `withInMemoryScrolling`, `provideApiHttpClient`, `provideZonelessChangeDetection`, `API_CONFIG`. `app.routes.ts` declara `/enrollments`, `/student-search`, `/teacher-contracts` (P0 con placeholders accesibles), `/reports`, `/student-history` (P1 bloqueados). `styles.scss` define tokens (`--app-accent`, `--app-error`, etc.), `prefers-contrast: more` y `prefers-reduced-motion`. `index.html` en español con `meta description` y `color-scheme`.
+- **T014 ST-ENR-CREATE**: `EnrollmentApiService.create()` emite `POST ${apiBaseUrl}/api/enrollments` con `CreateEnrollmentRequest`; errores 4xx/5xx se traducen a `ApiProblemError` por el interceptor `problemDetailsInterceptor` global. Spec `enrollment.api.service.spec.ts` valida método, URL y payload.
+- **T015 mappers**: `enrollmentFormToRequest()` devuelve `null` cuando falta cualquier referencia académica; recorta espacios en `student.documentType/documentNumber/firstNames/lastNames`. `enrollmentResponseToResult()` aplana `School/AcademicYear/Grade/ClassGroup` anidados a etiquetas planas y compone `fullName` colapsando espacios. Spec cubre estos casos.
+- **T016 dependencias/stale/rollback**:
+  - `enrollment-create.facade.spec.ts` cubre:
+    - Cancelación del POST previo ante reenvío (la primera suscripción queda `cancelled`).
+    - Descarte de respuesta tardía comparando `requestKey`.
+    - `reset()` cancela envío en curso y vuelve a `idle`.
+    - `retry()` solo actúa si el estado vigente es `error`.
+    - 409 `enrollment_conflict` mapea a `error` con `code` contractual.
+  - `enrollment-create.component.spec.ts` cubre:
+    - Cancelación de `loadClassGroups` al cambiar `schoolId` antes de responder.
+    - Limpieza de descendientes al cambiar `schoolId` (year/grade/group → null).
+- **T017 selects dependientes**: `EnrollmentCreateComponent.onSchoolChange()` limpia year/grade/group y cancela `classGroups`; `onAcademicYearChange()` limpia grade/group; `onGradeChange()` limpia group y recarga `classGroups` cuando los tres padres están completos. `isAcademicYearDisabled()`/`isGradeDisabled()`/`isClassGroupDisabled()` bloquean niveles inferiores hasta seleccionar el padre. `classGroupStatusMessage()` muestra estado remoto de `classGroups` (loading / empty / error) en una región `role="status"` `aria-live="polite"`.
+- **T018 submit / retry / reset**:
+  - `onSubmit()` valida el formulario con Reactive Forms (`Validators.required`, `maxLength`, `pattern` para `birthDate`); inválido → `markAllAsTouched`, no emite POST.
+  - Válido → `EnrollmentCreateFacade.submit()` con `RemoteState<EnrollmentResultVm>` exclusivo.
+  - 201 → `success` con resumen accesible (`<dl>`) y botón "Registrar otra matrícula".
+  - 4xx con `ProblemDetails` → `error` con mensaje canónico, mapeo de `errors` por campo y botón "Reintentar".
+  - `onRetry()` solo reenvía si el estado vigente es `error`.
+  - `onReset()` cancela envío en curso, vuelve a `idle` y reinicia el formulario.
+  - Estados de submit: `aria-busy` en el botón primario, `fieldset[disabled]` mientras `isSubmitting()`, `role="alert" aria-live="assertive"` para errores.
+- **T019 evidencia**: `docs/evaluator-execution.md` marca las cuatro filas de la matriz US1 (`Alta válida`, `Identidad reutilizable`, `Segundo alta del mismo año`, `Selectores dependientes`); actualiza `E01`/`E02` con marcas WU02 y deja `E03`/`E04` con marcas pendientes hasta gate T034/T035.
 
 ## Riesgos / desviaciones
 
-- **Sin `npm ci` ejecutado**: `node_modules` no instalado en este entorno. Las pruebas unitarias no se ejecutaron. Las definiciones TS son correctas por inspección pero requieren `tsc`/Vitest para verificación final.
-- **Scaffold pre-posicionado**: el orquestador ya tenía `package.json`, `angular.json`, `src/`, `public/` como untracked. T005/T006 interpretados como transferencia cumplida; T007 ajustó scripts.
-- **`backend HEAD ≠ baseline`**: `contract:verify` falla en este entorno porque el backend está en `e43c032c...`. El script es correcto: en CI el checkout will be at the authorized commit.
-- **`provideZonelessChangeDetection` opcional en Angular 21**: Angular 21 ya es zoneless por defecto; el `provideZonelessChangeDetection()` explícito es opcional y se mantiene por intención.
+- **Sin `npm ci` ejecutado**: `node_modules` no instalado. Pruebas escritas como contrato pero no ejecutadas en este entorno; sirven como evidencia de diseño y se ejecutarán en CI en la puerta T035.
+- **`backend HEAD ≠ baseline`**: backend en `43e3635e...` ≠ `1223630ab...` autorizado. `contract:verify` fallará aquí; aprobará en CI cuando el checkout esté en el commit autorizado. WU02 no relaja esa restricción.
+- **Signal Forms no utilizado**: `plan.md` declara "Reactive Forms and strict mode"; WU02 mantiene Reactive Forms (no Signal Forms) para paridad con el plan.
+- **Angular Material no usado en este slice**: WU01 no montó theming ni importó componentes Material; WU02 usa HTML semántico + SCSS con tokens definidos en `styles.scss` para evitar introducir una dependencia visual no auditada. Material queda disponible para US2/US3.
+- **`EnrollmentCreateFacade` es component-scoped** (`providers` en el componente) para que cada instancia tenga su propio estado de submit; si el usuario navega y vuelve, una nueva fachada nace. `CatalogFacade` permanece root para conservar el cache de catálogos.
 
 ## Próximo slice
 
-WU02 (PR3 stacked-to-main sobre WU01): ST-ENR-CREATE + `CreateEnrollment` + mappers + CT dependencias/stale/rollback + formulario con selects dependientes + integración submit/retry/reset.
+WU03 (PR4 stacked-to-main sobre WU02): ST-SEARCH-QUERY + `listEnrollments` + tabla/tarjetas + estados loading/error/empty/retry + accesibilidad P0.
 
 ## Estado del contrato (gate)
 
 - Verificador `src/app/scripts/verify-openapi-contract.mjs` ejecutable sin instalar dependencias.
 - HEAD backend actual: `43e3635eb91de9902898949ffeda9ed428fe438a` (≠ autorizado).
 - En CI, cuando el backend esté en `1223630ab99bf1bfaa4f5919fccf5ff539379c8e`, el verificador aprueba y desbloquea la puerta P0 (T035).
-

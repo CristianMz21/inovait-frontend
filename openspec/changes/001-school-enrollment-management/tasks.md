@@ -41,12 +41,12 @@
 
 ## Fase 2: US1 matrícula
 
-- [ ] 3.1 T014 ST-ENR-CREATE para `createEnrollment`.
-- [ ] 3.2 T015 Implementar `CreateEnrollment` y mappers.
-- [ ] 3.3 T016 CT dependencias/stale/rollback.
-- [ ] 3.4 T017 Formulario con selects dependientes.
-- [ ] 3.5 T018 Integrar submit, retry y reset.
-- [ ] 3.6 T019 WU02 + evidencia P0.
+- [x] 3.1 T014 ST-ENR-CREATE para `createEnrollment`.
+- [x] 3.2 T015 Implementar `CreateEnrollment` y mappers.
+- [x] 3.3 T016 CT dependencias/stale/rollback.
+- [x] 3.4 T017 Formulario con selects dependientes.
+- [x] 3.5 T018 Integrar submit, retry y reset.
+- [x] 3.6 T019 WU02 + evidencia P0.
 
 ## Fase 3: US2 consulta
 
