@@ -5,25 +5,23 @@ import {
   computed,
   inject,
   type OnInit,
-} from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+} from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import {
   type FormControl,
   FormGroup,
   NonNullableFormBuilder,
   ReactiveFormsModule,
   Validators,
-} from '@angular/forms';
-import { CatalogFacade } from '../../core/catalogs/catalog.facade';
-import type { RemoteState } from '../../core/api/remote-state';
-import { EnrollmentCreateFacade } from './enrollment-create.facade';
-import {
-  enrollmentFormToRequest,
-} from './enrollment.mappers';
+} from "@angular/forms";
+import { CatalogFacade } from "../../core/catalogs/catalog.facade";
+import type { RemoteState } from "../../core/api/remote-state";
+import { EnrollmentCreateFacade } from "./enrollment-create.facade";
+import { enrollmentFormToRequest } from "./enrollment.mappers";
 import type {
   EnrollmentFieldVm,
   EnrollmentFormVm,
-} from './enrollment-create.vm';
+} from "./enrollment-create.vm";
 
 interface EnrollmentFormShape {
   documentType: FormControl<string>;
@@ -60,12 +58,12 @@ type EnrollmentFormGroup = FormGroup<EnrollmentFormShape>;
  * Forms) para mantener paridad con el plan técnico acordado.
  */
 @Component({
-  selector: 'app-enrollment-create',
+  selector: "app-enrollment-create",
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule],
   providers: [EnrollmentCreateFacade],
-  templateUrl: './enrollment-create.component.html',
-  styleUrl: './enrollment-create.component.scss',
+  templateUrl: "./enrollment-create.component.html",
+  styleUrl: "./enrollment-create.component.scss",
 })
 export class EnrollmentCreateComponent implements OnInit {
   private readonly fb = inject(NonNullableFormBuilder);
@@ -76,29 +74,29 @@ export class EnrollmentCreateComponent implements OnInit {
   readonly result = this.enrollment.result;
 
   readonly documentTypes: readonly EnrollmentFieldVm<string>[] = [
-    { value: 'DNI', label: 'DNI' },
-    { value: 'PAS', label: 'Pasaporte' },
-    { value: 'CE', label: 'Cédula' },
+    { value: "DNI", label: "DNI" },
+    { value: "PAS", label: "Pasaporte" },
+    { value: "CE", label: "Cédula" },
   ];
 
   readonly form: EnrollmentFormGroup = this.fb.group({
-    documentType: this.fb.control('', [
+    documentType: this.fb.control("", [
       Validators.required,
       Validators.maxLength(20),
     ]),
-    documentNumber: this.fb.control('', [
+    documentNumber: this.fb.control("", [
       Validators.required,
       Validators.maxLength(32),
     ]),
-    firstNames: this.fb.control('', [
+    firstNames: this.fb.control("", [
       Validators.required,
       Validators.maxLength(120),
     ]),
-    lastNames: this.fb.control('', [
+    lastNames: this.fb.control("", [
       Validators.required,
       Validators.maxLength(120),
     ]),
-    birthDate: this.fb.control('', [
+    birthDate: this.fb.control("", [
       Validators.required,
       Validators.pattern(/^\d{4}-\d{2}-\d{2}$/),
     ]),
@@ -113,16 +111,16 @@ export class EnrollmentCreateComponent implements OnInit {
   readonly gradeOptions = this.gradeOptionsSignal();
   readonly classGroupOptions = this.classGroupOptionsSignal();
 
-  readonly isSubmitting = computed(() => this.result().status === 'loading');
-  readonly isSuccess = computed(() => this.result().status === 'success');
+  readonly isSubmitting = computed(() => this.result().status === "loading");
+  readonly isSuccess = computed(() => this.result().status === "success");
   readonly successData = computed(() => {
     const state = this.result();
-    return state.status === 'success' ? state.data : null;
+    return state.status === "success" ? state.data : null;
   });
-  readonly hasError = computed(() => this.result().status === 'error');
+  readonly hasError = computed(() => this.result().status === "error");
   readonly errorProblem = computed(() => {
     const state = this.result();
-    return state.status === 'error' ? state.problem : null;
+    return state.status === "error" ? state.problem : null;
   });
   readonly errorFields = computed(() => {
     const problem = this.errorProblem();
@@ -183,11 +181,11 @@ export class EnrollmentCreateComponent implements OnInit {
   onReset(): void {
     this.enrollment.reset();
     this.form.reset({
-      documentType: '',
-      documentNumber: '',
-      firstNames: '',
-      lastNames: '',
-      birthDate: '',
+      documentType: "",
+      documentNumber: "",
+      firstNames: "",
+      lastNames: "",
+      birthDate: "",
       schoolId: null,
       academicYearId: null,
       gradeId: null,
@@ -223,14 +221,14 @@ export class EnrollmentCreateComponent implements OnInit {
     if (this.isClassGroupDisabled()) {
       return null;
     }
-    if (state.status === 'loading') {
-      return 'Cargando grupos…';
+    if (state.status === "loading") {
+      return "Cargando grupos…";
     }
-    if (state.status === 'empty') {
-      return 'No hay grupos para la combinación seleccionada.';
+    if (state.status === "empty") {
+      return "No hay grupos para la combinación seleccionada.";
     }
-    if (state.status === 'error') {
-      return 'No se pudieron cargar los grupos. Reintente cambiando la selección.';
+    if (state.status === "error") {
+      return "No se pudieron cargar los grupos. Reintente cambiando la selección.";
     }
     return null;
   }
@@ -248,7 +246,7 @@ export class EnrollmentCreateComponent implements OnInit {
     this.form.controls.academicYearId.setValue(null, { emitEvent: false });
     this.form.controls.gradeId.setValue(null, { emitEvent: false });
     this.form.controls.classGroupId.setValue(null, { emitEvent: false });
-    this.catalog.cancel('classGroups');
+    this.catalog.cancel("classGroups");
   }
 
   /**
@@ -260,7 +258,7 @@ export class EnrollmentCreateComponent implements OnInit {
   private onAcademicYearChange(): void {
     this.form.controls.gradeId.setValue(null, { emitEvent: false });
     this.form.controls.classGroupId.setValue(null, { emitEvent: false });
-    this.catalog.cancel('classGroups');
+    this.catalog.cancel("classGroups");
   }
 
   /**
@@ -270,9 +268,13 @@ export class EnrollmentCreateComponent implements OnInit {
    */
   private onGradeChange(): void {
     this.form.controls.classGroupId.setValue(null, { emitEvent: false });
-    this.catalog.cancel('classGroups');
+    this.catalog.cancel("classGroups");
     const { schoolId, academicYearId, gradeId } = this.form.controls;
-    if (schoolId.value !== null && academicYearId.value !== null && gradeId.value !== null) {
+    if (
+      schoolId.value !== null &&
+      academicYearId.value !== null &&
+      gradeId.value !== null
+    ) {
       this.catalog.loadClassGroups({
         schoolId: schoolId.value,
         gradeId: gradeId.value,
@@ -289,7 +291,7 @@ export class EnrollmentCreateComponent implements OnInit {
     return computed(() =>
       mapOptions(this.catalog.schoolsState(), (school) => ({
         value: school.id,
-        label: `${school.name} · ${school.sector === 'Public' ? 'Público' : 'Privado'}`,
+        label: `${school.name} · ${school.sector === "Public" ? "Público" : "Privado"}`,
       })),
     );
   }
@@ -332,7 +334,7 @@ function mapOptions<T, TValue extends number | string>(
   state: RemoteState<readonly T[]>,
   project: (item: T) => EnrollmentFieldVm<TValue>,
 ): readonly EnrollmentFieldVm<TValue>[] {
-  if (state.status === 'success') {
+  if (state.status === "success") {
     return state.data.map(project);
   }
   return [];

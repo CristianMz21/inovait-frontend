@@ -1,11 +1,10 @@
 <section class="sector" aria-labelledby="sector-title">
   <h1 id="sector-title" tabindex="-1">Docentes distintos por sector</h1>
   <p id="sector-lede" class="sector-lede">
-    Indique un <strong>período</strong> (opcional) para obtener el conteo
-    de docentes con contratos vigentes en cada sector. Si lo deja vacío,
-    se usa la fecha actual como <code>periodStart</code> y
-    <code>periodEnd</code>. Debe completar <strong>ambos</strong>
-    extremos o <strong>ninguno</strong>.
+    Indique un <strong>período</strong> (opcional) para obtener el conteo de
+    docentes con contratos vigentes en cada sector. Si lo deja vacío, se usa la
+    fecha actual como <code>periodStart</code> y <code>periodEnd</code>. Debe
+    completar <strong>ambos</strong> extremos o <strong>ninguno</strong>.
   </p>
 
   <form
@@ -35,8 +34,8 @@
           aria-describedby="sector-period-help"
         />
         <small id="sector-period-help" class="sector-help">
-          Debe enviarse junto con el inicio. Si deja uno solo, la consulta
-          se bloquea hasta completar ambos campos (o vaciarlos).
+          Debe enviarse junto con el inicio. Si deja uno solo, la consulta se
+          bloquea hasta completar ambos campos (o vaciarlos).
         </small>
       </label>
     </fieldset>
@@ -95,7 +94,10 @@
           <ul class="sector-error-fields">
             @for (entry of errorFields(); track entry.field) {
               @for (msg of entry.messages; track msg) {
-                <li><code>{{ entry.field }}</code>: {{ msg }}</li>
+                <li>
+                  <code>{{ entry.field }}</code
+                  >: {{ msg }}
+                </li>
               }
             }
           </ul>
@@ -117,14 +119,14 @@
         Período <strong>{{ data.periodStart }}</strong> a
         <strong>{{ data.periodEnd }}</strong>
         · Total <strong>{{ data.totalDistinctTeacherCount }}</strong>
-        {{ data.totalDistinctTeacherCount === 1 ? 'docente' : 'docentes' }}
+        {{ data.totalDistinctTeacherCount === 1 ? "docente" : "docentes" }}
       </p>
 
       <table class="sector-table">
         <caption class="visually-hidden">
-          Docentes distintos por sector. Dos sectores canónicos con
-          conteos exactos reportados por el backend (deduplicación por
-          teacherId delegada al backend).
+          Docentes distintos por sector. Dos sectores canónicos con conteos
+          exactos reportados por el backend (deduplicación por teacherId
+          delegada al backend).
         </caption>
         <thead>
           <tr>

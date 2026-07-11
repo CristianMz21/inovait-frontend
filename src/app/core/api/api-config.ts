@@ -1,4 +1,4 @@
-import { InjectionToken } from '@angular/core';
+import { InjectionToken } from "@angular/core";
 
 /**
  * Configuración base de la API consumida por los servicios HTTP.
@@ -8,8 +8,8 @@ export interface ApiConfig {
   readonly apiBaseUrl: string;
 }
 
-export const API_CONFIG = new InjectionToken<ApiConfig>('inovait.api.config');
+export const API_CONFIG = new InjectionToken<ApiConfig>("inovait.api.config");
 
 export const DEFAULT_API_CONFIG: ApiConfig = {
-  apiBaseUrl: 'http://localhost:5000',
+  apiBaseUrl: "http://localhost:5000",
 };

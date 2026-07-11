@@ -1,9 +1,9 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
-import type { Observable } from 'rxjs';
-import { map } from 'rxjs';
-import { API_CONFIG } from '../../core/api/api-config';
-import type { EnrollmentListItem } from '../../core/api/dtos/enrollment-list-item.dto';
+import { HttpClient, HttpParams } from "@angular/common/http";
+import { Injectable, inject } from "@angular/core";
+import type { Observable } from "rxjs";
+import { map } from "rxjs";
+import { API_CONFIG } from "../../core/api/api-config";
+import type { EnrollmentListItem } from "../../core/api/dtos/enrollment-list-item.dto";
 
 /**
  * Parámetros de la operación canónica `listEnrollments`. Los tres filtros
@@ -20,11 +20,11 @@ export interface ListEnrollmentsParams {
 
 function toHttpParams(params: ListEnrollmentsParams): HttpParams {
   let httpParams = new HttpParams()
-    .set('schoolId', String(params.schoolId))
-    .set('gradeId', String(params.gradeId))
-    .set('academicYearId', String(params.academicYearId));
+    .set("schoolId", String(params.schoolId))
+    .set("gradeId", String(params.gradeId))
+    .set("academicYearId", String(params.academicYearId));
   if (params.asOfDate) {
-    httpParams = httpParams.set('asOfDate', params.asOfDate);
+    httpParams = httpParams.set("asOfDate", params.asOfDate);
   }
   return httpParams;
 }
@@ -40,12 +40,14 @@ function toHttpParams(params: ListEnrollmentsParams): HttpParams {
  * `operationId` declarado en `paths/enrollments.yaml`. El manejo uniforme
  * de errores 4xx/5xx queda delegado al `problemDetailsInterceptor`.
  */
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class StudentSearchApiService {
   private readonly http = inject(HttpClient);
   private readonly config = inject(API_CONFIG);
 
-  list(params: ListEnrollmentsParams): Observable<readonly EnrollmentListItem[]> {
+  list(
+    params: ListEnrollmentsParams,
+  ): Observable<readonly EnrollmentListItem[]> {
     return this.http
       .get<readonly EnrollmentListItem[]>(
         `${this.config.apiBaseUrl}/api/enrollments`,

@@ -1,6 +1,6 @@
-import { Injectable, inject, signal } from '@angular/core';
-import type { Subscription } from 'rxjs';
-import { ApiProblemError } from '../../core/api/api-problem-error';
+import { Injectable, inject, signal } from "@angular/core";
+import type { Subscription } from "rxjs";
+import { ApiProblemError } from "../../core/api/api-problem-error";
 import {
   empty as emptyState,
   errorState,
@@ -8,19 +8,19 @@ import {
   loading,
   success,
   type RemoteState,
-} from '../../core/api/remote-state';
+} from "../../core/api/remote-state";
 import {
   enrollmentListItemToResult,
   studentSearchFiltersToParams,
-} from './student-search.mappers';
+} from "./student-search.mappers";
 import {
   StudentSearchApiService,
   type ListEnrollmentsParams,
-} from './student-search.api.service';
+} from "./student-search.api.service";
 import type {
   StudentSearchFiltersVm,
   StudentSearchResultVm,
-} from './student-search.vm';
+} from "./student-search.vm";
 
 /**
  * Fachada del ciclo de vida de la **Consulta de estudiantes** (US2).
@@ -45,9 +45,8 @@ import type {
 @Injectable()
 export class StudentSearchFacade {
   private readonly api = inject(StudentSearchApiService);
-  private readonly state = signal<
-    RemoteState<readonly StudentSearchResultVm[]>
-  >(idle());
+  private readonly state =
+    signal<RemoteState<readonly StudentSearchResultVm[]>>(idle());
   private subscription: Subscription | null = null;
   private sequence = 0;
 
@@ -90,7 +89,7 @@ export class StudentSearchFacade {
    */
   retry(): void {
     const current = this.state();
-    if (current.status !== 'error') {
+    if (current.status !== "error") {
       return;
     }
     const params = studentSearchFiltersToParams(this.filters());
@@ -129,7 +128,7 @@ export class StudentSearchFacade {
           return;
         }
         if (items.length === 0) {
-          this.state.set(emptyState('noResults'));
+          this.state.set(emptyState("noResults"));
           return;
         }
         this.state.set(success(items.map(enrollmentListItemToResult)));
@@ -142,9 +141,7 @@ export class StudentSearchFacade {
         if (!problem) {
           return;
         }
-        this.state.set(
-          errorState<readonly StudentSearchResultVm[]>(problem),
-        );
+        this.state.set(errorState<readonly StudentSearchResultVm[]>(problem));
       },
       complete: () => {
         // El backend cierra el observable tras la respuesta única; no
@@ -160,8 +157,6 @@ export class StudentSearchFacade {
    */
   private isStale(requestKey: string): boolean {
     const current = this.state();
-    return (
-      current.status !== 'loading' || current.requestKey !== requestKey
-    );
+    return current.status !== "loading" || current.requestKey !== requestKey;
   }
 }

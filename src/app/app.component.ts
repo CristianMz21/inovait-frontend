@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { ChangeDetectionStrategy, Component } from "@angular/core";
+import { RouterLink, RouterLinkActive, RouterOutlet } from "@angular/router";
 
 /**
  * Shell raíz de la aplicación. Provee navegación entre las tres rutas P0
@@ -8,10 +8,10 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
  * etiqueta accesible.
  */
 @Component({
-  selector: 'app-root',
+  selector: "app-root",
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, RouterLinkActive, RouterOutlet],
-  templateUrl: './app.component.html',
-  styleUrl: './app.component.scss',
+  templateUrl: "./app.component.html",
+  styleUrl: "./app.component.scss",
 })
 export class App {}

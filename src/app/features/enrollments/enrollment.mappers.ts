@@ -1,9 +1,9 @@
-import type { CreateEnrollmentRequest } from '../../core/api/dtos/create-enrollment-request.dto';
-import type { CreateEnrollmentResponse } from '../../core/api/dtos/create-enrollment-response.dto';
+import type { CreateEnrollmentRequest } from "../../core/api/dtos/create-enrollment-request.dto";
+import type { CreateEnrollmentResponse } from "../../core/api/dtos/create-enrollment-response.dto";
 import type {
   EnrollmentFormVm,
   EnrollmentResultVm,
-} from './enrollment-create.vm';
+} from "./enrollment-create.vm";
 
 /**
  * Convierte la vista del formulario a la `CreateEnrollmentRequest`
@@ -54,7 +54,7 @@ export function enrollmentResponseToResult(
     enrollmentId: dto.enrollmentId,
     studentId: dto.studentId,
     studentReused: dto.studentReused,
-    fullName: `${dto.firstNames} ${dto.lastNames}`.replace(/\s+/g, ' ').trim(),
+    fullName: `${dto.firstNames} ${dto.lastNames}`.replace(/\s+/g, " ").trim(),
     age: dto.age,
     schoolName: dto.school.name,
     academicYearName: dto.academicYear.name,

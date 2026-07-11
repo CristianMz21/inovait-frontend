@@ -1,8 +1,8 @@
 <section class="enrollment" aria-labelledby="enrollment-title">
   <h1 id="enrollment-title" tabindex="-1">Nueva matrícula</h1>
   <p class="enrollment-lede">
-    Complete los datos del estudiante y la cadena académica. Los selectores
-    se desbloquean en orden: primero <strong>Escuela</strong>, luego
+    Complete los datos del estudiante y la cadena académica. Los selectores se
+    desbloquean en orden: primero <strong>Escuela</strong>, luego
     <strong>Año</strong>, <strong>Grado</strong> y por último
     <strong>Grupo</strong>. Cambiar un nivel superior limpia los inferiores.
   </p>
@@ -30,7 +30,7 @@
         </div>
         <div>
           <dt>Identidad reutilizada</dt>
-          <dd>{{ success.studentReused ? 'Sí' : 'No' }}</dd>
+          <dd>{{ success.studentReused ? "Sí" : "No" }}</dd>
         </div>
         <div>
           <dt>Escuela</dt>
@@ -66,11 +66,7 @@
 
         <label class="enrollment-field">
           <span>Tipo de documento</span>
-          <select
-            formControlName="documentType"
-            required
-            aria-required="true"
-          >
+          <select formControlName="documentType" required aria-required="true">
             <option value="" disabled>Seleccione…</option>
             @for (opt of documentTypes; track opt.value) {
               <option [value]="opt.value">{{ opt.label }}</option>
@@ -131,11 +127,7 @@
 
         <label class="enrollment-field">
           <span>Escuela</span>
-          <select
-            formControlName="schoolId"
-            required
-            aria-required="true"
-          >
+          <select formControlName="schoolId" required aria-required="true">
             <option [ngValue]="null" disabled>Seleccione…</option>
             @for (opt of schoolOptions(); track opt.value) {
               <option [ngValue]="opt.value">{{ opt.label }}</option>
@@ -242,7 +234,10 @@
               <ul class="enrollment-error-fields">
                 @for (entry of errorFields(); track entry.field) {
                   @for (msg of entry.messages; track msg) {
-                    <li><code>{{ entry.field }}</code>: {{ msg }}</li>
+                    <li>
+                      <code>{{ entry.field }}</code
+                      >: {{ msg }}
+                    </li>
                   }
                 }
               </ul>

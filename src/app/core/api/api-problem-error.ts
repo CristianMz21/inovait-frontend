@@ -1,4 +1,4 @@
-import type { ApiProblem } from './dtos/api-problem.dto';
+import type { ApiProblem } from "./dtos/api-problem.dto";
 
 /**
  * Error uniforme que el `problemDetailsInterceptor` produce para todas
@@ -11,7 +11,7 @@ export class ApiProblemError extends Error {
 
   constructor(problem: ApiProblem) {
     super(problem.title);
-    this.name = 'ApiProblemError';
+    this.name = "ApiProblemError";
     this.problem = problem;
     this.status = problem.status;
   }

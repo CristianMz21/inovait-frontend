@@ -18,20 +18,20 @@
  * indicado y falla si algo no encaja. No modifica archivos.
  */
 
-import { createHash } from 'node:crypto';
-import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, statSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { createHash } from "node:crypto";
+import { execFileSync } from "node:child_process";
+import { existsSync, readFileSync, statSync } from "node:fs";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = resolve(__filename, '..');
-const FRONTEND_ROOT = resolve(__dirname, '..', '..', '..');
+const __dirname = resolve(__filename, "..");
+const FRONTEND_ROOT = resolve(__dirname, "..", "..", "..");
 
 // Baseline contractual autorizado en `docs/evaluator-execution.md`.
-const AUTHORIZED_COMMIT = '1223630ab99bf1bfaa4f5919fccf5ff539379c8e';
+const AUTHORIZED_COMMIT = "1223630ab99bf1bfaa4f5919fccf5ff539379c8e";
 const AUTHORIZED_CHECKSUM =
-  '802c13b91bf5c6425d24c540b6841a2abe134e084ea310fc2b7041e32c24a81a';
+  "802c13b91bf5c6425d24c540b6841a2abe134e084ea310fc2b7041e32c24a81a";
 
 // Sucesores aprobados explícitamente. Vacío por defecto; sólo se añaden
 // commits verificados manualmente por mantenimiento.
@@ -41,47 +41,47 @@ const APPROVED_SUCCESSORS = new Set([
 
 // Orden canónico declarado en `quickstart.md`.
 const CONTRACT_FILES = [
-  'openapi.yaml',
-  'paths/catalogs.yaml',
-  'paths/enrollments.yaml',
-  'paths/teacher-contracts.yaml',
-  'paths/reports.yaml',
-  'components/catalogs.yaml',
-  'components/enrollments.yaml',
-  'components/teacher-contracts.yaml',
-  'components/reports.yaml',
-  'components/problems.yaml',
+  "openapi.yaml",
+  "paths/catalogs.yaml",
+  "paths/enrollments.yaml",
+  "paths/teacher-contracts.yaml",
+  "paths/reports.yaml",
+  "components/catalogs.yaml",
+  "components/enrollments.yaml",
+  "components/teacher-contracts.yaml",
+  "components/reports.yaml",
+  "components/problems.yaml",
 ];
 
 // operationIds que la UI consume en runtime (P0 + esqueleto P1 para gate).
 // Los nombres canónicos viven en `paths/*.yaml` del directorio contractual.
 const REQUIRED_OPERATION_IDS = [
   // Catálogos
-  'listSchools',
-  'listGrades',
-  'listAcademicYears',
-  'listClassGroups',
-  'listTeachers',
-  'listSubjects',
-  'listTeachersBySchool',
+  "listSchools",
+  "listGrades",
+  "listAcademicYears",
+  "listClassGroups",
+  "listTeachers",
+  "listSubjects",
+  "listTeachersBySchool",
   // Matrículas
-  'createEnrollment',
-  'listEnrollments',
+  "createEnrollment",
+  "listEnrollments",
   // Contratos docentes
-  'createTeacherContracts',
-  'listTeacherContracts',
+  "createTeacherContracts",
+  "listTeacherContracts",
   // Reportes (P1, pero el contrato debe estar presente)
-  'getAgeDistribution',
-  'getDistinctTeacherCountsBySector',
-  'getTopSchoolsByEnrollment',
+  "getAgeDistribution",
+  "getDistinctTeacherCountsBySector",
+  "getTopSchoolsByEnrollment",
   // Historia (P1)
-  'getStudentHistory',
+  "getStudentHistory",
 ];
 
 class VerificationError extends Error {
   constructor(message) {
     super(message);
-    this.name = 'VerificationError';
+    this.name = "VerificationError";
   }
 }
 
@@ -102,14 +102,21 @@ function resolveContractsDir(arg) {
     return resolve(process.cwd(), arg);
   }
   // Default: ruta relativa esperada para esta feature.
-  return resolve(FRONTEND_ROOT, '..', 'inovait-backend', 'specs', '001-school-enrollment-management', 'contracts');
+  return resolve(
+    FRONTEND_ROOT,
+    "..",
+    "inovait-backend",
+    "specs",
+    "001-school-enrollment-management",
+    "contracts",
+  );
 }
 
 function git(cwd, args) {
-  return execFileSync('git', args, {
+  return execFileSync("git", args, {
     cwd,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe'],
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
   }).trim();
 }
 
@@ -122,8 +129,10 @@ function gitOrNull(cwd, args) {
 }
 
 function assertFilesTracked(contractsDir) {
-  logStep('Verificando que los 10 archivos contractuales están bajo seguimiento');
-  const repoRoot = resolve(contractsDir, '..', '..', '..');
+  logStep(
+    "Verificando que los 10 archivos contractuales están bajo seguimiento",
+  );
+  const repoRoot = resolve(contractsDir, "..", "..", "..");
   for (const rel of CONTRACT_FILES) {
     const absolute = resolve(contractsDir, rel);
     if (!existsSync(absolute)) {
@@ -132,9 +141,9 @@ function assertFilesTracked(contractsDir) {
       );
     }
     const tracked = gitOrNull(repoRoot, [
-      'ls-files',
-      '--error-unmatch',
-      '--',
+      "ls-files",
+      "--error-unmatch",
+      "--",
       `specs/001-school-enrollment-management/contracts/${rel}`,
     ]);
     if (tracked === null) {
@@ -147,44 +156,49 @@ function assertFilesTracked(contractsDir) {
 }
 
 function assertContractsClean(contractsDir) {
-  logStep('Verificando que el directorio contractual está limpio');
-  const repoRoot = resolve(contractsDir, '..', '..', '..');
-  const porcelain = git(repoRoot, ['status', '--porcelain', '--', 'specs/001-school-enrollment-management/contracts']);
+  logStep("Verificando que el directorio contractual está limpio");
+  const repoRoot = resolve(contractsDir, "..", "..", "..");
+  const porcelain = git(repoRoot, [
+    "status",
+    "--porcelain",
+    "--",
+    "specs/001-school-enrollment-management/contracts",
+  ]);
   if (porcelain.length > 0) {
     throw new VerificationError(
       `El directorio contractual tiene cambios sin commit:\n${porcelain}`,
     );
   }
-  logOk('Directorio contractual limpio');
+  logOk("Directorio contractual limpio");
 }
 
 function assertAuthorizedCommit(contractsDir) {
-  logStep('Verificando commit autorizado o sucesor aprobado');
-  const repoRoot = resolve(contractsDir, '..', '..', '..');
-  const head = git(repoRoot, ['rev-parse', 'HEAD']);
+  logStep("Verificando commit autorizado o sucesor aprobado");
+  const repoRoot = resolve(contractsDir, "..", "..", "..");
+  const head = git(repoRoot, ["rev-parse", "HEAD"]);
   if (head !== AUTHORIZED_COMMIT && !APPROVED_SUCCESSORS.has(head)) {
     throw new VerificationError(
       `HEAD no autorizado: ${head}. ` +
         `Autorizado: ${AUTHORIZED_COMMIT}. ` +
-        `Aprobados: ${[...APPROVED_SUCCESSORS].join(', ') || '(ninguno)'}`,
+        `Aprobados: ${[...APPROVED_SUCCESSORS].join(", ") || "(ninguno)"}`,
     );
   }
   logOk(`Commit autorizado: ${head}`);
 }
 
 function computeChecksum(contractsDir) {
-  const sha = createHash('sha256');
+  const sha = createHash("sha256");
   for (const rel of CONTRACT_FILES) {
     const absolute = resolve(contractsDir, rel);
     const buffer = readFileSync(absolute);
-    const fileHash = createHash('sha256').update(buffer).digest('hex');
+    const fileHash = createHash("sha256").update(buffer).digest("hex");
     sha.update(fileHash);
   }
-  return sha.digest('hex');
+  return sha.digest("hex");
 }
 
 function assertChecksum(contractsDir) {
-  logStep('Verificando checksum combinado (orden canónico)');
+  logStep("Verificando checksum combinado (orden canónico)");
   const observed = computeChecksum(contractsDir);
   if (observed !== AUTHORIZED_CHECKSUM) {
     throw new VerificationError(
@@ -201,14 +215,14 @@ function extractOperationIds(contractsDir) {
   // no de `openapi.yaml` (que solo referencia paths/componentes sin inlinearlos).
   // No usamos un parser YAML para mantener el script 100% Node estándar
   // y sin dependencias de runtime.
-  const pathsDir = resolve(contractsDir, 'paths');
+  const pathsDir = resolve(contractsDir, "paths");
   const declared = new Set();
   for (const rel of CONTRACT_FILES) {
-    if (!rel.startsWith('paths/') || !rel.endsWith('.yaml')) {
+    if (!rel.startsWith("paths/") || !rel.endsWith(".yaml")) {
       continue;
     }
     const absolute = resolve(contractsDir, rel);
-    const source = readFileSync(absolute, 'utf8');
+    const source = readFileSync(absolute, "utf8");
     const matches = source.matchAll(/operationId:\s*([A-Za-z0-9_]+)/g);
     for (const match of matches) {
       declared.add(match[1]);
@@ -218,17 +232,15 @@ function extractOperationIds(contractsDir) {
 }
 
 function assertOperationIds(contractsDir) {
-  logStep('Verificando operationIds canónicos en paths/*.yaml');
+  logStep("Verificando operationIds canónicos en paths/*.yaml");
   const declared = extractOperationIds(contractsDir);
   const missing = REQUIRED_OPERATION_IDS.filter((id) => !declared.has(id));
   if (missing.length > 0) {
     throw new VerificationError(
-      `Faltan operationIds en paths/*.yaml: ${missing.join(', ')}`,
+      `Faltan operationIds en paths/*.yaml: ${missing.join(", ")}`,
     );
   }
-  logOk(
-    `${REQUIRED_OPERATION_IDS.length} operationIds canónicos presentes`,
-  );
+  logOk(`${REQUIRED_OPERATION_IDS.length} operationIds canónicos presentes`);
 }
 
 function assertContractsDirIsDirectory(contractsDir) {
@@ -261,7 +273,7 @@ function main() {
   assertChecksum(contractsDir);
   assertOperationIds(contractsDir);
 
-  process.stdout.write('\nContrato verificado correctamente.\n');
+  process.stdout.write("\nContrato verificado correctamente.\n");
 }
 
 try {

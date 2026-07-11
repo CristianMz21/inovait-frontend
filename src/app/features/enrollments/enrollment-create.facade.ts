@@ -1,17 +1,23 @@
-import { Injectable, inject, signal } from '@angular/core';
-import type { Subscription } from 'rxjs';
-import { ApiProblemError } from '../../core/api/api-problem-error';
-import type { CreateEnrollmentRequest } from '../../core/api/dtos/create-enrollment-request.dto';
+import { Injectable, inject, signal } from "@angular/core";
+import type { Subscription } from "rxjs";
+import { ApiProblemError } from "../../core/api/api-problem-error";
+import type { CreateEnrollmentRequest } from "../../core/api/dtos/create-enrollment-request.dto";
 import {
   type RemoteState,
   errorState,
   idle,
   loading,
   success,
-} from '../../core/api/remote-state';
-import { enrollmentFormToRequest, enrollmentResponseToResult } from './enrollment.mappers';
-import type { EnrollmentFormVm, EnrollmentResultVm } from './enrollment-create.vm';
-import { EnrollmentApiService } from './enrollment.api.service';
+} from "../../core/api/remote-state";
+import {
+  enrollmentFormToRequest,
+  enrollmentResponseToResult,
+} from "./enrollment.mappers";
+import type {
+  EnrollmentFormVm,
+  EnrollmentResultVm,
+} from "./enrollment-create.vm";
+import { EnrollmentApiService } from "./enrollment.api.service";
 
 /**
  * Fachada del ciclo de vida de la creación de matrícula.
@@ -71,7 +77,7 @@ export class EnrollmentCreateFacade {
    */
   retry(form: EnrollmentFormVm): void {
     const current = this.state();
-    if (current.status !== 'error') {
+    if (current.status !== "error") {
       return;
     }
     this.submit(form);
@@ -125,8 +131,6 @@ export class EnrollmentCreateFacade {
    */
   private isStale(requestKey: string): boolean {
     const current = this.state();
-    return (
-      current.status !== 'loading' || current.requestKey !== requestKey
-    );
+    return current.status !== "loading" || current.requestKey !== requestKey;
   }
 }

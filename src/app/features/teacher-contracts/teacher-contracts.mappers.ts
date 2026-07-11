@@ -1,9 +1,9 @@
-import type { CreateTeacherContractsRequest } from '../../core/api/dtos/create-teacher-contracts-request.dto';
-import type { TeacherContractResponse } from '../../core/api/dtos/teacher-contract-response.dto';
+import type { CreateTeacherContractsRequest } from "../../core/api/dtos/create-teacher-contracts-request.dto";
+import type { TeacherContractResponse } from "../../core/api/dtos/teacher-contract-response.dto";
 import type {
   TeacherContractResultVm,
   TeacherContractsFormVm,
-} from './teacher-contracts.vm';
+} from "./teacher-contracts.vm";
 
 /**
  * Determina si el formulario de contratos es submittable.
@@ -89,7 +89,7 @@ export function teacherContractResponseToResult(
     teacherId: dto.teacherId,
     schoolId: dto.school.id,
     schoolName: dto.school.name,
-    schoolSector: dto.school.sector === 'Public' ? 'Público' : 'Privado',
+    schoolSector: dto.school.sector === "Public" ? "Público" : "Privado",
     startDate: dto.startDate,
     endDate: dto.endDate,
     persistedStatus: dto.persistedStatus,

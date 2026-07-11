@@ -10,7 +10,9 @@
             [attr.aria-current]="isActive(section.id) ? 'location' : null"
           >
             <span class="reports-shell-link-label">{{ section.label }}</span>
-            <span class="reports-shell-link-summary">{{ section.summary }}</span>
+            <span class="reports-shell-link-summary">{{
+              section.summary
+            }}</span>
           </a>
         </li>
       }

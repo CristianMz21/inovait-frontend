@@ -1,11 +1,11 @@
 <section class="top" aria-labelledby="top-title">
   <h1 id="top-title" tabindex="-1">Escuelas líderes por matrícula</h1>
   <p id="top-lede" class="top-lede">
-    Seleccione el <strong>año académico</strong> para obtener las escuelas
-    con mayor cantidad de inscripciones del año. Cuando hay empates en
-    el conteo máximo, se muestran <strong>todas</strong> las escuelas
-    empatadas, en el orden que devuelve el backend (por
-    <code>school.name</code> y luego <code>school.id</code>).
+    Seleccione el <strong>año académico</strong> para obtener las escuelas con
+    mayor cantidad de inscripciones del año. Cuando hay empates en el conteo
+    máximo, se muestran <strong>todas</strong> las escuelas empatadas, en el
+    orden que devuelve el backend (por <code>school.name</code> y luego
+    <code>school.id</code>).
   </p>
 
   <form
@@ -20,11 +20,7 @@
 
       <label class="top-field">
         <span>Año académico</span>
-        <select
-          formControlName="academicYearId"
-          required
-          aria-required="true"
-        >
+        <select formControlName="academicYearId" required aria-required="true">
           <option [ngValue]="null" disabled>Seleccione…</option>
           @for (opt of academicYearOptions(); track opt.value) {
             <option [ngValue]="opt.value">{{ opt.label }}</option>
@@ -87,7 +83,10 @@
           <ul class="top-error-fields">
             @for (entry of errorFields(); track entry.field) {
               @for (msg of entry.messages; track msg) {
-                <li><code>{{ entry.field }}</code>: {{ msg }}</li>
+                <li>
+                  <code>{{ entry.field }}</code
+                  >: {{ msg }}
+                </li>
               }
             }
           </ul>
@@ -105,8 +104,8 @@
       data-testid="top-empty"
     >
       <p>
-        El año académico seleccionado no tiene inscripciones. No hay
-        escuelas líderes para mostrar.
+        El año académico seleccionado no tiene inscripciones. No hay escuelas
+        líderes para mostrar.
       </p>
       <button type="button" (click)="onRetry()">Reintentar</button>
     </div>
@@ -121,9 +120,9 @@
     >
       <h2 id="top-results-title">Escuelas líderes</h2>
       <p class="top-context" role="status" aria-live="polite">
-        Año académico <strong>{{ data.academicYearId }}</strong>
-        · {{ data.schools.length }}
-        {{ data.schools.length === 1 ? 'escuela líder' : 'escuelas líderes' }}
+        Año académico <strong>{{ data.academicYearId }}</strong> ·
+        {{ data.schools.length }}
+        {{ data.schools.length === 1 ? "escuela líder" : "escuelas líderes" }}
         @if (data.schools.length > 0) {
           · {{ data.schools[0]?.enrollmentCount }} inscripciones por escuela
         }
@@ -131,10 +130,10 @@
 
       <table class="top-table">
         <caption class="visually-hidden">
-          Escuelas líderes por matrícula. Lista en el orden estable del
-          backend (por school.name ascendente y luego school.id). Los
-          empates en el enrollmentCount máximo se conservan como
-          múltiples filas del mismo conteo.
+          Escuelas líderes por matrícula. Lista en el orden estable del backend
+          (por school.name ascendente y luego school.id). Los empates en el
+          enrollmentCount máximo se conservan como múltiples filas del mismo
+          conteo.
         </caption>
         <thead>
           <tr>

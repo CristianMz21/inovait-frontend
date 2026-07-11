@@ -5,24 +5,24 @@ import {
   computed,
   inject,
   type OnInit,
-} from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+} from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import {
   type FormControl,
   FormGroup,
   NonNullableFormBuilder,
   ReactiveFormsModule,
   Validators,
-} from '@angular/forms';
-import { CatalogFacade } from '../../core/catalogs/catalog.facade';
-import type { RemoteState } from '../../core/api/remote-state';
-import { StudentSearchFacade } from './student-search.facade';
-import { studentSearchFiltersToParams } from './student-search.mappers';
+} from "@angular/forms";
+import { CatalogFacade } from "../../core/catalogs/catalog.facade";
+import type { RemoteState } from "../../core/api/remote-state";
+import { StudentSearchFacade } from "./student-search.facade";
+import { studentSearchFiltersToParams } from "./student-search.mappers";
 import type {
   StudentSearchFieldVm,
   StudentSearchFiltersVm,
   StudentSearchResultVm,
-} from './student-search.vm';
+} from "./student-search.vm";
 
 interface StudentSearchFormShape {
   schoolId: FormControl<number | null>;
@@ -56,12 +56,12 @@ type StudentSearchFormGroup = FormGroup<StudentSearchFormShape>;
  * para mantener paridad con el plan técnico acordado.
  */
 @Component({
-  selector: 'app-student-search',
+  selector: "app-student-search",
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule],
   providers: [StudentSearchFacade],
-  templateUrl: './student-search.component.html',
-  styleUrl: './student-search.component.scss',
+  templateUrl: "./student-search.component.html",
+  styleUrl: "./student-search.component.scss",
 })
 export class StudentSearchComponent implements OnInit {
   private readonly fb = inject(NonNullableFormBuilder);
@@ -75,15 +75,13 @@ export class StudentSearchComponent implements OnInit {
     schoolId: this.fb.control<number | null>(null, [Validators.required]),
     gradeId: this.fb.control<number | null>(null, [Validators.required]),
     academicYearId: this.fb.control<number | null>(null, [Validators.required]),
-    asOfDate: this.fb.control('', [
-      Validators.pattern(/^\d{4}-\d{2}-\d{2}$/),
-    ]),
+    asOfDate: this.fb.control("", [Validators.pattern(/^\d{4}-\d{2}-\d{2}$/)]),
   });
 
   readonly schoolOptions = computed(() =>
     this.mapOptions(this.catalog.schoolsState(), (school) => ({
       value: school.id,
-      label: `${school.name} · ${school.sector === 'Public' ? 'Público' : 'Privado'}`,
+      label: `${school.name} · ${school.sector === "Public" ? "Público" : "Privado"}`,
     })),
   );
   readonly gradeOptions = computed(() =>
@@ -102,18 +100,18 @@ export class StudentSearchComponent implements OnInit {
   readonly successData = computed<readonly StudentSearchResultVm[] | null>(
     () => {
       const state = this.result();
-      return state.status === 'success' ? state.data : null;
+      return state.status === "success" ? state.data : null;
     },
   );
 
-  readonly isLoading = computed(() => this.result().status === 'loading');
-  readonly isSuccess = computed(() => this.result().status === 'success');
-  readonly isEmpty = computed(() => this.result().status === 'empty');
-  readonly hasError = computed(() => this.result().status === 'error');
+  readonly isLoading = computed(() => this.result().status === "loading");
+  readonly isSuccess = computed(() => this.result().status === "success");
+  readonly isEmpty = computed(() => this.result().status === "empty");
+  readonly hasError = computed(() => this.result().status === "error");
 
   readonly errorProblem = computed(() => {
     const state = this.result();
-    return state.status === 'error' ? state.problem : null;
+    return state.status === "error" ? state.problem : null;
   });
 
   readonly errorFields = computed(() => {
@@ -160,7 +158,7 @@ export class StudentSearchComponent implements OnInit {
       schoolId: null,
       gradeId: null,
       academicYearId: null,
-      asOfDate: '',
+      asOfDate: "",
     });
   }
 
@@ -180,7 +178,7 @@ export class StudentSearchComponent implements OnInit {
     state: RemoteState<readonly T[]>,
     project: (item: T) => StudentSearchFieldVm<TValue>,
   ): readonly StudentSearchFieldVm<TValue>[] {
-    if (state.status === 'success') {
+    if (state.status === "success") {
       return state.data.map(project);
     }
     return [];

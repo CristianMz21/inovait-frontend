@@ -1,7 +1,10 @@
-import type { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
-import { catchError, throwError } from 'rxjs';
-import { ApiProblemError } from './api-problem-error';
-import { toApiProblem } from './to-api-problem';
+import type {
+  HttpErrorResponse,
+  HttpInterceptorFn,
+} from "@angular/common/http";
+import { catchError, throwError } from "rxjs";
+import { ApiProblemError } from "./api-problem-error";
+import { toApiProblem } from "./to-api-problem";
 
 /**
  * Interceptor funcional que normaliza respuestas 4xx/5xx a `ApiProblemError`.
@@ -18,7 +21,7 @@ export const problemDetailsInterceptor: HttpInterceptorFn = (req, next) =>
         return throwError(() => error);
       }
       const httpError = error as HttpErrorResponse;
-      if (httpError && typeof httpError.status === 'number') {
+      if (httpError && typeof httpError.status === "number") {
         return throwError(() => new ApiProblemError(toApiProblem(httpError)));
       }
       return throwError(() => error);

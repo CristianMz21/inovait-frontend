@@ -1,8 +1,8 @@
-import type { EnrollmentListItem } from '../../core/api/dtos/enrollment-list-item.dto';
+import type { EnrollmentListItem } from "../../core/api/dtos/enrollment-list-item.dto";
 import type {
   StudentSearchFiltersVm,
   StudentSearchResultVm,
-} from './student-search.vm';
+} from "./student-search.vm";
 
 /**
  * Determina si los filtros académicos están completos y la consulta puede
@@ -13,9 +13,7 @@ export function studentSearchFiltersAreComplete(
   vm: StudentSearchFiltersVm,
 ): boolean {
   return (
-    vm.schoolId !== null &&
-    vm.gradeId !== null &&
-    vm.academicYearId !== null
+    vm.schoolId !== null && vm.gradeId !== null && vm.academicYearId !== null
   );
 }
 
@@ -28,9 +26,7 @@ export function studentSearchFiltersAreComplete(
  * explícitamente: omitirlo deja al backend usar la fecha actual para el
  * cálculo de edad canónica.
  */
-export function studentSearchFiltersToParams(
-  vm: StudentSearchFiltersVm,
-): {
+export function studentSearchFiltersToParams(vm: StudentSearchFiltersVm): {
   schoolId: number;
   gradeId: number;
   academicYearId: number;
@@ -71,12 +67,12 @@ export function enrollmentListItemToResult(
     documentType: item.documentType,
     documentNumber: item.documentNumber,
     fullName: `${item.firstNames} ${item.lastNames}`
-      .replace(/\s+/g, ' ')
+      .replace(/\s+/g, " ")
       .trim(),
     birthDate: item.birthDate,
     age: item.age,
     schoolName: item.school.name,
-    schoolSector: item.school.sector === 'Public' ? 'Público' : 'Privado',
+    schoolSector: item.school.sector === "Public" ? "Público" : "Privado",
     academicYearName: item.academicYear.name,
     gradeName: item.grade.name,
     classGroupCode: item.classGroup.code,

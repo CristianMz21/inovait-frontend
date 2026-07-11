@@ -2,8 +2,8 @@
   <h1 id="age-title" tabindex="-1">Distribución por edad</h1>
   <p id="age-lede" class="age-lede">
     Seleccione el <strong>año académico</strong> para obtener el conteo de
-    inscripciones distribuidas en tres rangos etarios. Puede acotar la
-    consulta por <strong>escuela</strong>, <strong>grado</strong> o
+    inscripciones distribuidas en tres rangos etarios. Puede acotar la consulta
+    por <strong>escuela</strong>, <strong>grado</strong> o
     <strong>fecha de referencia</strong>.
   </p>
 
@@ -19,11 +19,7 @@
 
       <label class="age-field">
         <span>Año académico</span>
-        <select
-          formControlName="academicYearId"
-          required
-          aria-required="true"
-        >
+        <select formControlName="academicYearId" required aria-required="true">
           <option [ngValue]="null" disabled>Seleccione…</option>
           @for (opt of academicYearOptions(); track opt.value) {
             <option [ngValue]="opt.value">{{ opt.label }}</option>
@@ -118,7 +114,10 @@
           <ul class="age-error-fields">
             @for (entry of errorFields(); track entry.field) {
               @for (msg of entry.messages; track msg) {
-                <li><code>{{ entry.field }}</code>: {{ msg }}</li>
+                <li>
+                  <code>{{ entry.field }}</code
+                  >: {{ msg }}
+                </li>
               }
             }
           </ul>
@@ -137,10 +136,10 @@
     >
       <h2 id="age-results-title">Distribución por edad</h2>
       <p class="age-context" role="status" aria-live="polite">
-        Año académico <strong>{{ data.academicYearId }}</strong>
-        · Fecha de referencia <strong>{{ data.asOfDate }}</strong>
-        · Total <strong>{{ data.totalCount }}</strong>
-        {{ data.totalCount === 1 ? 'inscripción' : 'inscripciones' }}
+        Año académico <strong>{{ data.academicYearId }}</strong> · Fecha de
+        referencia <strong>{{ data.asOfDate }}</strong> · Total
+        <strong>{{ data.totalCount }}</strong>
+        {{ data.totalCount === 1 ? "inscripción" : "inscripciones" }}
       </p>
 
       <table class="age-table">

@@ -65,7 +65,7 @@ export interface EnrollmentHistoryItemVm {
   readonly academicYearIsCurrent: boolean;
   readonly schoolId: number;
   readonly schoolName: string;
-  readonly schoolSector: 'Public' | 'Private';
+  readonly schoolSector: "Public" | "Private";
   readonly schoolSectorLabel: string;
   readonly gradeId: number;
   readonly gradeName: string;
@@ -86,17 +86,19 @@ export interface StudentHistoryVm {
 
 /** Etiquetas legibles por día ISO (1 = lunes ... 7 = domingo). */
 export const WEEKDAY_LABELS: Readonly<Record<number, string>> = {
-  1: 'Lunes',
-  2: 'Martes',
-  3: 'Miércoles',
-  4: 'Jueves',
-  5: 'Viernes',
-  6: 'Sábado',
-  7: 'Domingo',
+  1: "Lunes",
+  2: "Martes",
+  3: "Miércoles",
+  4: "Jueves",
+  5: "Viernes",
+  6: "Sábado",
+  7: "Domingo",
 };
 
 /** Etiqueta del sector (`Public` → "Público", `Private` → "Privado"). */
-export const SCHOOL_SECTOR_LABELS: Readonly<Record<'Public' | 'Private', string>> = {
-  Public: 'Público',
-  Private: 'Privado',
+export const SCHOOL_SECTOR_LABELS: Readonly<
+  Record<"Public" | "Private", string>
+> = {
+  Public: "Público",
+  Private: "Privado",
 };

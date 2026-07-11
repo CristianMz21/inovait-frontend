@@ -1,9 +1,9 @@
 <section class="search" aria-labelledby="search-title">
   <h1 id="search-title" tabindex="-1">Consulta de estudiantes</h1>
   <p class="search-lede">
-    Seleccione la combinación <strong>Escuela</strong>,
-    <strong>Grado</strong> y <strong>Año académico</strong> para listar las
-    inscripciones vigentes. La fecha de referencia para la edad es opcional.
+    Seleccione la combinación <strong>Escuela</strong>, <strong>Grado</strong> y
+    <strong>Año académico</strong> para listar las inscripciones vigentes. La
+    fecha de referencia para la edad es opcional.
   </p>
 
   <form
@@ -18,11 +18,7 @@
 
       <label class="search-field">
         <span>Escuela</span>
-        <select
-          formControlName="schoolId"
-          required
-          aria-required="true"
-        >
+        <select formControlName="schoolId" required aria-required="true">
           <option [ngValue]="null" disabled>Seleccione…</option>
           @for (opt of schoolOptions(); track opt.value) {
             <option [ngValue]="opt.value">{{ opt.label }}</option>
@@ -32,11 +28,7 @@
 
       <label class="search-field">
         <span>Grado</span>
-        <select
-          formControlName="gradeId"
-          required
-          aria-required="true"
-        >
+        <select formControlName="gradeId" required aria-required="true">
           <option [ngValue]="null" disabled>Seleccione…</option>
           @for (opt of gradeOptions(); track opt.value) {
             <option [ngValue]="opt.value">{{ opt.label }}</option>
@@ -46,11 +38,7 @@
 
       <label class="search-field">
         <span>Año académico</span>
-        <select
-          formControlName="academicYearId"
-          required
-          aria-required="true"
-        >
+        <select formControlName="academicYearId" required aria-required="true">
           <option [ngValue]="null" disabled>Seleccione…</option>
           @for (opt of academicYearOptions(); track opt.value) {
             <option [ngValue]="opt.value">{{ opt.label }}</option>
@@ -125,7 +113,10 @@
           <ul class="search-error-fields">
             @for (entry of errorFields(); track entry.field) {
               @for (msg of entry.messages; track msg) {
-                <li><code>{{ entry.field }}</code>: {{ msg }}</li>
+                <li>
+                  <code>{{ entry.field }}</code
+                  >: {{ msg }}
+                </li>
               }
             }
           </ul>
@@ -160,12 +151,12 @@
       <h2 id="results-title">Inscripciones encontradas</h2>
       <p class="search-count" aria-live="polite">
         {{ rows.length }}
-        {{ rows.length === 1 ? 'inscripción' : 'inscripciones' }}
+        {{ rows.length === 1 ? "inscripción" : "inscripciones" }}
       </p>
       <table class="search-table">
         <caption class="visually-hidden">
-          Inscripciones resultantes de la búsqueda. El orden refleja el
-          devuelto por el backend.
+          Inscripciones resultantes de la búsqueda. El orden refleja el devuelto
+          por el backend.
         </caption>
         <thead>
           <tr>

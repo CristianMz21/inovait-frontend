@@ -12,7 +12,7 @@
  */
 
 /** Tipos de documento aceptados por la UI. Limitado a los valores del contrato. */
-export type EnrollmentDocumentType = 'DNI' | 'PAS' | 'CE';
+export type EnrollmentDocumentType = "DNI" | "PAS" | "CE";
 
 export interface EnrollmentFormVm {
   readonly documentType: string;

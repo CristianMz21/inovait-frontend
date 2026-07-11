@@ -1,27 +1,27 @@
-import { Injectable, inject, signal } from '@angular/core';
-import type { Observable } from 'rxjs';
-import { Subscription } from 'rxjs';
-import { ApiProblemError } from '../api/api-problem-error';
-import type { AcademicYearSummary } from '../api/dtos/academic-year-summary.dto';
-import type { ClassGroupSummary } from '../api/dtos/class-group-summary.dto';
-import type { GradeSummary } from '../api/dtos/grade-summary.dto';
-import type { SchoolSummary } from '../api/dtos/school-summary.dto';
-import type { SubjectSummary } from '../api/dtos/subject-summary.dto';
-import type { TeacherSummary } from '../api/dtos/teacher-summary.dto';
-import type { RemoteState } from '../api/remote-state';
-import {
-  empty,
-  errorState,
-  idle,
-  loading,
-  success,
-} from '../api/remote-state';
+import { Injectable, inject, signal } from "@angular/core";
+import type { Observable } from "rxjs";
+import { Subscription } from "rxjs";
+import { ApiProblemError } from "../api/api-problem-error";
+import type { AcademicYearSummary } from "../api/dtos/academic-year-summary.dto";
+import type { ClassGroupSummary } from "../api/dtos/class-group-summary.dto";
+import type { GradeSummary } from "../api/dtos/grade-summary.dto";
+import type { SchoolSummary } from "../api/dtos/school-summary.dto";
+import type { SubjectSummary } from "../api/dtos/subject-summary.dto";
+import type { TeacherSummary } from "../api/dtos/teacher-summary.dto";
+import type { RemoteState } from "../api/remote-state";
+import { empty, errorState, idle, loading, success } from "../api/remote-state";
 import {
   CatalogApiService,
   type ListClassGroupsParams,
-} from './catalog-api.service';
+} from "./catalog-api.service";
 
-type Slot = 'schools' | 'grades' | 'academicYears' | 'classGroups' | 'teachers' | 'subjects';
+type Slot =
+  | "schools"
+  | "grades"
+  | "academicYears"
+  | "classGroups"
+  | "teachers"
+  | "subjects";
 
 interface SlotBinding<T> {
   state: ReturnType<typeof signal<RemoteState<T>>>;
@@ -45,7 +45,7 @@ function nextRequestKey(slot: Slot, sequence: number): string {
  * - Expone el estado vía Signals para que los componentes P0 reaccionen
  *   sin necesidad de suscribirse manualmente.
  */
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class CatalogFacade {
   private readonly api = inject(CatalogApiService);
 
@@ -61,11 +61,12 @@ export class CatalogFacade {
     sequence: 0,
   };
 
-  private readonly academicYears: SlotBinding<readonly AcademicYearSummary[]> = {
-    state: signal(idle()),
-    subscription: null,
-    sequence: 0,
-  };
+  private readonly academicYears: SlotBinding<readonly AcademicYearSummary[]> =
+    {
+      state: signal(idle()),
+      subscription: null,
+      sequence: 0,
+    };
 
   private readonly classGroups: SlotBinding<readonly ClassGroupSummary[]> = {
     state: signal(idle()),
@@ -95,7 +96,7 @@ export class CatalogFacade {
   loadSchools(): void {
     this.dispatch<readonly SchoolSummary[]>(
       this.schools,
-      'schools',
+      "schools",
       this.api.listSchools(),
     );
   }
@@ -103,7 +104,7 @@ export class CatalogFacade {
   loadGrades(): void {
     this.dispatch<readonly GradeSummary[]>(
       this.grades,
-      'grades',
+      "grades",
       this.api.listGrades(),
     );
   }
@@ -111,7 +112,7 @@ export class CatalogFacade {
   loadAcademicYears(): void {
     this.dispatch<readonly AcademicYearSummary[]>(
       this.academicYears,
-      'academicYears',
+      "academicYears",
       this.api.listAcademicYears(),
     );
   }
@@ -119,7 +120,7 @@ export class CatalogFacade {
   loadClassGroups(params?: ListClassGroupsParams): void {
     this.dispatch<readonly ClassGroupSummary[]>(
       this.classGroups,
-      'classGroups',
+      "classGroups",
       this.api.listClassGroups(params),
     );
   }
@@ -127,7 +128,7 @@ export class CatalogFacade {
   loadTeachers(): void {
     this.dispatch<readonly TeacherSummary[]>(
       this.teachers,
-      'teachers',
+      "teachers",
       this.api.listTeachers(),
     );
   }
@@ -135,7 +136,7 @@ export class CatalogFacade {
   loadSubjects(): void {
     this.dispatch<readonly SubjectSummary[]>(
       this.subjects,
-      'subjects',
+      "subjects",
       this.api.listSubjects(),
     );
   }
@@ -144,7 +145,7 @@ export class CatalogFacade {
    * Cancela manualmente la suscripción del slot (si existe) y vuelve el
    * estado a `idle`. Útil cuando una vista se destruye antes de tiempo.
    */
-  cancel(slot: 'classGroups' | 'teachers' | 'subjects'): void {
+  cancel(slot: "classGroups" | "teachers" | "subjects"): void {
     const binding = this.resolveSlot(slot);
     binding.subscription?.unsubscribe();
     binding.subscription = null;
@@ -166,22 +167,21 @@ export class CatalogFacade {
         // Descarte de respuesta obsoleta: si la secuencia cambió,
         // esta respuesta ya no corresponde al estado actual.
         const current = binding.state();
-        if (current.status !== 'loading' || current.requestKey !== requestKey) {
+        if (current.status !== "loading" || current.requestKey !== requestKey) {
           return;
         }
         if (Array.isArray(data) && data.length === 0) {
-          binding.state.set(empty<T>('noResults'));
+          binding.state.set(empty<T>("noResults"));
         } else {
           binding.state.set(success(data));
         }
       },
       error: (err: unknown) => {
         const current = binding.state();
-        if (current.status !== 'loading' || current.requestKey !== requestKey) {
+        if (current.status !== "loading" || current.requestKey !== requestKey) {
           return;
         }
-        const problem =
-          err instanceof ApiProblemError ? err.problem : null;
+        const problem = err instanceof ApiProblemError ? err.problem : null;
         if (problem) {
           binding.state.set(errorState<T>(problem));
         }
@@ -190,14 +190,17 @@ export class CatalogFacade {
   }
 
   private resolveSlot(
-    slot: 'classGroups' | 'teachers' | 'subjects',
-  ): SlotBinding<readonly ClassGroupSummary[]> | SlotBinding<readonly TeacherSummary[]> | SlotBinding<readonly SubjectSummary[]> {
+    slot: "classGroups" | "teachers" | "subjects",
+  ):
+    | SlotBinding<readonly ClassGroupSummary[]>
+    | SlotBinding<readonly TeacherSummary[]>
+    | SlotBinding<readonly SubjectSummary[]> {
     switch (slot) {
-      case 'classGroups':
+      case "classGroups":
         return this.classGroups;
-      case 'teachers':
+      case "teachers":
         return this.teachers;
-      case 'subjects':
+      case "subjects":
         return this.subjects;
     }
   }

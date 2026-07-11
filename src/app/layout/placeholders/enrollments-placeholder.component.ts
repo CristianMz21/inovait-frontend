@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from "@angular/core";
 
 @Component({
-  selector: 'app-enrollments-placeholder',
+  selector: "app-enrollments-placeholder",
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="route-placeholder" aria-labelledby="route-title">

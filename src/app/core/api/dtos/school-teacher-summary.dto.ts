@@ -1,11 +1,8 @@
-import type { TeacherSummary } from './teacher-summary.dto';
+import type { TeacherSummary } from "./teacher-summary.dto";
 
-export type TeacherContractPersistedStatus = 'Confirmed' | 'Cancelled';
+export type TeacherContractPersistedStatus = "Confirmed" | "Cancelled";
 export type TeacherContractEffectiveStatus =
-  | 'Upcoming'
-  | 'Effective'
-  | 'Expired'
-  | 'Cancelled';
+  "Upcoming" | "Effective" | "Expired" | "Cancelled";
 
 export interface SchoolTeacherSummary {
   readonly teacher: TeacherSummary;

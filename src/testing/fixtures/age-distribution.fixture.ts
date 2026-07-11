@@ -1,7 +1,7 @@
 import type {
   AgeBandResponse,
   AgeDistributionResponseDto,
-} from '../../app/core/api/dtos/age-distribution.dto';
+} from "../../app/core/api/dtos/age-distribution.dto";
 
 /**
  * Fixture "happy" de `AgeDistributionResponseDto` cuando el backend
@@ -13,7 +13,7 @@ export const ageDistributionFixture: AgeDistributionResponseDto = {
   academicYearId: 2,
   schoolId: null,
   gradeId: null,
-  asOfDate: '2026-07-10',
+  asOfDate: "2026-07-10",
   age3To7: { minimumAge: 3, maximumAge: 7, count: 4 },
   age8To12: { minimumAge: 8, maximumAge: 12, count: 6 },
   ageOver12: { minimumAge: 13, maximumAge: null, count: 2 },
@@ -28,7 +28,7 @@ export const emptyAgeDistributionFixture: AgeDistributionResponseDto = {
   academicYearId: 2,
   schoolId: 1,
   gradeId: null,
-  asOfDate: '2026-07-10',
+  asOfDate: "2026-07-10",
   age3To7: { minimumAge: 3, maximumAge: 7, count: 0 },
   age8To12: { minimumAge: 8, maximumAge: 12, count: 0 },
   ageOver12: { minimumAge: 13, maximumAge: null, count: 0 },
@@ -41,10 +41,10 @@ export const emptyAgeDistributionFixture: AgeDistributionResponseDto = {
  * y conservar los filtros de la operadora.
  */
 export const apiProblemAsOfDateInvalidFixture = {
-  type: 'https://inovait.local/problems/as-of-date-invalid',
-  title: 'La fecha de referencia no es válida',
+  type: "https://inovait.local/problems/as-of-date-invalid",
+  title: "La fecha de referencia no es válida",
   status: 422,
-  code: 'as_of_date_invalid',
+  code: "as_of_date_invalid",
 } as const;
 
 /**

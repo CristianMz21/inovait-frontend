@@ -7,12 +7,12 @@
  * un delta en el contrato y, eventualmente, un delta en
  * `openspec/specs/municipal-reports/spec.md` (FR-RPT-004).
  */
-import type { AcademicYearSummary } from './academic-year-summary.dto';
-import type { ClassGroupSummary } from './class-group-summary.dto';
-import type { GradeSummary } from './grade-summary.dto';
-import type { SchoolSummary } from './school-summary.dto';
-import type { SubjectSummary } from './subject-summary.dto';
-import type { TeacherSummary } from './teacher-summary.dto';
+import type { AcademicYearSummary } from "./academic-year-summary.dto";
+import type { ClassGroupSummary } from "./class-group-summary.dto";
+import type { GradeSummary } from "./grade-summary.dto";
+import type { SchoolSummary } from "./school-summary.dto";
+import type { SubjectSummary } from "./subject-summary.dto";
+import type { TeacherSummary } from "./teacher-summary.dto";
 
 /**
  * Una asignación docente dentro de una inscripción histórica. Refleja

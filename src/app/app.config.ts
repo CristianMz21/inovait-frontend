@@ -2,18 +2,18 @@ import {
   ApplicationConfig,
   provideBrowserGlobalErrorListeners,
   provideZonelessChangeDetection,
-} from '@angular/core';
+} from "@angular/core";
 import {
   provideRouter,
   withComponentInputBinding,
   withInMemoryScrolling,
-} from '@angular/router';
+} from "@angular/router";
 import {
   API_CONFIG,
   DEFAULT_API_CONFIG,
   provideApiHttpClient,
-} from './core/api';
-import { routes } from './app.routes';
+} from "./core/api";
+import { routes } from "./app.routes";
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -23,8 +23,8 @@ export const appConfig: ApplicationConfig = {
       routes,
       withComponentInputBinding(),
       withInMemoryScrolling({
-        scrollPositionRestoration: 'enabled',
-        anchorScrolling: 'enabled',
+        scrollPositionRestoration: "enabled",
+        anchorScrolling: "enabled",
       }),
     ),
     provideApiHttpClient(),

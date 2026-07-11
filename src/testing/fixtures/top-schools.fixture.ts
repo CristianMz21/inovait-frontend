@@ -1,4 +1,4 @@
-import type { TopSchoolResponseDto } from '../../app/core/api/dtos/top-schools.dto';
+import type { TopSchoolResponseDto } from "../../app/core/api/dtos/top-schools.dto";
 
 /**
  * Fixture "happy / con empates" de `TopSchoolResponseDto[]` cuando el
@@ -12,12 +12,12 @@ import type { TopSchoolResponseDto } from '../../app/core/api/dtos/top-schools.d
  */
 export const topSchoolsFixture: readonly TopSchoolResponseDto[] = [
   {
-    school: { id: 1, name: 'Escuela Río Claro', sector: 'Public' },
+    school: { id: 1, name: "Escuela Río Claro", sector: "Public" },
     academicYearId: 2,
     enrollmentCount: 12,
   },
   {
-    school: { id: 2, name: 'Instituto Horizonte', sector: 'Private' },
+    school: { id: 2, name: "Instituto Horizonte", sector: "Private" },
     academicYearId: 2,
     enrollmentCount: 12,
   },
@@ -42,7 +42,7 @@ export const emptyTopSchoolsFixture: readonly TopSchoolResponseDto[] = [];
  */
 export const topSchoolsSingleFixture: readonly TopSchoolResponseDto[] = [
   {
-    school: { id: 3, name: 'Colegio Pampa Azul', sector: 'Public' },
+    school: { id: 3, name: "Colegio Pampa Azul", sector: "Public" },
     academicYearId: 2,
     enrollmentCount: 8,
   },

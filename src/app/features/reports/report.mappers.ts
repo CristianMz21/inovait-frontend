@@ -1,6 +1,9 @@
-import type { AgeBandResponse, AgeDistributionResponseDto } from '../../core/api/dtos/age-distribution.dto';
-import type { TeacherCountsBySectorResponseDto } from '../../core/api/dtos/sector-counts.dto';
-import type { TopSchoolResponseDto } from '../../core/api/dtos/top-schools.dto';
+import type {
+  AgeBandResponse,
+  AgeDistributionResponseDto,
+} from "../../core/api/dtos/age-distribution.dto";
+import type { TeacherCountsBySectorResponseDto } from "../../core/api/dtos/sector-counts.dto";
+import type { TopSchoolResponseDto } from "../../core/api/dtos/top-schools.dto";
 import {
   AGE_BAND_LABELS,
   SECTOR_LABELS,
@@ -17,7 +20,7 @@ import {
   type TopSchoolVm,
   type TopSchoolsFiltersVm,
   type TopSchoolsVm,
-} from './report.vm';
+} from "./report.vm";
 
 /**
  * Determina si los filtros académicos permiten invocar
@@ -109,9 +112,9 @@ export function ageDistributionResponseToVm(
   dto: AgeDistributionResponseDto,
 ): AgeDistributionVm {
   const bands: readonly AgeBandVm[] = [
-    toBandVm('age3To7', dto.age3To7),
-    toBandVm('age8To12', dto.age8To12),
-    toBandVm('ageOver12', dto.ageOver12),
+    toBandVm("age3To7", dto.age3To7),
+    toBandVm("age8To12", dto.age8To12),
+    toBandVm("ageOver12", dto.ageOver12),
   ];
   return {
     academicYearId: dto.academicYearId,

@@ -1,7 +1,7 @@
-import type { AcademicYearSummary } from './academic-year-summary.dto';
-import type { ClassGroupSummary } from './class-group-summary.dto';
-import type { GradeSummary } from './grade-summary.dto';
-import type { SchoolSummary } from './school-summary.dto';
+import type { AcademicYearSummary } from "./academic-year-summary.dto";
+import type { ClassGroupSummary } from "./class-group-summary.dto";
+import type { GradeSummary } from "./grade-summary.dto";
+import type { SchoolSummary } from "./school-summary.dto";
 
 export interface EnrollmentListItem {
   readonly enrollmentId: number;

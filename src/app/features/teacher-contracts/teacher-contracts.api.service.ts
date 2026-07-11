@@ -1,10 +1,10 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
-import type { Observable } from 'rxjs';
-import { map } from 'rxjs';
-import { API_CONFIG } from '../../core/api/api-config';
-import type { CreateTeacherContractsRequest } from '../../core/api/dtos/create-teacher-contracts-request.dto';
-import type { TeacherContractResponse } from '../../core/api/dtos/teacher-contract-response.dto';
+import { HttpClient, HttpParams } from "@angular/common/http";
+import { Injectable, inject } from "@angular/core";
+import type { Observable } from "rxjs";
+import { map } from "rxjs";
+import { API_CONFIG } from "../../core/api/api-config";
+import type { CreateTeacherContractsRequest } from "../../core/api/dtos/create-teacher-contracts-request.dto";
+import type { TeacherContractResponse } from "../../core/api/dtos/teacher-contract-response.dto";
 
 /**
  * Parámetros de la operación canónica `createTeacherContracts`. El
@@ -28,7 +28,7 @@ export interface ListTeacherContractsParams {
 function toListParams(params: ListTeacherContractsParams): HttpParams {
   let httpParams = new HttpParams();
   if (params.asOfDate) {
-    httpParams = httpParams.set('asOfDate', params.asOfDate);
+    httpParams = httpParams.set("asOfDate", params.asOfDate);
   }
   return httpParams;
 }
@@ -45,7 +45,7 @@ function toListParams(params: ListTeacherContractsParams): HttpParams {
  * `operationId` declarados en `paths/teacher-contracts.yaml`. El manejo
  * uniforme de errores 4xx/5xx queda delegado al `problemDetailsInterceptor`.
  */
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class TeacherContractsApiService {
   private readonly http = inject(HttpClient);
   private readonly config = inject(API_CONFIG);

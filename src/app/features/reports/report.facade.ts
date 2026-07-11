@@ -1,6 +1,6 @@
-import { Injectable, inject, signal } from '@angular/core';
-import type { Subscription } from 'rxjs';
-import { ApiProblemError } from '../../core/api/api-problem-error';
+import { Injectable, inject, signal } from "@angular/core";
+import type { Subscription } from "rxjs";
+import { ApiProblemError } from "../../core/api/api-problem-error";
 import {
   empty as emptyState,
   errorState,
@@ -8,13 +8,13 @@ import {
   loading,
   success,
   type RemoteState,
-} from '../../core/api/remote-state';
+} from "../../core/api/remote-state";
 import {
   ReportApiService,
   type GetAgeDistributionParams,
   type GetTeacherCountsBySectorParams,
   type GetTopSchoolsByEnrollmentParams,
-} from './report.api.service';
+} from "./report.api.service";
 import {
   ageDistributionFiltersToParams,
   ageDistributionResponseToVm,
@@ -22,7 +22,7 @@ import {
   teacherCountsBySectorResponseToVm,
   topSchoolsFiltersToParams,
   topSchoolsResponseToVm,
-} from './report.mappers';
+} from "./report.mappers";
 import type {
   AgeDistributionFiltersVm,
   AgeDistributionVm,
@@ -30,7 +30,7 @@ import type {
   TeacherCountsBySectorVm,
   TopSchoolsFiltersVm,
   TopSchoolsVm,
-} from './report.vm';
+} from "./report.vm";
 
 /**
  * Fachada reactiva de los recorridos de **Reportes municipales** dentro
@@ -67,7 +67,8 @@ export class ReportFacade {
   private ageSubscription: Subscription | null = null;
   private ageSequence = 0;
 
-  private readonly sector = signal<RemoteState<TeacherCountsBySectorVm>>(idle());
+  private readonly sector =
+    signal<RemoteState<TeacherCountsBySectorVm>>(idle());
   private sectorSubscription: Subscription | null = null;
   private sectorSequence = 0;
 
@@ -150,7 +151,7 @@ export class ReportFacade {
    */
   retryAge(): void {
     const current = this.age();
-    if (current.status !== 'error') {
+    if (current.status !== "error") {
       return;
     }
     const params = ageDistributionFiltersToParams(this.lastAgeFilters);
@@ -199,7 +200,7 @@ export class ReportFacade {
    */
   retrySector(): void {
     const current = this.sector();
-    if (current.status !== 'error') {
+    if (current.status !== "error") {
       return;
     }
     const params = teacherCountsBySectorFiltersToParams(this.lastSectorFilters);
@@ -252,7 +253,7 @@ export class ReportFacade {
    */
   retryTop(): void {
     const current = this.top();
-    if (current.status !== 'error' && current.status !== 'empty') {
+    if (current.status !== "error" && current.status !== "empty") {
       return;
     }
     const params = topSchoolsFiltersToParams(this.lastTopFilters);
@@ -347,33 +348,35 @@ export class ReportFacade {
     const requestKey = `report-top#${this.topSequence}`;
     this.top.set(loading<TopSchoolsVm>(requestKey));
 
-    this.topSubscription = this.api.getTopSchoolsByEnrollment(params).subscribe({
-      next: (dto) => {
-        if (this.isStale(this.top(), requestKey)) {
-          return;
-        }
-        // El DTO canónico admite `200 []` cuando el año académico no
-        // tiene inscripciones. La fachada mapea ese caso a `empty`
-        // (con `reason: 'noResults'`); una lista no vacía se mapea a
-        // `success` preservando el orden estable y los empates.
-        if (dto.length === 0) {
-          this.top.set(emptyState<TopSchoolsVm>('noResults'));
-          return;
-        }
-        const vm = topSchoolsResponseToVm(dto);
-        this.top.set(success(vm));
-      },
-      error: (err: unknown) => {
-        if (this.isStale(this.top(), requestKey)) {
-          return;
-        }
-        const problem = err instanceof ApiProblemError ? err.problem : null;
-        if (!problem) {
-          return;
-        }
-        this.top.set(errorState<TopSchoolsVm>(problem));
-      },
-    });
+    this.topSubscription = this.api
+      .getTopSchoolsByEnrollment(params)
+      .subscribe({
+        next: (dto) => {
+          if (this.isStale(this.top(), requestKey)) {
+            return;
+          }
+          // El DTO canónico admite `200 []` cuando el año académico no
+          // tiene inscripciones. La fachada mapea ese caso a `empty`
+          // (con `reason: 'noResults'`); una lista no vacía se mapea a
+          // `success` preservando el orden estable y los empates.
+          if (dto.length === 0) {
+            this.top.set(emptyState<TopSchoolsVm>("noResults"));
+            return;
+          }
+          const vm = topSchoolsResponseToVm(dto);
+          this.top.set(success(vm));
+        },
+        error: (err: unknown) => {
+          if (this.isStale(this.top(), requestKey)) {
+            return;
+          }
+          const problem = err instanceof ApiProblemError ? err.problem : null;
+          if (!problem) {
+            return;
+          }
+          this.top.set(errorState<TopSchoolsVm>(problem));
+        },
+      });
   }
 
   /**
@@ -382,6 +385,6 @@ export class ReportFacade {
    * estado implica que la respuesta debe descartarse.
    */
   private isStale<T>(state: RemoteState<T>, requestKey: string): boolean {
-    return state.status !== 'loading' || state.requestKey !== requestKey;
+    return state.status !== "loading" || state.requestKey !== requestKey;
   }
 }

@@ -1,4 +1,4 @@
-export type SchoolSector = 'Public' | 'Private';
+export type SchoolSector = "Public" | "Private";
 
 export interface SchoolSummary {
   readonly id: number;

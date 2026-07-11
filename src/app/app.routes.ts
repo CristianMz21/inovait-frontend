@@ -1,4 +1,4 @@
-import type { Routes } from '@angular/router';
+import type { Routes } from "@angular/router";
 
 /**
  * Rutas P0 y P1 de la feature `001-school-enrollment-management`.
@@ -16,50 +16,46 @@ import type { Routes } from '@angular/router';
  */
 export const routes: Routes = [
   {
-    path: '',
-    pathMatch: 'full',
-    redirectTo: 'enrollments',
+    path: "",
+    pathMatch: "full",
+    redirectTo: "enrollments",
   },
   {
-    path: 'enrollments',
+    path: "enrollments",
     loadComponent: () =>
-      import('./features/enrollments').then(
-        (m) => m.EnrollmentCreateComponent,
-      ),
-    title: 'Matrículas · Inovait',
+      import("./features/enrollments").then((m) => m.EnrollmentCreateComponent),
+    title: "Matrículas · Inovait",
   },
   {
-    path: 'student-search',
+    path: "student-search",
     loadComponent: () =>
-      import('./features/student-search').then(
-        (m) => m.StudentSearchComponent,
-      ),
-    title: 'Consulta de estudiantes · Inovait',
+      import("./features/student-search").then((m) => m.StudentSearchComponent),
+    title: "Consulta de estudiantes · Inovait",
   },
   {
-    path: 'teacher-contracts',
+    path: "teacher-contracts",
     loadComponent: () =>
-      import('./features/teacher-contracts').then(
+      import("./features/teacher-contracts").then(
         (m) => m.TeacherContractsComponent,
       ),
-    title: 'Contratos docentes · Inovait',
+    title: "Contratos docentes · Inovait",
   },
   {
-    path: 'reports',
+    path: "reports",
     loadComponent: () =>
-      import('./features/reports').then((m) => m.ReportsShellComponent),
-    title: 'Reportes · Inovait',
+      import("./features/reports").then((m) => m.ReportsShellComponent),
+    title: "Reportes · Inovait",
   },
   {
-    path: 'student-history',
+    path: "student-history",
     loadComponent: () =>
-      import('./features/student-history').then(
+      import("./features/student-history").then(
         (m) => m.StudentHistoryComponent,
       ),
-    title: 'Historial del estudiante · Inovait',
+    title: "Historial del estudiante · Inovait",
   },
   {
-    path: '**',
-    redirectTo: 'enrollments',
+    path: "**",
+    redirectTo: "enrollments",
   },
 ];

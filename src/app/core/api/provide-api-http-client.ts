@@ -1,10 +1,10 @@
-import type { EnvironmentProviders } from '@angular/core';
+import type { EnvironmentProviders } from "@angular/core";
 import {
   type HttpInterceptorFn,
   provideHttpClient,
   withInterceptors,
-} from '@angular/common/http';
-import { problemDetailsInterceptor } from './problem-details.interceptor';
+} from "@angular/common/http";
+import { problemDetailsInterceptor } from "./problem-details.interceptor";
 
 /**
  * Helper para `provideHttpClient` que registra el interceptor de

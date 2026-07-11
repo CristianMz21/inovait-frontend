@@ -32,9 +32,9 @@
               <span class="contracts-school-sector">
                 ({{ contract.schoolSector }})
               </span>
-              · {{ dateRangeLabel(contract) }}
-              · Estado persistido: <em>{{ persistedLabel(contract.persistedStatus) }}</em>
-              · Estado efectivo: <em>{{ effectiveLabel(contract.effectiveStatus) }}</em>
+              · {{ dateRangeLabel(contract) }} · Estado persistido:
+              <em>{{ persistedLabel(contract.persistedStatus) }}</em> · Estado
+              efectivo: <em>{{ effectiveLabel(contract.effectiveStatus) }}</em>
             </li>
           }
         </ul>
@@ -55,11 +55,7 @@
 
           <label class="contracts-field">
             <span>Docente</span>
-            <select
-              formControlName="teacherId"
-              required
-              aria-required="true"
-            >
+            <select formControlName="teacherId" required aria-required="true">
               <option [ngValue]="null" disabled>Seleccione…</option>
               @for (opt of createTeacherOptions(); track opt.value) {
                 <option [ngValue]="opt.value">{{ opt.label }}</option>
@@ -109,7 +105,9 @@
                   <input
                     type="checkbox"
                     [checked]="isSchoolSelected(opt.value)"
-                    (change)="onToggleSchool(opt.value, $any($event.target).checked)"
+                    (change)="
+                      onToggleSchool(opt.value, $any($event.target).checked)
+                    "
                     [attr.aria-label]="opt.label"
                   />
                   <span>{{ opt.label }}</span>
@@ -163,7 +161,10 @@
                 <ul class="contracts-error-fields">
                   @for (entry of createErrorFields(); track entry.field) {
                     @for (msg of entry.messages; track msg) {
-                      <li><code>{{ entry.field }}</code>: {{ msg }}</li>
+                      <li>
+                        <code>{{ entry.field }}</code
+                        >: {{ msg }}
+                      </li>
                     }
                   }
                 </ul>
@@ -195,11 +196,7 @@
 
         <label class="contracts-field">
           <span>Docente</span>
-          <select
-            formControlName="teacherId"
-            required
-            aria-required="true"
-          >
+          <select formControlName="teacherId" required aria-required="true">
             <option [ngValue]="null" disabled>Seleccione…</option>
             @for (opt of queryTeacherOptions(); track opt.value) {
               <option [ngValue]="opt.value">{{ opt.label }}</option>
@@ -264,8 +261,8 @@
       >
         <h3>Sin contratos</h3>
         <p>
-          El docente no tiene contratos registrados. Verifique la
-          identidad seleccionada.
+          El docente no tiene contratos registrados. Verifique la identidad
+          seleccionada.
         </p>
         <button type="button" (click)="onRetryQuery()">Reintentar</button>
       </div>
@@ -303,12 +300,12 @@
         <h3 id="query-results-title">Contratos del docente</h3>
         <p class="contracts-count" aria-live="polite">
           {{ rows.length }}
-          {{ rows.length === 1 ? 'contrato' : 'contratos' }}
+          {{ rows.length === 1 ? "contrato" : "contratos" }}
         </p>
         <table class="contracts-table">
           <caption class="visually-hidden">
-            Contratos históricos del docente. El orden refleja el
-            devuelto por el backend.
+            Contratos históricos del docente. El orden refleja el devuelto por
+            el backend.
           </caption>
           <thead>
             <tr>

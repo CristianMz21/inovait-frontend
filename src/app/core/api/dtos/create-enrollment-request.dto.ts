@@ -1,4 +1,4 @@
-import type { StudentIdentityInput } from './student-identity-input.dto';
+import type { StudentIdentityInput } from "./student-identity-input.dto";
 
 export interface CreateEnrollmentRequest {
   readonly student: StudentIdentityInput;

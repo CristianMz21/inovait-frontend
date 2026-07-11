@@ -1,18 +1,18 @@
-import { HttpHeaders } from '@angular/common/http';
-import { provideHttpClient } from '@angular/common/http';
+import { HttpHeaders } from "@angular/common/http";
+import { provideHttpClient } from "@angular/common/http";
 import {
   HttpTestingController,
   provideHttpClientTesting,
-} from '@angular/common/http/testing';
-import { TestBed, type ComponentFixture } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
-import { ReactiveFormsModule } from '@angular/forms';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+} from "@angular/common/http/testing";
+import { TestBed, type ComponentFixture } from "@angular/core/testing";
+import { provideRouter } from "@angular/router";
+import { ReactiveFormsModule } from "@angular/forms";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   API_CONFIG,
   DEFAULT_API_CONFIG,
   withApiProblemDetails,
-} from '../../../core/api';
+} from "../../../core/api";
 import {
   academicYearsFixture,
   ageDistributionFixture,
@@ -21,32 +21,29 @@ import {
   emptyAgeDistributionFixture,
   gradesFixture,
   schoolsFixture,
-} from '../../../../testing/fixtures';
-import { AgeDistributionComponent } from './age-distribution.component';
+} from "../../../../testing/fixtures";
+import { AgeDistributionComponent } from "./age-distribution.component";
 
 const ageUrl = `${DEFAULT_API_CONFIG.apiBaseUrl}/api/reports/age-distribution`;
 
 function flushCatalogs(http: HttpTestingController): void {
   const pending = http.match(() => true);
   for (const req of pending) {
-    if (
-      req.request.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/schools`
-    ) {
+    if (req.request.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/schools`) {
       req.flush(schoolsFixture);
     } else if (
       req.request.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/grades`
     ) {
       req.flush(gradesFixture);
     } else if (
-      req.request.url ===
-      `${DEFAULT_API_CONFIG.apiBaseUrl}/api/academic-years`
+      req.request.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/academic-years`
     ) {
       req.flush(academicYearsFixture);
     }
   }
 }
 
-describe('AgeDistributionComponent (CT-AGE-RPT)', () => {
+describe("AgeDistributionComponent (CT-AGE-RPT)", () => {
   let http: HttpTestingController;
   let fixture: ComponentFixture<AgeDistributionComponent>;
   let component: AgeDistributionComponent;
@@ -74,7 +71,7 @@ describe('AgeDistributionComponent (CT-AGE-RPT)', () => {
 
   // -- Carga inicial -----------------------------------------------------
 
-  it('carga catálogos (escuelas, grados, años académicos) al inicializar', () => {
+  it("carga catálogos (escuelas, grados, años académicos) al inicializar", () => {
     flushCatalogs(http);
     expect(component.academicYearOptions().length).toBe(
       academicYearsFixture.length,
@@ -88,22 +85,22 @@ describe('AgeDistributionComponent (CT-AGE-RPT)', () => {
   it('renderiza exactamente un <h1> con tabindex="-1" enfocable programáticamente', () => {
     flushCatalogs(http);
     const compiled = fixture.nativeElement as HTMLElement;
-    const headings = compiled.querySelectorAll('h1');
+    const headings = compiled.querySelectorAll("h1");
     expect(headings.length).toBe(1);
     const h1 = headings[0];
-    expect(h1?.getAttribute('tabindex')).toBe('-1');
+    expect(h1?.getAttribute("tabindex")).toBe("-1");
     expect((h1 as HTMLElement).tabIndex).toBe(-1);
-    expect(h1?.textContent?.trim()).toBe('Distribución por edad');
+    expect(h1?.textContent?.trim()).toBe("Distribución por edad");
   });
 
-  it('estructura los filtros con <fieldset><legend>', () => {
+  it("estructura los filtros con <fieldset><legend>", () => {
     flushCatalogs(http);
     const compiled = fixture.nativeElement as HTMLElement;
-    const fieldsets = compiled.querySelectorAll('fieldset');
+    const fieldsets = compiled.querySelectorAll("fieldset");
     expect(fieldsets.length).toBeGreaterThanOrEqual(1);
     for (const fs of Array.from(fieldsets)) {
-      const legend = fs.querySelector('legend');
-      expect(legend, 'fieldset sin <legend>').toBeTruthy();
+      const legend = fs.querySelector("legend");
+      expect(legend, "fieldset sin <legend>").toBeTruthy();
       expect(legend?.textContent?.trim().length ?? 0).toBeGreaterThan(0);
     }
   });
@@ -123,17 +120,17 @@ describe('AgeDistributionComponent (CT-AGE-RPT)', () => {
       'button[type="submit"]',
     ) as HTMLButtonElement | null;
     expect(submit).toBeTruthy();
-    expect(submit?.getAttribute('aria-busy')).toBe('false');
+    expect(submit?.getAttribute("aria-busy")).toBe("false");
   });
 
   // -- Estado del formulario --------------------------------------------
 
-  it('bloquea el botón Consultar sin año académico', () => {
+  it("bloquea el botón Consultar sin año académico", () => {
     flushCatalogs(http);
     expect(component.form.invalid).toBe(true);
   });
 
-  it('habilita el botón Consultar con año académico', () => {
+  it("habilita el botón Consultar con año académico", () => {
     flushCatalogs(http);
     component.form.patchValue({ academicYearId: 2 });
     expect(component.form.invalid).toBe(false);
@@ -141,16 +138,14 @@ describe('AgeDistributionComponent (CT-AGE-RPT)', () => {
 
   // -- Success -----------------------------------------------------------
 
-  it('submit() válido expone loading y luego success con las tres bandas canónicas', () => {
+  it("submit() válido expone loading y luego success con las tres bandas canónicas", () => {
     flushCatalogs(http);
     component.form.patchValue({ academicYearId: 2 });
     component.onSubmit();
     expect(component.isLoading()).toBe(true);
 
-    const req = http.expectOne(
-      (r) => r.url === ageUrl && r.method === 'GET',
-    );
-    expect(req.request.params.get('academicYearId')).toBe('2');
+    const req = http.expectOne((r) => r.url === ageUrl && r.method === "GET");
+    expect(req.request.params.get("academicYearId")).toBe("2");
     req.flush(ageDistributionFixture);
     fixture.detectChanges();
 
@@ -159,9 +154,9 @@ describe('AgeDistributionComponent (CT-AGE-RPT)', () => {
     expect(data).not.toBeNull();
     expect(data?.bands).toHaveLength(3);
     expect(data?.bands.map((b) => b.id)).toEqual([
-      'age3To7',
-      'age8To12',
-      'ageOver12',
+      "age3To7",
+      "age8To12",
+      "ageOver12",
     ]);
     expect(data?.totalCount).toBe(12);
 
@@ -169,13 +164,13 @@ describe('AgeDistributionComponent (CT-AGE-RPT)', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const results = compiled.querySelector('[data-testid="age-results"]');
     expect(results).toBeTruthy();
-    const caption = compiled.querySelector('caption.visually-hidden');
+    const caption = compiled.querySelector("caption.visually-hidden");
     expect(caption?.textContent?.trim().length ?? 0).toBeGreaterThan(0);
     const headers = compiled.querySelectorAll('th[scope="col"]');
     expect(headers.length).toBe(3);
   });
 
-  it('200 con ceros expone success sin error y conteos en 0', () => {
+  it("200 con ceros expone success sin error y conteos en 0", () => {
     flushCatalogs(http);
     component.form.patchValue({ academicYearId: 2 });
     component.onSubmit();
@@ -196,14 +191,12 @@ describe('AgeDistributionComponent (CT-AGE-RPT)', () => {
     component.form.patchValue({ academicYearId: 0 });
     component.onSubmit();
 
-    const req = http.expectOne(
-      (r) => r.url === ageUrl && r.method === 'GET',
-    );
+    const req = http.expectOne((r) => r.url === ageUrl && r.method === "GET");
     req.flush(apiProblemBadRequestFixture, {
       status: 400,
-      statusText: 'Bad Request',
+      statusText: "Bad Request",
       headers: new HttpHeaders({
-        'Content-Type': 'application/problem+json',
+        "Content-Type": "application/problem+json",
       }),
     });
     fixture.detectChanges();
@@ -212,26 +205,24 @@ describe('AgeDistributionComponent (CT-AGE-RPT)', () => {
     const alert = compiled.querySelector('[role="alert"]');
     expect(alert).toBeTruthy();
     expect(component.successData()).toBeNull();
-    expect(component.errorProblem()?.code).toBe('invalid_request');
+    expect(component.errorProblem()?.code).toBe("invalid_request");
   });
 
   it('422 as_of_date_invalid conserva los filtros y expone role="alert"', () => {
     flushCatalogs(http);
     component.form.patchValue({
       academicYearId: 2,
-      asOfDate: '2010-01-01',
+      asOfDate: "2010-01-01",
     });
     component.onSubmit();
 
-    const req = http.expectOne(
-      (r) => r.url === ageUrl && r.method === 'GET',
-    );
-    expect(req.request.params.get('asOfDate')).toBe('2010-01-01');
+    const req = http.expectOne((r) => r.url === ageUrl && r.method === "GET");
+    expect(req.request.params.get("asOfDate")).toBe("2010-01-01");
     req.flush(apiProblemAsOfDateInvalidFixture, {
       status: 422,
-      statusText: 'Unprocessable Entity',
+      statusText: "Unprocessable Entity",
       headers: new HttpHeaders({
-        'Content-Type': 'application/problem+json',
+        "Content-Type": "application/problem+json",
       }),
     });
     fixture.detectChanges();
@@ -239,16 +230,16 @@ describe('AgeDistributionComponent (CT-AGE-RPT)', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const alert = compiled.querySelector('[data-testid="age-error"]');
     expect(alert).toBeTruthy();
-    expect(alert?.getAttribute('role')).toBe('alert');
+    expect(alert?.getAttribute("role")).toBe("alert");
     expect(component.successData()).toBeNull();
     // Los filtros se conservan para corrección.
     expect(component.form.controls.academicYearId.value).toBe(2);
-    expect(component.form.controls.asOfDate.value).toBe('2010-01-01');
+    expect(component.form.controls.asOfDate.value).toBe("2010-01-01");
   });
 
   // -- Retry / Reset ----------------------------------------------------
 
-  it('retry() reenvía la consulta tras un error con los filtros vigentes', () => {
+  it("retry() reenvía la consulta tras un error con los filtros vigentes", () => {
     flushCatalogs(http);
     component.form.patchValue({ academicYearId: 2 });
     component.onSubmit();
@@ -257,9 +248,9 @@ describe('AgeDistributionComponent (CT-AGE-RPT)', () => {
       .expectOne((r) => r.url === ageUrl)
       .flush(apiProblemAsOfDateInvalidFixture, {
         status: 422,
-        statusText: 'Unprocessable Entity',
+        statusText: "Unprocessable Entity",
         headers: new HttpHeaders({
-          'Content-Type': 'application/problem+json',
+          "Content-Type": "application/problem+json",
         }),
       });
     expect(component.hasError()).toBe(true);
@@ -270,38 +261,34 @@ describe('AgeDistributionComponent (CT-AGE-RPT)', () => {
     expect(component.isSuccess()).toBe(true);
   });
 
-  it('reset() cancela el envío en curso y vuelve a idle', () => {
+  it("reset() cancela el envío en curso y vuelve a idle", () => {
     flushCatalogs(http);
     component.form.patchValue({ academicYearId: 2 });
     component.onSubmit();
 
-    const req = http.expectOne(
-      (r) => r.url === ageUrl && r.method === 'GET',
-    );
+    const req = http.expectOne((r) => r.url === ageUrl && r.method === "GET");
     expect(component.isLoading()).toBe(true);
 
     component.onReset();
     expect(req.cancelled).toBe(true);
-    expect(component.result().status).toBe('idle');
+    expect(component.result().status).toBe("idle");
     expect(component.form.controls.academicYearId.value).toBeNull();
   });
 
   // -- Cancel-on-switch -------------------------------------------------
 
-  it('cambiar academicYearId entre submits cancela el GET previo', () => {
+  it("cambiar academicYearId entre submits cancela el GET previo", () => {
     flushCatalogs(http);
     component.form.patchValue({ academicYearId: 1 });
     component.onSubmit();
     const first = http.expectOne(
-      (r) =>
-        r.url === ageUrl && r.params.get('academicYearId') === '1',
+      (r) => r.url === ageUrl && r.params.get("academicYearId") === "1",
     );
 
     component.form.patchValue({ academicYearId: 2 });
     component.onSubmit();
     const second = http.expectOne(
-      (r) =>
-        r.url === ageUrl && r.params.get('academicYearId') === '2',
+      (r) => r.url === ageUrl && r.params.get("academicYearId") === "2",
     );
     expect(first.cancelled).toBe(true);
 

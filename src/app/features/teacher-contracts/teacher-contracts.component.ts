@@ -5,24 +5,24 @@ import {
   computed,
   inject,
   type OnInit,
-} from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+} from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import {
   type FormControl,
   FormGroup,
   NonNullableFormBuilder,
   ReactiveFormsModule,
   Validators,
-} from '@angular/forms';
-import { CatalogFacade } from '../../core/catalogs/catalog.facade';
-import type { RemoteState } from '../../core/api/remote-state';
-import { TeacherContractsFacade } from './teacher-contracts.facade';
-import { teacherContractsFormToRequest } from './teacher-contracts.mappers';
+} from "@angular/forms";
+import { CatalogFacade } from "../../core/catalogs/catalog.facade";
+import type { RemoteState } from "../../core/api/remote-state";
+import { TeacherContractsFacade } from "./teacher-contracts.facade";
+import { teacherContractsFormToRequest } from "./teacher-contracts.mappers";
 import type {
   TeacherContractResultVm,
   TeacherContractsFieldVm,
   TeacherContractsFormVm,
-} from './teacher-contracts.vm';
+} from "./teacher-contracts.vm";
 
 interface TeacherContractsFormShape {
   teacherId: FormControl<number | null>;
@@ -61,12 +61,12 @@ type TeacherQueryFormGroup = FormGroup<TeacherQueryFormShape>;
  * Forms) para mantener paridad con el plan técnico acordado.
  */
 @Component({
-  selector: 'app-teacher-contracts',
+  selector: "app-teacher-contracts",
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule],
   providers: [TeacherContractsFacade],
-  templateUrl: './teacher-contracts.component.html',
-  styleUrl: './teacher-contracts.component.scss',
+  templateUrl: "./teacher-contracts.component.html",
+  styleUrl: "./teacher-contracts.component.scss",
 })
 export class TeacherContractsComponent implements OnInit {
   private readonly fb = inject(NonNullableFormBuilder);
@@ -81,11 +81,11 @@ export class TeacherContractsComponent implements OnInit {
 
   readonly createForm: TeacherContractsFormGroup = this.fb.group({
     teacherId: this.fb.control<number | null>(null, [Validators.required]),
-    startDate: this.fb.control('', [
+    startDate: this.fb.control("", [
       Validators.required,
       Validators.pattern(/^\d{4}-\d{2}-\d{2}$/),
     ]),
-    endDate: this.fb.control('', [Validators.pattern(/^\d{4}-\d{2}-\d{2}$/)]),
+    endDate: this.fb.control("", [Validators.pattern(/^\d{4}-\d{2}-\d{2}$/)]),
   });
 
   /** Conjunto de escuelas seleccionadas para el envío atómico. */
@@ -102,19 +102,23 @@ export class TeacherContractsComponent implements OnInit {
   readonly schoolOptions = computed(() =>
     this.mapOptions(this.catalog.schoolsState(), (school) => ({
       value: school.id,
-      label: `${school.name} · ${school.sector === 'Public' ? 'Público' : 'Privado'}`,
+      label: `${school.name} · ${school.sector === "Public" ? "Público" : "Privado"}`,
     })),
   );
 
-  readonly isCreating = computed(() => this.createResult().status === 'loading');
+  readonly isCreating = computed(
+    () => this.createResult().status === "loading",
+  );
   readonly createSuccess = computed(() => {
     const state = this.createResult();
-    return state.status === 'success' ? state.data : null;
+    return state.status === "success" ? state.data : null;
   });
-  readonly hasCreateError = computed(() => this.createResult().status === 'error');
+  readonly hasCreateError = computed(
+    () => this.createResult().status === "error",
+  );
   readonly createErrorProblem = computed(() => {
     const state = this.createResult();
-    return state.status === 'error' ? state.problem : null;
+    return state.status === "error" ? state.problem : null;
   });
   readonly createErrorFields = computed(() => {
     const problem = this.createErrorProblem();
@@ -131,7 +135,7 @@ export class TeacherContractsComponent implements OnInit {
 
   readonly queryForm: TeacherQueryFormGroup = this.fb.group({
     teacherId: this.fb.control<number | null>(null, [Validators.required]),
-    asOfDate: this.fb.control('', [Validators.pattern(/^\d{4}-\d{2}-\d{2}$/)]),
+    asOfDate: this.fb.control("", [Validators.pattern(/^\d{4}-\d{2}-\d{2}$/)]),
   });
 
   readonly queryTeacherOptions = computed(() =>
@@ -141,45 +145,41 @@ export class TeacherContractsComponent implements OnInit {
     })),
   );
 
-  readonly isQuerying = computed(() => this.listResult().status === 'loading');
-  readonly isQueryEmpty = computed(() => this.listResult().status === 'empty');
+  readonly isQuerying = computed(() => this.listResult().status === "loading");
+  readonly isQueryEmpty = computed(() => this.listResult().status === "empty");
   readonly querySuccess = computed<readonly TeacherContractResultVm[] | null>(
     () => {
       const state = this.listResult();
-      return state.status === 'success' ? state.data : null;
+      return state.status === "success" ? state.data : null;
     },
   );
-  readonly hasQueryError = computed(() => this.listResult().status === 'error');
+  readonly hasQueryError = computed(() => this.listResult().status === "error");
   readonly queryErrorProblem = computed(() => {
     const state = this.listResult();
-    return state.status === 'error' ? state.problem : null;
+    return state.status === "error" ? state.problem : null;
   });
 
   /** Etiqueta humana del estado efectivo. */
-  effectiveLabel(
-    status: TeacherContractResultVm['effectiveStatus'],
-  ): string {
+  effectiveLabel(status: TeacherContractResultVm["effectiveStatus"]): string {
     switch (status) {
-      case 'Upcoming':
-        return 'Próximo';
-      case 'Effective':
-        return 'Vigente';
-      case 'Expired':
-        return 'Vencido';
-      case 'Cancelled':
-        return 'Cancelado';
+      case "Upcoming":
+        return "Próximo";
+      case "Effective":
+        return "Vigente";
+      case "Expired":
+        return "Vencido";
+      case "Cancelled":
+        return "Cancelado";
     }
   }
 
   /** Etiqueta humana del estado persistido. */
-  persistedLabel(
-    status: TeacherContractResultVm['persistedStatus'],
-  ): string {
+  persistedLabel(status: TeacherContractResultVm["persistedStatus"]): string {
     switch (status) {
-      case 'Confirmed':
-        return 'Vigente';
-      case 'Cancelled':
-        return 'Cancelado';
+      case "Confirmed":
+        return "Vigente";
+      case "Cancelled":
+        return "Cancelado";
     }
   }
 
@@ -239,8 +239,8 @@ export class TeacherContractsComponent implements OnInit {
     this.contracts.resetCreate();
     this.createForm.reset({
       teacherId: null,
-      startDate: '',
-      endDate: '',
+      startDate: "",
+      endDate: "",
     });
     this.selectedSchoolIds.clear();
   }
@@ -267,13 +267,13 @@ export class TeacherContractsComponent implements OnInit {
     const start = this.createForm.controls.startDate.value;
     const end = this.createForm.controls.endDate.value;
     if (!start) {
-      return '';
+      return "";
     }
     if (!end) {
       return `Desde ${start} · sin fecha de fin`;
     }
     if (end < start) {
-      return 'La fecha de fin debe ser igual o posterior a la fecha de inicio.';
+      return "La fecha de fin debe ser igual o posterior a la fecha de inicio.";
     }
     return `Desde ${start} hasta ${end}`;
   }
@@ -291,10 +291,7 @@ export class TeacherContractsComponent implements OnInit {
       return;
     }
     const asOf = this.queryForm.controls.asOfDate.value;
-    this.contracts.searchByTeacher(
-      teacherId,
-      asOf.length === 0 ? null : asOf,
-    );
+    this.contracts.searchByTeacher(teacherId, asOf.length === 0 ? null : asOf);
   }
 
   onRetryQuery(): void {
@@ -305,7 +302,7 @@ export class TeacherContractsComponent implements OnInit {
     this.contracts.resetList();
     this.queryForm.reset({
       teacherId: null,
-      asOfDate: '',
+      asOfDate: "",
     });
   }
 
@@ -325,7 +322,7 @@ export class TeacherContractsComponent implements OnInit {
     state: RemoteState<readonly T[]>,
     project: (item: T) => TeacherContractsFieldVm<TValue>,
   ): readonly TeacherContractsFieldVm<TValue>[] {
-    if (state.status === 'success') {
+    if (state.status === "success") {
       return state.data.map(project);
     }
     return [];

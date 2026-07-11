@@ -112,7 +112,10 @@
           <ul class="history-error-fields">
             @for (entry of errorFields(); track entry.field) {
               @for (msg of entry.messages; track msg) {
-                <li><code>{{ entry.field }}</code>: {{ msg }}</li>
+                <li>
+                  <code>{{ entry.field }}</code
+                  >: {{ msg }}
+                </li>
               }
             }
           </ul>
@@ -147,8 +150,8 @@
         Línea de tiempo de {{ data.identity.fullName }}
       </h2>
       <p class="history-context" role="status" aria-live="polite">
-        {{ data.identity.documentType }} · {{ data.identity.documentNumber }}
-        · {{ data.enrollments.length }}
+        {{ data.identity.documentType }} · {{ data.identity.documentNumber }} ·
+        {{ data.enrollments.length }}
         @if (data.enrollments.length === 1) {
           inscripción
         } @else {
@@ -209,7 +212,8 @@
                     asignación
                   } @else {
                     asignaciones
-                  })
+                  }
+                  )
                 </span>
               </h4>
               @if (entry.teachingAssignments.length === 0) {

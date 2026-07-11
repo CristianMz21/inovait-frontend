@@ -5,23 +5,20 @@ import {
   computed,
   inject,
   type OnInit,
-} from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+} from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import {
   type FormControl,
   FormGroup,
   NonNullableFormBuilder,
   ReactiveFormsModule,
   Validators,
-} from '@angular/forms';
-import { CatalogFacade } from '../../../core/catalogs/catalog.facade';
-import type { RemoteState } from '../../../core/api/remote-state';
-import { ReportFacade } from '../report.facade';
-import { topSchoolsFiltersToParams } from '../report.mappers';
-import type {
-  TopSchoolsFiltersVm,
-  TopSchoolsVm,
-} from '../report.vm';
+} from "@angular/forms";
+import { CatalogFacade } from "../../../core/catalogs/catalog.facade";
+import type { RemoteState } from "../../../core/api/remote-state";
+import { ReportFacade } from "../report.facade";
+import { topSchoolsFiltersToParams } from "../report.mappers";
+import type { TopSchoolsFiltersVm, TopSchoolsVm } from "../report.vm";
 
 interface TopFiltersFormShape {
   academicYearId: FormControl<number | null>;
@@ -59,12 +56,12 @@ type TopFiltersFormGroup = FormGroup<TopFiltersFormShape>;
  * en aislamiento porque la fachada es proveda localmente.
  */
 @Component({
-  selector: 'app-top-schools',
+  selector: "app-top-schools",
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule],
   providers: [ReportFacade],
-  templateUrl: './top-schools.component.html',
-  styleUrl: './top-schools.component.scss',
+  templateUrl: "./top-schools.component.html",
+  styleUrl: "./top-schools.component.scss",
 })
 export class TopSchoolsComponent implements OnInit {
   private readonly fb = inject(NonNullableFormBuilder);
@@ -75,14 +72,12 @@ export class TopSchoolsComponent implements OnInit {
   readonly result = this.reports.topState;
 
   readonly form: TopFiltersFormGroup = this.fb.group({
-    academicYearId: this.fb.control<number | null>(null, [
-      Validators.required,
-    ]),
+    academicYearId: this.fb.control<number | null>(null, [Validators.required]),
   });
 
   readonly academicYearOptions = computed(() => {
     const state = this.catalog.academicYearsState();
-    if (state.status === 'success') {
+    if (state.status === "success") {
       return state.data.map((year) => ({
         value: year.id,
         label: year.isCurrent ? `${year.name} (actual)` : year.name,
@@ -91,19 +86,19 @@ export class TopSchoolsComponent implements OnInit {
     return [];
   });
 
-  readonly isLoading = computed(() => this.result().status === 'loading');
-  readonly isSuccess = computed(() => this.result().status === 'success');
-  readonly isEmpty = computed(() => this.result().status === 'empty');
-  readonly hasError = computed(() => this.result().status === 'error');
+  readonly isLoading = computed(() => this.result().status === "loading");
+  readonly isSuccess = computed(() => this.result().status === "success");
+  readonly isEmpty = computed(() => this.result().status === "empty");
+  readonly hasError = computed(() => this.result().status === "error");
 
   readonly successData = computed<TopSchoolsVm | null>(() => {
     const state = this.result();
-    return state.status === 'success' ? state.data : null;
+    return state.status === "success" ? state.data : null;
   });
 
   readonly errorProblem = computed(() => {
     const state = this.result();
-    return state.status === 'error' ? state.problem : null;
+    return state.status === "error" ? state.problem : null;
   });
 
   readonly errorFields = computed(() => {

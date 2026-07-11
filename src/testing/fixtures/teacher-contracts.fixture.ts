@@ -1,4 +1,4 @@
-import type { TeacherContractResponse } from '../../app/core/api/dtos/teacher-contract-response.dto';
+import type { TeacherContractResponse } from "../../app/core/api/dtos/teacher-contract-response.dto";
 
 /**
  * Fixture de respuesta canónica de
@@ -12,22 +12,22 @@ export const teacherContractsCreatedFixture: readonly TeacherContractResponse[] 
     {
       id: 20,
       teacherId: 5,
-      school: { id: 1, name: 'Escuela Río Claro', sector: 'Public' },
-      startDate: '2026-03-01',
+      school: { id: 1, name: "Escuela Río Claro", sector: "Public" },
+      startDate: "2026-03-01",
       endDate: null,
-      persistedStatus: 'Confirmed',
-      effectiveStatus: 'Effective',
-      evaluatedAt: '2026-07-10',
+      persistedStatus: "Confirmed",
+      effectiveStatus: "Effective",
+      evaluatedAt: "2026-07-10",
     },
     {
       id: 21,
       teacherId: 5,
-      school: { id: 2, name: 'Instituto Horizonte', sector: 'Private' },
-      startDate: '2026-03-01',
+      school: { id: 2, name: "Instituto Horizonte", sector: "Private" },
+      startDate: "2026-03-01",
       endDate: null,
-      persistedStatus: 'Confirmed',
-      effectiveStatus: 'Effective',
-      evaluatedAt: '2026-07-10',
+      persistedStatus: "Confirmed",
+      effectiveStatus: "Effective",
+      evaluatedAt: "2026-07-10",
     },
   ];
 
@@ -43,22 +43,22 @@ export const teacherContractsListedFixture: readonly TeacherContractResponse[] =
     {
       id: 20,
       teacherId: 5,
-      school: { id: 1, name: 'Escuela Río Claro', sector: 'Public' },
-      startDate: '2025-03-03',
-      endDate: '2025-12-19',
-      persistedStatus: 'Cancelled',
-      effectiveStatus: 'Expired',
-      evaluatedAt: '2026-07-10',
+      school: { id: 1, name: "Escuela Río Claro", sector: "Public" },
+      startDate: "2025-03-03",
+      endDate: "2025-12-19",
+      persistedStatus: "Cancelled",
+      effectiveStatus: "Expired",
+      evaluatedAt: "2026-07-10",
     },
     {
       id: 21,
       teacherId: 5,
-      school: { id: 2, name: 'Instituto Horizonte', sector: 'Private' },
-      startDate: '2026-03-02',
+      school: { id: 2, name: "Instituto Horizonte", sector: "Private" },
+      startDate: "2026-03-02",
       endDate: null,
-      persistedStatus: 'Confirmed',
-      effectiveStatus: 'Effective',
-      evaluatedAt: '2026-07-10',
+      persistedStatus: "Confirmed",
+      effectiveStatus: "Effective",
+      evaluatedAt: "2026-07-10",
     },
   ];
 

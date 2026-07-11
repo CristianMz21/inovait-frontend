@@ -17,7 +17,7 @@
  * NO reordena ni empata/desempata — se preserva el shape canónico.
  */
 export interface TopSchoolResponseDto {
-  readonly school: import('./school-summary.dto').SchoolSummary;
+  readonly school: import("./school-summary.dto").SchoolSummary;
   readonly academicYearId: number;
   readonly enrollmentCount: number;
 }

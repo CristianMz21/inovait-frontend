@@ -1,11 +1,11 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
-import type { Observable } from 'rxjs';
-import { map } from 'rxjs';
-import { API_CONFIG } from '../../core/api/api-config';
-import type { AgeDistributionResponseDto } from '../../core/api/dtos/age-distribution.dto';
-import type { TeacherCountsBySectorResponseDto } from '../../core/api/dtos/sector-counts.dto';
-import type { TopSchoolResponseDto } from '../../core/api/dtos/top-schools.dto';
+import { HttpClient, HttpParams } from "@angular/common/http";
+import { Injectable, inject } from "@angular/core";
+import type { Observable } from "rxjs";
+import { map } from "rxjs";
+import { API_CONFIG } from "../../core/api/api-config";
+import type { AgeDistributionResponseDto } from "../../core/api/dtos/age-distribution.dto";
+import type { TeacherCountsBySectorResponseDto } from "../../core/api/dtos/sector-counts.dto";
+import type { TopSchoolResponseDto } from "../../core/api/dtos/top-schools.dto";
 
 /**
  * Parámetros de la operación canónica `getAgeDistribution`. Sólo
@@ -49,17 +49,17 @@ function toAgeDistributionHttpParams(
   params: GetAgeDistributionParams,
 ): HttpParams {
   let httpParams = new HttpParams().set(
-    'academicYearId',
+    "academicYearId",
     String(params.academicYearId),
   );
   if (params.asOfDate) {
-    httpParams = httpParams.set('asOfDate', params.asOfDate);
+    httpParams = httpParams.set("asOfDate", params.asOfDate);
   }
   if (params.schoolId !== undefined) {
-    httpParams = httpParams.set('schoolId', String(params.schoolId));
+    httpParams = httpParams.set("schoolId", String(params.schoolId));
   }
   if (params.gradeId !== undefined) {
-    httpParams = httpParams.set('gradeId', String(params.gradeId));
+    httpParams = httpParams.set("gradeId", String(params.gradeId));
   }
   return httpParams;
 }
@@ -69,10 +69,10 @@ function toSectorHttpParams(
 ): HttpParams {
   let httpParams = new HttpParams();
   if (params.periodStart) {
-    httpParams = httpParams.set('periodStart', params.periodStart);
+    httpParams = httpParams.set("periodStart", params.periodStart);
   }
   if (params.periodEnd) {
-    httpParams = httpParams.set('periodEnd', params.periodEnd);
+    httpParams = httpParams.set("periodEnd", params.periodEnd);
   }
   return httpParams;
 }
@@ -80,10 +80,7 @@ function toSectorHttpParams(
 function toTopSchoolsHttpParams(
   params: GetTopSchoolsByEnrollmentParams,
 ): HttpParams {
-  return new HttpParams().set(
-    'academicYearId',
-    String(params.academicYearId),
-  );
+  return new HttpParams().set("academicYearId", String(params.academicYearId));
 }
 
 /**
@@ -108,7 +105,7 @@ function toTopSchoolsHttpParams(
  * Cada método clona el DTO recibido (`map((data) => ({ ...data }))`)
  * para evitar fugas de referencia cruzada entre slots de la fachada.
  */
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class ReportApiService {
   private readonly http = inject(HttpClient);
   private readonly config = inject(API_CONFIG);
@@ -150,6 +147,10 @@ export class ReportApiService {
       .get<readonly TopSchoolResponseDto[]>(url, {
         params: toTopSchoolsHttpParams(params),
       })
-      .pipe(map((data) => data.map((entry) => ({ ...entry, school: { ...entry.school } }))));
+      .pipe(
+        map((data) =>
+          data.map((entry) => ({ ...entry, school: { ...entry.school } })),
+        ),
+      );
   }
 }

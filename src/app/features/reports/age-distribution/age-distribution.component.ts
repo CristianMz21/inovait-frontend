@@ -5,25 +5,25 @@ import {
   computed,
   inject,
   type OnInit,
-} from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+} from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import {
   type FormControl,
   FormGroup,
   NonNullableFormBuilder,
   ReactiveFormsModule,
   Validators,
-} from '@angular/forms';
-import { CatalogFacade } from '../../../core/catalogs/catalog.facade';
-import type { RemoteState } from '../../../core/api/remote-state';
-import { ReportFacade } from '../report.facade';
-import { ageDistributionFiltersToParams } from '../report.mappers';
+} from "@angular/forms";
+import { CatalogFacade } from "../../../core/catalogs/catalog.facade";
+import type { RemoteState } from "../../../core/api/remote-state";
+import { ReportFacade } from "../report.facade";
+import { ageDistributionFiltersToParams } from "../report.mappers";
 import type {
   AgeBandVm,
   AgeDistributionFiltersVm,
   AgeDistributionVm,
   AgeDistributionFieldVm,
-} from '../report.vm';
+} from "../report.vm";
 
 interface AgeFiltersFormShape {
   academicYearId: FormControl<number | null>;
@@ -57,12 +57,12 @@ type AgeFiltersFormGroup = FormGroup<AgeFiltersFormShape>;
  * ejercitarse en aislamiento porque la fachada es proveda localmente.
  */
 @Component({
-  selector: 'app-age-distribution',
+  selector: "app-age-distribution",
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule],
   providers: [ReportFacade],
-  templateUrl: './age-distribution.component.html',
-  styleUrl: './age-distribution.component.scss',
+  templateUrl: "./age-distribution.component.html",
+  styleUrl: "./age-distribution.component.scss",
 })
 export class AgeDistributionComponent implements OnInit {
   private readonly fb = inject(NonNullableFormBuilder);
@@ -73,30 +73,23 @@ export class AgeDistributionComponent implements OnInit {
   readonly result = this.reports.ageState;
 
   readonly form: AgeFiltersFormGroup = this.fb.group({
-    academicYearId: this.fb.control<number | null>(null, [
-      Validators.required,
-    ]),
-    asOfDate: this.fb.control('', [
-      Validators.pattern(/^\d{4}-\d{2}-\d{2}$/),
-    ]),
+    academicYearId: this.fb.control<number | null>(null, [Validators.required]),
+    asOfDate: this.fb.control("", [Validators.pattern(/^\d{4}-\d{2}-\d{2}$/)]),
     schoolId: this.fb.control<number | null>(null),
     gradeId: this.fb.control<number | null>(null),
   });
 
   readonly academicYearOptions = computed(() =>
-    this.mapOptions(
-      this.catalog.academicYearsState(),
-      (year) => ({
-        value: year.id,
-        label: year.isCurrent ? `${year.name} (actual)` : year.name,
-      }),
-    ),
+    this.mapOptions(this.catalog.academicYearsState(), (year) => ({
+      value: year.id,
+      label: year.isCurrent ? `${year.name} (actual)` : year.name,
+    })),
   );
 
   readonly schoolOptions = computed(() =>
     this.mapOptions(this.catalog.schoolsState(), (school) => ({
       value: school.id,
-      label: `${school.name} · ${school.sector === 'Public' ? 'Público' : 'Privado'}`,
+      label: `${school.name} · ${school.sector === "Public" ? "Público" : "Privado"}`,
     })),
   );
 
@@ -107,18 +100,18 @@ export class AgeDistributionComponent implements OnInit {
     })),
   );
 
-  readonly isLoading = computed(() => this.result().status === 'loading');
-  readonly isSuccess = computed(() => this.result().status === 'success');
-  readonly hasError = computed(() => this.result().status === 'error');
+  readonly isLoading = computed(() => this.result().status === "loading");
+  readonly isSuccess = computed(() => this.result().status === "success");
+  readonly hasError = computed(() => this.result().status === "error");
 
   readonly successData = computed<AgeDistributionVm | null>(() => {
     const state = this.result();
-    return state.status === 'success' ? state.data : null;
+    return state.status === "success" ? state.data : null;
   });
 
   readonly errorProblem = computed(() => {
     const state = this.result();
-    return state.status === 'error' ? state.problem : null;
+    return state.status === "error" ? state.problem : null;
   });
 
   readonly errorFields = computed(() => {
@@ -169,7 +162,7 @@ export class AgeDistributionComponent implements OnInit {
     this.reports.resetAge();
     this.form.reset({
       academicYearId: null,
-      asOfDate: '',
+      asOfDate: "",
       schoolId: null,
       gradeId: null,
     });
@@ -210,7 +203,7 @@ export class AgeDistributionComponent implements OnInit {
     state: RemoteState<readonly T[]>,
     project: (item: T) => AgeDistributionFieldVm<TValue>,
   ): readonly AgeDistributionFieldVm<TValue>[] {
-    if (state.status === 'success') {
+    if (state.status === "success") {
       return state.data.map(project);
     }
     return [];

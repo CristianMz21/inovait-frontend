@@ -1,7 +1,7 @@
-import { Injectable, inject, signal } from '@angular/core';
-import type { Subscription } from 'rxjs';
-import { ApiProblemError } from '../../core/api/api-problem-error';
-import type { TeacherContractResponse } from '../../core/api/dtos/teacher-contract-response.dto';
+import { Injectable, inject, signal } from "@angular/core";
+import type { Subscription } from "rxjs";
+import { ApiProblemError } from "../../core/api/api-problem-error";
+import type { TeacherContractResponse } from "../../core/api/dtos/teacher-contract-response.dto";
 import {
   type RemoteState,
   empty,
@@ -9,19 +9,19 @@ import {
   idle,
   loading,
   success,
-} from '../../core/api/remote-state';
+} from "../../core/api/remote-state";
 import {
   teacherContractResponseToResult,
   teacherContractsFormToRequest,
-} from './teacher-contracts.mappers';
+} from "./teacher-contracts.mappers";
 import {
   TeacherContractsApiService,
   type CreateTeacherContractsParams,
-} from './teacher-contracts.api.service';
+} from "./teacher-contracts.api.service";
 import type {
   TeacherContractResultVm,
   TeacherContractsFormVm,
-} from './teacher-contracts.vm';
+} from "./teacher-contracts.vm";
 
 /**
  * Fachada del ciclo de vida de **Contratos docentes** (US3).
@@ -56,15 +56,13 @@ import type {
 export class TeacherContractsFacade {
   private readonly api = inject(TeacherContractsApiService);
 
-  private readonly create = signal<
-    RemoteState<readonly TeacherContractResultVm[]>
-  >(idle());
+  private readonly create =
+    signal<RemoteState<readonly TeacherContractResultVm[]>>(idle());
   private createSubscription: Subscription | null = null;
   private createSequence = 0;
 
-  private readonly list = signal<
-    RemoteState<readonly TeacherContractResultVm[]>
-  >(idle());
+  private readonly list =
+    signal<RemoteState<readonly TeacherContractResultVm[]>>(idle());
   private listSubscription: Subscription | null = null;
   private listSequence = 0;
 
@@ -105,7 +103,7 @@ export class TeacherContractsFacade {
    * No-op si no hay un error previo o si la VM actual es inválida.
    */
   retrySubmit(form: TeacherContractsFormVm): void {
-    if (this.create().status !== 'error') {
+    if (this.create().status !== "error") {
       return;
     }
     this.submit(form);
@@ -142,13 +140,16 @@ export class TeacherContractsFacade {
    * no hay un error previo o si nunca se consultó un docente.
    */
   retryList(): void {
-    if (this.list().status !== 'error') {
+    if (this.list().status !== "error") {
       return;
     }
     if (this.lastListTeacherId === null) {
       return;
     }
-    this.dispatchList(this.lastListTeacherId, this.lastListAsOfDate ?? undefined);
+    this.dispatchList(
+      this.lastListTeacherId,
+      this.lastListAsOfDate ?? undefined,
+    );
   }
 
   /**
@@ -166,9 +167,7 @@ export class TeacherContractsFacade {
 
   // -- Despacho interno ---------------------------------------------------
 
-  private dispatchCreate(
-    params: CreateTeacherContractsParams,
-  ): void {
+  private dispatchCreate(params: CreateTeacherContractsParams): void {
     this.createSubscription?.unsubscribe();
     this.createSequence += 1;
     const requestKey = `teacher-contracts-create#${this.createSequence}`;
@@ -180,7 +179,9 @@ export class TeacherContractsFacade {
           return;
         }
         if (response.length === 0) {
-          this.create.set(empty<readonly TeacherContractResultVm[]>('noContracts'));
+          this.create.set(
+            empty<readonly TeacherContractResultVm[]>("noContracts"),
+          );
           return;
         }
         this.create.set(success(response.map(teacherContractResponseToResult)));
@@ -214,7 +215,9 @@ export class TeacherContractsFacade {
             return;
           }
           if (response.length === 0) {
-            this.list.set(empty<readonly TeacherContractResultVm[]>('noContracts'));
+            this.list.set(
+              empty<readonly TeacherContractResultVm[]>("noContracts"),
+            );
             return;
           }
           this.list.set(success(response.map(teacherContractResponseToResult)));
@@ -239,10 +242,7 @@ export class TeacherContractsFacade {
    * Sólo durante `loading` la `requestKey` está vigente; cualquier otro
    * estado implica que la respuesta debe descartarse.
    */
-  private isStale<T>(
-    state: RemoteState<T>,
-    requestKey: string,
-  ): boolean {
-    return state.status !== 'loading' || state.requestKey !== requestKey;
+  private isStale<T>(state: RemoteState<T>, requestKey: string): boolean {
+    return state.status !== "loading" || state.requestKey !== requestKey;
   }
 }

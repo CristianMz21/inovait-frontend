@@ -1,24 +1,24 @@
-import { HttpHeaders } from '@angular/common/http';
+import { HttpHeaders } from "@angular/common/http";
 import {
   HttpTestingController,
   provideHttpClientTesting,
-} from '@angular/common/http/testing';
-import { TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+} from "@angular/common/http/testing";
+import { TestBed } from "@angular/core/testing";
+import { provideHttpClient } from "@angular/common/http";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   API_CONFIG,
   DEFAULT_API_CONFIG,
   withApiProblemDetails,
-} from '../../core/api';
+} from "../../core/api";
 import {
   apiProblemNotFoundFixture,
   emptyEnrollmentListResponseFixture,
   enrollmentListResponseFixture,
-} from '../../../testing/fixtures';
-import { StudentSearchApiService } from './student-search.api.service';
-import { StudentSearchFacade } from './student-search.facade';
-import type { StudentSearchFiltersVm } from './student-search.vm';
+} from "../../../testing/fixtures";
+import { StudentSearchApiService } from "./student-search.api.service";
+import { StudentSearchFacade } from "./student-search.facade";
+import type { StudentSearchFiltersVm } from "./student-search.vm";
 
 const completeFilters: StudentSearchFiltersVm = {
   schoolId: 1,
@@ -34,7 +34,7 @@ const incompleteFilters: StudentSearchFiltersVm = {
   asOfDate: null,
 };
 
-describe('StudentSearchFacade', () => {
+describe("StudentSearchFacade", () => {
   let facade: StudentSearchFacade;
   let http: HttpTestingController;
 
@@ -56,43 +56,43 @@ describe('StudentSearchFacade', () => {
     http.verify();
   });
 
-  it('canSearch() rechaza la VM cuando falta cualquier filtro académico', () => {
+  it("canSearch() rechaza la VM cuando falta cualquier filtro académico", () => {
     expect(facade.canSearch(completeFilters)).toBe(true);
     expect(facade.canSearch(incompleteFilters)).toBe(false);
   });
 
-  it('search() con VM inválida es no-op y conserva el estado idle', () => {
+  it("search() con VM inválida es no-op y conserva el estado idle", () => {
     facade.search(incompleteFilters);
-    expect(facade.result().status).toBe('idle');
+    expect(facade.result().status).toBe("idle");
     http.expectNone(
       (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
     );
   });
 
-  it('search() expone loading y luego success al confirmar la consulta', () => {
+  it("search() expone loading y luego success al confirmar la consulta", () => {
     facade.search(completeFilters);
-    expect(facade.result().status).toBe('loading');
+    expect(facade.result().status).toBe("loading");
 
     const req = http.expectOne(
       (r) =>
         r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments` &&
-        r.method === 'GET',
+        r.method === "GET",
     );
-    expect(req.request.params.get('schoolId')).toBe('1');
-    expect(req.request.params.get('gradeId')).toBe('1');
-    expect(req.request.params.get('academicYearId')).toBe('2');
+    expect(req.request.params.get("schoolId")).toBe("1");
+    expect(req.request.params.get("gradeId")).toBe("1");
+    expect(req.request.params.get("academicYearId")).toBe("2");
     req.flush(enrollmentListResponseFixture);
 
     const state = facade.result();
-    expect(state.status).toBe('success');
-    if (state.status === 'success') {
+    expect(state.status).toBe("success");
+    if (state.status === "success") {
       expect(state.data).toHaveLength(2);
-      expect(state.data[0].fullName).toBe('Ana María Solís');
-      expect(state.data[1].fullName).toBe('Luis Pérez');
+      expect(state.data[0].fullName).toBe("Ana María Solís");
+      expect(state.data[1].fullName).toBe("Luis Pérez");
     }
   });
 
-  it('search() con 200 [] mapea a empty/noResults (no es error)', () => {
+  it("search() con 200 [] mapea a empty/noResults (no es error)", () => {
     facade.search(completeFilters);
     const req = http.expectOne(
       (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
@@ -100,61 +100,61 @@ describe('StudentSearchFacade', () => {
     req.flush(emptyEnrollmentListResponseFixture);
 
     const state = facade.result();
-    expect(state.status).toBe('empty');
-    if (state.status === 'empty') {
-      expect(state.reason).toBe('noResults');
+    expect(state.status).toBe("empty");
+    if (state.status === "empty") {
+      expect(state.reason).toBe("noResults");
     }
   });
 
-  it('search() con 404 mapea a error con ProblemDetails', () => {
+  it("search() con 404 mapea a error con ProblemDetails", () => {
     facade.search(completeFilters);
     const req = http.expectOne(
       (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
     );
     req.flush(apiProblemNotFoundFixture, {
       status: 404,
-      statusText: 'Not Found',
-      headers: new HttpHeaders({ 'Content-Type': 'application/problem+json' }),
+      statusText: "Not Found",
+      headers: new HttpHeaders({ "Content-Type": "application/problem+json" }),
     });
 
     const state = facade.result();
-    expect(state.status).toBe('error');
-    if (state.status === 'error') {
+    expect(state.status).toBe("error");
+    if (state.status === "error") {
       expect(state.problem.status).toBe(404);
-      expect(state.problem.code).toBe('resource_not_found');
+      expect(state.problem.code).toBe("resource_not_found");
     }
   });
 
-  it('search() cancela la búsqueda previa cuando cambian los filtros (stale descartado)', () => {
+  it("search() cancela la búsqueda previa cuando cambian los filtros (stale descartado)", () => {
     facade.search(completeFilters);
     const first = http.expectOne(
       (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
     );
-    expect(facade.result().status).toBe('loading');
+    expect(facade.result().status).toBe("loading");
 
     facade.search({ ...completeFilters, schoolId: 7 });
     const second = http.expectOne(
       (r) =>
         r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments` &&
-        r.params.get('schoolId') === '7',
+        r.params.get("schoolId") === "7",
     );
     expect(first.cancelled).toBe(true);
 
     second.flush(enrollmentListResponseFixture);
     const state = facade.result();
-    expect(state.status).toBe('success');
+    expect(state.status).toBe("success");
   });
 
-  it('reset() cancela la búsqueda en curso y vuelve a idle', () => {
+  it("reset() cancela la búsqueda en curso y vuelve a idle", () => {
     facade.search(completeFilters);
     const req = http.expectOne(
       (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
     );
-    expect(facade.result().status).toBe('loading');
+    expect(facade.result().status).toBe("loading");
 
     facade.reset();
     expect(req.cancelled).toBe(true);
-    expect(facade.result().status).toBe('idle');
+    expect(facade.result().status).toBe("idle");
     expect(facade.filters()).toEqual({
       schoolId: null,
       gradeId: null,
@@ -163,61 +163,67 @@ describe('StudentSearchFacade', () => {
     });
   });
 
-  it('retry() reenvía tras un error usando los filtros vigentes', () => {
+  it("retry() reenvía tras un error usando los filtros vigentes", () => {
     facade.search(completeFilters);
     http
-      .expectOne((r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`)
+      .expectOne(
+        (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
+      )
       .flush(apiProblemNotFoundFixture, {
         status: 404,
-        statusText: 'Not Found',
-        headers: new HttpHeaders({ 'Content-Type': 'application/problem+json' }),
+        statusText: "Not Found",
+        headers: new HttpHeaders({
+          "Content-Type": "application/problem+json",
+        }),
       });
 
-    expect(facade.result().status).toBe('error');
+    expect(facade.result().status).toBe("error");
 
     facade.retry();
     const retryReq = http.expectOne(
       (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
     );
-    expect(retryReq.request.params.get('schoolId')).toBe('1');
+    expect(retryReq.request.params.get("schoolId")).toBe("1");
     retryReq.flush(enrollmentListResponseFixture);
 
     const state = facade.result();
-    expect(state.status).toBe('success');
-    if (state.status === 'success') {
+    expect(state.status).toBe("success");
+    if (state.status === "success") {
       expect(state.data).toHaveLength(2);
     }
   });
 
-  it('retry() no hace nada si el estado vigente no es error', () => {
+  it("retry() no hace nada si el estado vigente no es error", () => {
     facade.search(completeFilters);
-    http.expectOne((r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`);
+    http.expectOne(
+      (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
+    );
 
     facade.retry();
     // No se emitió un segundo GET: la fachada sigue en `loading`.
-    expect(facade.result().status).toBe('loading');
+    expect(facade.result().status).toBe("loading");
   });
 
-  it('search() persiste los filtros vigentes para futuros retry', () => {
-    facade.search({ ...completeFilters, asOfDate: '2026-07-10' });
+  it("search() persiste los filtros vigentes para futuros retry", () => {
+    facade.search({ ...completeFilters, asOfDate: "2026-07-10" });
     const req = http.expectOne(
       (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
     );
-    expect(req.request.params.get('asOfDate')).toBe('2026-07-10');
+    expect(req.request.params.get("asOfDate")).toBe("2026-07-10");
     req.flush(apiProblemNotFoundFixture, {
       status: 404,
-      statusText: 'Not Found',
-      headers: new HttpHeaders({ 'Content-Type': 'application/problem+json' }),
+      statusText: "Not Found",
+      headers: new HttpHeaders({ "Content-Type": "application/problem+json" }),
     });
 
-    expect(facade.filters().asOfDate).toBe('2026-07-10');
+    expect(facade.filters().asOfDate).toBe("2026-07-10");
 
     facade.retry();
     const retryReq = http.expectOne(
       (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
     );
-    expect(retryReq.request.params.get('asOfDate')).toBe('2026-07-10');
+    expect(retryReq.request.params.get("asOfDate")).toBe("2026-07-10");
     retryReq.flush(emptyEnrollmentListResponseFixture);
-    expect(facade.result().status).toBe('empty');
+    expect(facade.result().status).toBe("empty");
   });
 });

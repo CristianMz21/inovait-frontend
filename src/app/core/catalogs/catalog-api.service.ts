@@ -1,15 +1,15 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
-import type { Observable } from 'rxjs';
-import { map } from 'rxjs';
-import { API_CONFIG } from '../api/api-config';
-import type { AcademicYearSummary } from '../api/dtos/academic-year-summary.dto';
-import type { ClassGroupSummary } from '../api/dtos/class-group-summary.dto';
-import type { GradeSummary } from '../api/dtos/grade-summary.dto';
-import type { SchoolSummary } from '../api/dtos/school-summary.dto';
-import type { SchoolTeacherSummary } from '../api/dtos/school-teacher-summary.dto';
-import type { SubjectSummary } from '../api/dtos/subject-summary.dto';
-import type { TeacherSummary } from '../api/dtos/teacher-summary.dto';
+import { HttpClient, HttpParams } from "@angular/common/http";
+import { Injectable, inject } from "@angular/core";
+import type { Observable } from "rxjs";
+import { map } from "rxjs";
+import { API_CONFIG } from "../api/api-config";
+import type { AcademicYearSummary } from "../api/dtos/academic-year-summary.dto";
+import type { ClassGroupSummary } from "../api/dtos/class-group-summary.dto";
+import type { GradeSummary } from "../api/dtos/grade-summary.dto";
+import type { SchoolSummary } from "../api/dtos/school-summary.dto";
+import type { SchoolTeacherSummary } from "../api/dtos/school-teacher-summary.dto";
+import type { SubjectSummary } from "../api/dtos/subject-summary.dto";
+import type { TeacherSummary } from "../api/dtos/teacher-summary.dto";
 
 /**
  * Parámetros opcionales para `listClassGroups`. Cada filtro se omite cuando
@@ -40,7 +40,7 @@ function toHttpParams(params: ListClassGroupsParams | undefined): HttpParams {
  * Devuelve `Observable<T>` sin estado; los consumidores (facades) deben
  * aplicar cancelación y descarte de respuestas obsoletas.
  */
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class CatalogApiService {
   private readonly http = inject(HttpClient);
   private readonly config = inject(API_CONFIG);
@@ -94,7 +94,7 @@ export class CatalogApiService {
   ): Observable<readonly SchoolTeacherSummary[]> {
     let params = new HttpParams();
     if (asOfDate) {
-      params = params.set('asOfDate', asOfDate);
+      params = params.set("asOfDate", asOfDate);
     }
     return this.http
       .get<readonly SchoolTeacherSummary[]>(

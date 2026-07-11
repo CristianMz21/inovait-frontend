@@ -20,17 +20,14 @@ import type {
   EnrollmentHistoryItemDto,
   HistoryTeachingAssignmentDto,
   StudentHistoryResponseDto,
-} from '../../core/api/dtos/student-history-item.dto';
+} from "../../core/api/dtos/student-history-item.dto";
 import type {
   EnrollmentHistoryItemVm,
   StudentHistoryFiltersVm,
   StudentHistoryVm,
   TeachingAssignmentVm,
-} from './student-history.vm';
-import {
-  SCHOOL_SECTOR_LABELS,
-  WEEKDAY_LABELS,
-} from './student-history.vm';
+} from "./student-history.vm";
+import { SCHOOL_SECTOR_LABELS, WEEKDAY_LABELS } from "./student-history.vm";
 
 const DOCUMENT_TYPE_MIN = 1;
 const DOCUMENT_TYPE_MAX = 20;
@@ -45,13 +42,21 @@ const DOCUMENT_NUMBER_MAX = 32;
  *
  * `asOfDate` es opcional y se omite cuando es `null` o vacío.
  */
-export function studentHistoryFiltersAreValid(vm: StudentHistoryFiltersVm): boolean {
+export function studentHistoryFiltersAreValid(
+  vm: StudentHistoryFiltersVm,
+): boolean {
   const docType = vm.documentType.trim();
   const docNumber = vm.documentNumber.trim();
-  if (docType.length < DOCUMENT_TYPE_MIN || docType.length > DOCUMENT_TYPE_MAX) {
+  if (
+    docType.length < DOCUMENT_TYPE_MIN ||
+    docType.length > DOCUMENT_TYPE_MAX
+  ) {
     return false;
   }
-  if (docNumber.length < DOCUMENT_NUMBER_MIN || docNumber.length > DOCUMENT_NUMBER_MAX) {
+  if (
+    docNumber.length < DOCUMENT_NUMBER_MIN ||
+    docNumber.length > DOCUMENT_NUMBER_MAX
+  ) {
     return false;
   }
   return true;
@@ -96,9 +101,7 @@ export function studentHistoryFiltersToParams(vm: StudentHistoryFiltersVm): {
  * no ocultarlos al usuario.
  */
 export function weekdayListLabel(weekdays: readonly number[]): string {
-  return weekdays
-    .map((day) => WEEKDAY_LABELS[day] ?? `Día ${day}`)
-    .join(', ');
+  return weekdays.map((day) => WEEKDAY_LABELS[day] ?? `Día ${day}`).join(", ");
 }
 
 /**
@@ -116,7 +119,7 @@ function toTeachingAssignmentVm(
   dto: HistoryTeachingAssignmentDto,
 ): TeachingAssignmentVm {
   const teacherFullName = `${dto.teacher.firstNames} ${dto.teacher.lastNames}`
-    .replace(/\s+/g, ' ')
+    .replace(/\s+/g, " ")
     .trim();
   return {
     assignmentId: dto.assignmentId,
@@ -191,7 +194,7 @@ export function studentHistoryResponseToVm(
   dto: StudentHistoryResponseDto,
 ): StudentHistoryVm {
   const fullName = `${dto.firstNames} ${dto.lastNames}`
-    .replace(/\s+/g, ' ')
+    .replace(/\s+/g, " ")
     .trim();
   const identity = {
     studentId: dto.studentId,

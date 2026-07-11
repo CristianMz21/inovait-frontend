@@ -37,20 +37,17 @@ export interface TeacherContractResultVm {
   readonly schoolSector: string;
   readonly startDate: string;
   readonly endDate: string | null;
-  readonly persistedStatus: 'Confirmed' | 'Cancelled';
-  readonly effectiveStatus: 'Upcoming' | 'Effective' | 'Expired' | 'Cancelled';
+  readonly persistedStatus: "Confirmed" | "Cancelled";
+  readonly effectiveStatus: "Upcoming" | "Effective" | "Expired" | "Cancelled";
   readonly evaluatedAt: string;
 }
 
 /** Etiqueta legible del estado persistido para la UI. */
-export type TeacherContractPersistedLabel = 'Vigente' | 'Cancelado';
+export type TeacherContractPersistedLabel = "Vigente" | "Cancelado";
 
 /** Etiqueta legible del estado efectivo para la UI. */
 export type TeacherContractEffectiveLabel =
-  | 'Próximo'
-  | 'Vigente'
-  | 'Vencido'
-  | 'Cancelado';
+  "Próximo" | "Vigente" | "Vencido" | "Cancelado";
 
 export interface TeacherContractsFieldVm<TValue extends number | string> {
   readonly value: TValue;

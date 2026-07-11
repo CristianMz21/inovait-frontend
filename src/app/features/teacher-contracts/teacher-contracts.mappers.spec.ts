@@ -1,56 +1,56 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from "vitest";
 import {
   teacherContractResponseToResult,
   teacherContractsFormIsValid,
   teacherContractsFormToRequest,
-} from './teacher-contracts.mappers';
-import type { TeacherContractsFormVm } from './teacher-contracts.vm';
+} from "./teacher-contracts.mappers";
+import type { TeacherContractsFormVm } from "./teacher-contracts.vm";
 import {
   teacherContractsCreatedFixture,
   teacherContractsListedFixture,
-} from '../../../testing/fixtures';
+} from "../../../testing/fixtures";
 
 const validForm: TeacherContractsFormVm = {
   teacherId: 5,
   schoolIds: [1, 2],
-  startDate: '2026-03-01',
+  startDate: "2026-03-01",
   endDate: null,
 };
 
-describe('TeacherContractsMappers', () => {
-  describe('teacherContractsFormIsValid()', () => {
-    it('acepta una VM válida con endDate null', () => {
+describe("TeacherContractsMappers", () => {
+  describe("teacherContractsFormIsValid()", () => {
+    it("acepta una VM válida con endDate null", () => {
       expect(teacherContractsFormIsValid(validForm)).toBe(true);
     });
 
-    it('acepta una VM válida con endDate igual o posterior a startDate', () => {
+    it("acepta una VM válida con endDate igual o posterior a startDate", () => {
       expect(
         teacherContractsFormIsValid({
           ...validForm,
-          endDate: '2026-03-01',
+          endDate: "2026-03-01",
         }),
       ).toBe(true);
       expect(
         teacherContractsFormIsValid({
           ...validForm,
-          endDate: '2026-12-31',
+          endDate: "2026-12-31",
         }),
       ).toBe(true);
     });
 
-    it('rechaza cuando teacherId falta', () => {
+    it("rechaza cuando teacherId falta", () => {
       expect(
         teacherContractsFormIsValid({ ...validForm, teacherId: null }),
       ).toBe(false);
     });
 
-    it('rechaza cuando schoolIds está vacío', () => {
-      expect(
-        teacherContractsFormIsValid({ ...validForm, schoolIds: [] }),
-      ).toBe(false);
+    it("rechaza cuando schoolIds está vacío", () => {
+      expect(teacherContractsFormIsValid({ ...validForm, schoolIds: [] })).toBe(
+        false,
+      );
     });
 
-    it('rechaza cuando schoolIds contiene duplicados (regla local 409)', () => {
+    it("rechaza cuando schoolIds contiene duplicados (regla local 409)", () => {
       expect(
         teacherContractsFormIsValid({
           ...validForm,
@@ -59,49 +59,51 @@ describe('TeacherContractsMappers', () => {
       ).toBe(false);
     });
 
-    it('rechaza cuando startDate no tiene formato YYYY-MM-DD', () => {
+    it("rechaza cuando startDate no tiene formato YYYY-MM-DD", () => {
+      expect(teacherContractsFormIsValid({ ...validForm, startDate: "" })).toBe(
+        false,
+      );
       expect(
-        teacherContractsFormIsValid({ ...validForm, startDate: '' }),
-      ).toBe(false);
-      expect(
-        teacherContractsFormIsValid({ ...validForm, startDate: '01-03-2026' }),
-      ).toBe(false);
-    });
-
-    it('rechaza cuando endDate no tiene formato YYYY-MM-DD', () => {
-      expect(
-        teacherContractsFormIsValid({ ...validForm, endDate: 'foo' }),
+        teacherContractsFormIsValid({ ...validForm, startDate: "01-03-2026" }),
       ).toBe(false);
     });
 
-    it('rechaza cuando endDate es anterior a startDate', () => {
+    it("rechaza cuando endDate no tiene formato YYYY-MM-DD", () => {
+      expect(
+        teacherContractsFormIsValid({ ...validForm, endDate: "foo" }),
+      ).toBe(false);
+    });
+
+    it("rechaza cuando endDate es anterior a startDate", () => {
       expect(
         teacherContractsFormIsValid({
           ...validForm,
-          endDate: '2026-02-28',
+          endDate: "2026-02-28",
         }),
       ).toBe(false);
     });
   });
 
-  describe('teacherContractsFormToRequest()', () => {
-    it('produce el payload canónico del contrato', () => {
+  describe("teacherContractsFormToRequest()", () => {
+    it("produce el payload canónico del contrato", () => {
       const result = teacherContractsFormToRequest(validForm);
       expect(result).toEqual({
         teacherId: 5,
         request: {
           schoolIds: [1, 2],
-          startDate: '2026-03-01',
+          startDate: "2026-03-01",
           endDate: null,
         },
       });
     });
 
-    it('devuelve null cuando la VM es inválida', () => {
-      expect(teacherContractsFormToRequest({ ...validForm, teacherId: null })).toBeNull();
+    it("devuelve null cuando la VM es inválida", () => {
+      expect(
+        teacherContractsFormToRequest({ ...validForm, teacherId: null }),
+      ).toBeNull();
     });
 
-    it('clona schoolIds para no exponer la referencia interna', () => {
+    it("clona schoolIds para no exponer la referencia interna", () => {
       const input: TeacherContractsFormVm = {
         ...validForm,
         schoolIds: [1, 2],
@@ -115,52 +117,52 @@ describe('TeacherContractsMappers', () => {
     });
   });
 
-  describe('teacherContractResponseToResult()', () => {
-    it('aplana la respuesta 201 a la VM de presentación', () => {
+  describe("teacherContractResponseToResult()", () => {
+    it("aplana la respuesta 201 a la VM de presentación", () => {
       const [dto] = teacherContractsCreatedFixture;
       if (!dto) {
-        throw new Error('fixture vacío');
+        throw new Error("fixture vacío");
       }
       const result = teacherContractResponseToResult(dto);
       expect(result).toEqual({
         id: 20,
         teacherId: 5,
         schoolId: 1,
-        schoolName: 'Escuela Río Claro',
-        schoolSector: 'Público',
-        startDate: '2026-03-01',
+        schoolName: "Escuela Río Claro",
+        schoolSector: "Público",
+        startDate: "2026-03-01",
         endDate: null,
-        persistedStatus: 'Confirmed',
-        effectiveStatus: 'Effective',
-        evaluatedAt: '2026-07-10',
+        persistedStatus: "Confirmed",
+        effectiveStatus: "Effective",
+        evaluatedAt: "2026-07-10",
       });
     });
 
-    it('conserva persistedStatus y effectiveStatus como enums separados (FR-TC-003)', () => {
+    it("conserva persistedStatus y effectiveStatus como enums separados (FR-TC-003)", () => {
       const [first, second] = teacherContractsListedFixture;
       if (!first || !second) {
-        throw new Error('fixture vacío');
+        throw new Error("fixture vacío");
       }
       expect(teacherContractResponseToResult(first).persistedStatus).toBe(
-        'Cancelled',
+        "Cancelled",
       );
       expect(teacherContractResponseToResult(first).effectiveStatus).toBe(
-        'Expired',
+        "Expired",
       );
       expect(teacherContractResponseToResult(second).persistedStatus).toBe(
-        'Confirmed',
+        "Confirmed",
       );
       expect(teacherContractResponseToResult(second).effectiveStatus).toBe(
-        'Effective',
+        "Effective",
       );
     });
 
-    it('mapea sector Private a etiqueta Privado', () => {
+    it("mapea sector Private a etiqueta Privado", () => {
       const [, dto] = teacherContractsCreatedFixture;
       if (!dto) {
-        throw new Error('fixture vacío');
+        throw new Error("fixture vacío");
       }
-      expect(teacherContractResponseToResult(dto).schoolSector).toBe('Privado');
+      expect(teacherContractResponseToResult(dto).schoolSector).toBe("Privado");
     });
   });
 });

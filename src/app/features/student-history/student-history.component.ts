@@ -3,20 +3,20 @@ import {
   Component,
   computed,
   inject,
-} from '@angular/core';
+} from "@angular/core";
 import {
   type FormControl,
   FormGroup,
   NonNullableFormBuilder,
   ReactiveFormsModule,
   Validators,
-} from '@angular/forms';
-import { StudentHistoryFacade } from './student-history.facade';
-import { studentHistoryFiltersToParams } from './student-history.mappers';
+} from "@angular/forms";
+import { StudentHistoryFacade } from "./student-history.facade";
+import { studentHistoryFiltersToParams } from "./student-history.mappers";
 import type {
   StudentHistoryFiltersVm,
   StudentHistoryVm,
-} from './student-history.vm';
+} from "./student-history.vm";
 
 interface StudentHistoryFormShape {
   documentType: FormControl<string>;
@@ -54,12 +54,12 @@ type StudentHistoryFormGroup = FormGroup<StudentHistoryFormShape>;
  * para que cada componente tenga su propio slot de estado.
  */
 @Component({
-  selector: 'app-student-history',
+  selector: "app-student-history",
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule],
   providers: [StudentHistoryFacade],
-  templateUrl: './student-history.component.html',
-  styleUrl: './student-history.component.scss',
+  templateUrl: "./student-history.component.html",
+  styleUrl: "./student-history.component.scss",
 })
 export class StudentHistoryComponent {
   private readonly fb = inject(NonNullableFormBuilder);
@@ -68,34 +68,32 @@ export class StudentHistoryComponent {
   readonly result = this.history.result;
 
   readonly form: StudentHistoryFormGroup = this.fb.group({
-    documentType: this.fb.control('', [
+    documentType: this.fb.control("", [
       Validators.required,
       Validators.minLength(1),
       Validators.maxLength(20),
     ]),
-    documentNumber: this.fb.control('', [
+    documentNumber: this.fb.control("", [
       Validators.required,
       Validators.minLength(1),
       Validators.maxLength(32),
     ]),
-    asOfDate: this.fb.control('', [
-      Validators.pattern(/^\d{4}-\d{2}-\d{2}$/),
-    ]),
+    asOfDate: this.fb.control("", [Validators.pattern(/^\d{4}-\d{2}-\d{2}$/)]),
   });
 
-  readonly isLoading = computed(() => this.result().status === 'loading');
-  readonly isSuccess = computed(() => this.result().status === 'success');
-  readonly isEmpty = computed(() => this.result().status === 'empty');
-  readonly hasError = computed(() => this.result().status === 'error');
+  readonly isLoading = computed(() => this.result().status === "loading");
+  readonly isSuccess = computed(() => this.result().status === "success");
+  readonly isEmpty = computed(() => this.result().status === "empty");
+  readonly hasError = computed(() => this.result().status === "error");
 
   readonly successData = computed<StudentHistoryVm | null>(() => {
     const state = this.result();
-    return state.status === 'success' ? state.data : null;
+    return state.status === "success" ? state.data : null;
   });
 
   readonly errorProblem = computed(() => {
     const state = this.result();
-    return state.status === 'error' ? state.problem : null;
+    return state.status === "error" ? state.problem : null;
   });
 
   readonly errorFields = computed(() => {
@@ -135,9 +133,9 @@ export class StudentHistoryComponent {
   onReset(): void {
     this.history.resetHistory();
     this.form.reset({
-      documentType: '',
-      documentNumber: '',
-      asOfDate: '',
+      documentType: "",
+      documentNumber: "",
+      asOfDate: "",
     });
   }
 

@@ -7,7 +7,7 @@
  * WU07 implementa el slot `ageDistribution`; WU08 el slot `sector`;
  * WU09 el slot `topSchools`.
  */
-export type AgeBandId = 'age3To7' | 'age8To12' | 'ageOver12';
+export type AgeBandId = "age3To7" | "age8To12" | "ageOver12";
 
 /**
  * Vista normalizada de una banda de edad. Aplana `AgeBandResponse` con
@@ -54,9 +54,9 @@ export interface AgeDistributionVm {
  * centralizan aquí para que la UI no duplique literales.
  */
 export const AGE_BAND_LABELS: Readonly<Record<AgeBandId, string>> = {
-  age3To7: '3 a 7 años',
-  age8To12: '8 a 12 años',
-  ageOver12: 'Mayores de 12 años',
+  age3To7: "3 a 7 años",
+  age8To12: "8 a 12 años",
+  ageOver12: "Mayores de 12 años",
 };
 
 /**
@@ -79,7 +79,7 @@ export interface AgeDistributionFieldVm<TValue extends number | string> {
  * correspondiente, lo que simplifica el render del template y la
  * internacionalización sin perder el shape canónico.
  */
-export type SectorId = 'public' | 'private';
+export type SectorId = "public" | "private";
 
 /**
  * Vista normalizada de un sector reportada por
@@ -122,8 +122,8 @@ export interface TeacherCountsBySectorVm {
  * centralizan aquí para que la UI no duplique literales.
  */
 export const SECTOR_LABELS: Readonly<Record<SectorId, string>> = {
-  public: 'Público',
-  private: 'Privado',
+  public: "Público",
+  private: "Privado",
 };
 
 /**
@@ -131,7 +131,7 @@ export const SECTOR_LABELS: Readonly<Record<SectorId, string>> = {
  * "dos sectores en orden fijo" (`paths/reports.yaml` descripción del
  * response `200`); la UI debe respetar ese orden sin reordenar.
  */
-export const SECTOR_ORDER: readonly SectorId[] = ['public', 'private'];
+export const SECTOR_ORDER: readonly SectorId[] = ["public", "private"];
 
 /**
  * Tipos de la capa de vista del recorrido de **Escuelas líderes por
@@ -157,7 +157,7 @@ export const SECTOR_ORDER: readonly SectorId[] = ['public', 'private'];
 export interface TopSchoolVm {
   readonly schoolId: number;
   readonly schoolName: string;
-  readonly sector: 'Public' | 'Private';
+  readonly sector: "Public" | "Private";
   readonly sectorLabel: string;
   readonly enrollmentCount: number;
 }
@@ -189,10 +189,9 @@ export interface TopSchoolsVm {
  * para que un cambio futuro en el catálogo de sectores no rompa
  * accidentalmente esta vista.
  */
-export const TOP_SCHOOL_SECTOR_LABELS: Readonly<Record<
-  'Public' | 'Private',
-  string
->> = {
-  Public: 'Público',
-  Private: 'Privado',
+export const TOP_SCHOOL_SECTOR_LABELS: Readonly<
+  Record<"Public" | "Private", string>
+> = {
+  Public: "Público",
+  Private: "Privado",
 };

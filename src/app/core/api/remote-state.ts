@@ -1,4 +1,4 @@
-import type { ApiProblem } from './dtos/api-problem.dto';
+import type { ApiProblem } from "./dtos/api-problem.dto";
 
 /**
  * Estado remoto exclusivo que la UI usa para presentar el resultado de un
@@ -11,32 +11,32 @@ import type { ApiProblem } from './dtos/api-problem.dto';
  * - `error`: el backend devolvió un `ApiProblem` y debe mostrarse contextual.
  */
 export type RemoteState<T> =
-  | { readonly status: 'idle' }
-  | { readonly status: 'loading'; readonly requestKey: string }
-  | { readonly status: 'success'; readonly data: T }
+  | { readonly status: "idle" }
+  | { readonly status: "loading"; readonly requestKey: string }
+  | { readonly status: "success"; readonly data: T }
   | {
-      readonly status: 'empty';
-      readonly reason: 'noResults' | 'noGroups' | 'noContracts';
+      readonly status: "empty";
+      readonly reason: "noResults" | "noGroups" | "noContracts";
     }
-  | { readonly status: 'error'; readonly problem: ApiProblem };
+  | { readonly status: "error"; readonly problem: ApiProblem };
 
-export const idle = <T>(): RemoteState<T> => ({ status: 'idle' });
+export const idle = <T>(): RemoteState<T> => ({ status: "idle" });
 
 export const loading = <T>(requestKey: string): RemoteState<T> => ({
-  status: 'loading',
+  status: "loading",
   requestKey,
 });
 
 export const success = <T>(data: T): RemoteState<T> => ({
-  status: 'success',
+  status: "success",
   data,
 });
 
 export const empty = <T>(
-  reason: 'noResults' | 'noGroups' | 'noContracts',
-): RemoteState<T> => ({ status: 'empty', reason });
+  reason: "noResults" | "noGroups" | "noContracts",
+): RemoteState<T> => ({ status: "empty", reason });
 
 export const errorState = <T>(problem: ApiProblem): RemoteState<T> => ({
-  status: 'error',
+  status: "error",
   problem,
 });

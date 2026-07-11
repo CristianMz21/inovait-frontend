@@ -1,6 +1,6 @@
-import { Injectable, inject, signal } from '@angular/core';
-import type { Subscription } from 'rxjs';
-import { ApiProblemError } from '../../core/api/api-problem-error';
+import { Injectable, inject, signal } from "@angular/core";
+import type { Subscription } from "rxjs";
+import { ApiProblemError } from "../../core/api/api-problem-error";
 import {
   empty as emptyState,
   errorState,
@@ -8,19 +8,19 @@ import {
   loading,
   success,
   type RemoteState,
-} from '../../core/api/remote-state';
+} from "../../core/api/remote-state";
 import {
   StudentHistoryApiService,
   type GetStudentHistoryParams,
-} from './student-history.api.service';
+} from "./student-history.api.service";
 import {
   studentHistoryFiltersToParams,
   studentHistoryResponseToVm,
-} from './student-history.mappers';
+} from "./student-history.mappers";
 import type {
   StudentHistoryFiltersVm,
   StudentHistoryVm,
-} from './student-history.vm';
+} from "./student-history.vm";
 
 /**
  * Fachada del ciclo de vida de **Historial académico-docente** (FR-RPT-004,
@@ -61,8 +61,8 @@ export class StudentHistoryFacade {
 
   /** Filtros vigentes que la UI debe reflejar en el formulario. */
   readonly filters = signal<StudentHistoryFiltersVm>({
-    documentType: '',
-    documentNumber: '',
+    documentType: "",
+    documentNumber: "",
     asOfDate: null,
   });
 
@@ -95,7 +95,7 @@ export class StudentHistoryFacade {
    */
   retryHistory(): void {
     const current = this.state();
-    if (current.status !== 'error' && current.status !== 'empty') {
+    if (current.status !== "error" && current.status !== "empty") {
       return;
     }
     const params = studentHistoryFiltersToParams(this.filters());
@@ -115,8 +115,8 @@ export class StudentHistoryFacade {
     this.subscription = null;
     this.state.set(idle());
     this.filters.set({
-      documentType: '',
-      documentNumber: '',
+      documentType: "",
+      documentNumber: "",
       asOfDate: null,
     });
   }
@@ -136,7 +136,7 @@ export class StudentHistoryFacade {
           // El contrato declara `200 []` como respuesta válida para
           // "identidad sin inscripciones". Se mapea a `empty('noResults')`,
           // NO a `error`, para mantener la paridad con `top-schools`.
-          this.state.set(emptyState<StudentHistoryVm>('noResults'));
+          this.state.set(emptyState<StudentHistoryVm>("noResults"));
           return;
         }
         const vm = studentHistoryResponseToVm(dto);
@@ -166,8 +166,6 @@ export class StudentHistoryFacade {
    */
   private isStale(requestKey: string): boolean {
     const current = this.state();
-    return (
-      current.status !== 'loading' || current.requestKey !== requestKey
-    );
+    return current.status !== "loading" || current.requestKey !== requestKey;
   }
 }

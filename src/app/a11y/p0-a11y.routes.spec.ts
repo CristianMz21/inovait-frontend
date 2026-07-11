@@ -1,18 +1,18 @@
-import { HttpHeaders } from '@angular/common/http';
-import { provideHttpClient } from '@angular/common/http';
+import { HttpHeaders } from "@angular/common/http";
+import { provideHttpClient } from "@angular/common/http";
 import {
   HttpTestingController,
   provideHttpClientTesting,
-} from '@angular/common/http/testing';
-import { TestBed, type ComponentFixture } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
-import { ReactiveFormsModule } from '@angular/forms';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+} from "@angular/common/http/testing";
+import { TestBed, type ComponentFixture } from "@angular/core/testing";
+import { provideRouter } from "@angular/router";
+import { ReactiveFormsModule } from "@angular/forms";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   API_CONFIG,
   DEFAULT_API_CONFIG,
   withApiProblemDetails,
-} from '../core/api';
+} from "../core/api";
 import {
   academicYearsFixture,
   apiProblemNotFoundFixture,
@@ -25,11 +25,11 @@ import {
   schoolsFixture,
   teacherContractsCreatedFixture,
   teachersFixture,
-} from '../../testing/fixtures';
-import { App } from '../app.component';
-import { EnrollmentCreateComponent } from '../features/enrollments/enrollment-create.component';
-import { StudentSearchComponent } from '../features/student-search/student-search.component';
-import { TeacherContractsComponent } from '../features/teacher-contracts/teacher-contracts.component';
+} from "../../testing/fixtures";
+import { App } from "../app.component";
+import { EnrollmentCreateComponent } from "../features/enrollments/enrollment-create.component";
+import { StudentSearchComponent } from "../features/student-search/student-search.component";
+import { TeacherContractsComponent } from "../features/teacher-contracts/teacher-contracts.component";
 
 /**
  * CT-A11Y-P0 — Hardening P0 (T031).
@@ -53,8 +53,8 @@ import { TeacherContractsComponent } from '../features/teacher-contracts/teacher
  *      - `role="status"` para loading / empty / success
  *      - `role="alert"` para error
  */
-describe('CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0', () => {
-  describe('Shell (App)', () => {
+describe("CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0", () => {
+  describe("Shell (App)", () => {
     beforeEach(async () => {
       await TestBed.configureTestingModule({
         imports: [App],
@@ -66,15 +66,15 @@ describe('CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0', () => {
       TestBed.resetTestingModule();
     });
 
-    it('expone skip-link hacia #main como primer foco accesible', () => {
+    it("expone skip-link hacia #main como primer foco accesible", () => {
       const fixture = TestBed.createComponent(App);
       fixture.detectChanges();
       const compiled = fixture.nativeElement as HTMLElement;
 
-      const skip = compiled.querySelector('a.skip-link');
+      const skip = compiled.querySelector("a.skip-link");
       expect(skip).toBeTruthy();
-      expect(skip?.getAttribute('href')).toBe('#main');
-      expect(skip?.textContent?.trim()).toBe('Saltar al contenido principal');
+      expect(skip?.getAttribute("href")).toBe("#main");
+      expect(skip?.textContent?.trim()).toBe("Saltar al contenido principal");
     });
 
     it('renderiza landmark <main id="main" tabindex="-1">', () => {
@@ -82,9 +82,9 @@ describe('CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0', () => {
       fixture.detectChanges();
       const compiled = fixture.nativeElement as HTMLElement;
 
-      const main = compiled.querySelector('main#main');
+      const main = compiled.querySelector("main#main");
       expect(main).toBeTruthy();
-      expect(main?.getAttribute('tabindex')).toBe('-1');
+      expect(main?.getAttribute("tabindex")).toBe("-1");
     });
 
     it('renderiza landmark <nav aria-label="Navegación principal">', () => {
@@ -97,16 +97,16 @@ describe('CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0', () => {
       );
       expect(nav).toBeTruthy();
 
-      const labels = Array.from(nav?.querySelectorAll('a') ?? []).map(
-        (a) => a.textContent?.trim() ?? '',
+      const labels = Array.from(nav?.querySelectorAll("a") ?? []).map(
+        (a) => a.textContent?.trim() ?? "",
       );
       expect(labels).toEqual(
         expect.arrayContaining([
-          'Matrículas',
-          'Consulta de estudiantes',
-          'Contratos docentes',
-          'Reportes',
-          'Historia',
+          "Matrículas",
+          "Consulta de estudiantes",
+          "Contratos docentes",
+          "Reportes",
+          "Historia",
         ]),
       );
     });
@@ -160,7 +160,7 @@ describe('CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0', () => {
   // /enrollments
   // ----------------------------------------------------------------
 
-  describe('Ruta /enrollments', () => {
+  describe("Ruta /enrollments", () => {
     let http: HttpTestingController;
     let fixture: ComponentFixture<EnrollmentCreateComponent>;
 
@@ -179,22 +179,22 @@ describe('CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0', () => {
     it('renderiza exactamente un <h1> con tabindex="-1" enfocable programáticamente', () => {
       flushCatalog(http);
       const compiled = fixture.nativeElement as HTMLElement;
-      const headings = compiled.querySelectorAll('h1');
+      const headings = compiled.querySelectorAll("h1");
       expect(headings.length).toBe(1);
       const h1 = headings[0];
-      expect(h1?.getAttribute('tabindex')).toBe('-1');
+      expect(h1?.getAttribute("tabindex")).toBe("-1");
       expect((h1 as HTMLElement).tabIndex).toBe(-1);
-      expect(h1?.textContent?.trim()).toBe('Nueva matrícula');
+      expect(h1?.textContent?.trim()).toBe("Nueva matrícula");
     });
 
-    it('estructura cada grupo de formulario con <fieldset><legend>', () => {
+    it("estructura cada grupo de formulario con <fieldset><legend>", () => {
       flushCatalog(http);
       const compiled = fixture.nativeElement as HTMLElement;
-      const fieldsets = compiled.querySelectorAll('fieldset');
+      const fieldsets = compiled.querySelectorAll("fieldset");
       expect(fieldsets.length).toBeGreaterThanOrEqual(2);
 
       for (const fs of Array.from(fieldsets)) {
-        const legend = fs.querySelector('legend');
+        const legend = fs.querySelector("legend");
         expect(legend, `fieldset sin <legend>`).toBeTruthy();
         expect(legend?.textContent?.trim().length ?? 0).toBeGreaterThan(0);
       }
@@ -214,8 +214,8 @@ describe('CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0', () => {
       const submit = compiled.querySelector(
         'button[type="submit"]',
       ) as HTMLButtonElement | null;
-      expect(submit, 'la ruta debe exponer un botón submit').toBeTruthy();
-      expect(submit?.getAttribute('aria-busy')).toBe('false');
+      expect(submit, "la ruta debe exponer un botón submit").toBeTruthy();
+      expect(submit?.getAttribute("aria-busy")).toBe("false");
     });
 
     it('success tras POST expone region role="status"', () => {
@@ -226,36 +226,35 @@ describe('CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0', () => {
         form: { controls: Record<string, { setValue(v: unknown): void }> };
         onSubmit(): void;
       };
-      comp.form.controls['documentType'].setValue('DNI');
-      comp.form.controls['documentNumber'].setValue('99.001.101');
-      comp.form.controls['firstNames'].setValue('Ana');
-      comp.form.controls['lastNames'].setValue('Solís');
-      comp.form.controls['birthDate'].setValue('2018-07-10');
-      comp.form.controls['schoolId'].setValue(1);
-      comp.form.controls['academicYearId'].setValue(2);
-      comp.form.controls['gradeId'].setValue(1);
+      comp.form.controls["documentType"].setValue("DNI");
+      comp.form.controls["documentNumber"].setValue("99.001.101");
+      comp.form.controls["firstNames"].setValue("Ana");
+      comp.form.controls["lastNames"].setValue("Solís");
+      comp.form.controls["birthDate"].setValue("2018-07-10");
+      comp.form.controls["schoolId"].setValue(1);
+      comp.form.controls["academicYearId"].setValue(2);
+      comp.form.controls["gradeId"].setValue(1);
       fixture.detectChanges();
 
       http
         .expectOne(
-          (r) =>
-            r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/class-groups`,
+          (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/class-groups`,
         )
         .flush(classGroupsFixture);
-      comp.form.controls['classGroupId'].setValue(10);
+      comp.form.controls["classGroupId"].setValue(10);
       comp.onSubmit();
 
       const req = http.expectOne(
         (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
       );
-      expect(req.request.method).toBe('POST');
+      expect(req.request.method).toBe("POST");
       req.flush(createEnrollmentResponseFixture);
       fixture.detectChanges();
 
       const compiled = fixture.nativeElement as HTMLElement;
       const ok = compiled.querySelector('[data-testid="enrollment-success"]');
       expect(ok).toBeTruthy();
-      expect(ok?.getAttribute('role')).toBe('status');
+      expect(ok?.getAttribute("role")).toBe("status");
       expect(compiled.querySelector('[role="alert"]')).toBeNull();
     });
 
@@ -267,22 +266,21 @@ describe('CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0', () => {
         form: { controls: Record<string, { setValue(v: unknown): void }> };
         onSubmit(): void;
       };
-      comp.form.controls['documentType'].setValue('DNI');
-      comp.form.controls['documentNumber'].setValue('99.001.101');
-      comp.form.controls['firstNames'].setValue('Ana');
-      comp.form.controls['lastNames'].setValue('Solís');
-      comp.form.controls['birthDate'].setValue('2018-07-10');
-      comp.form.controls['schoolId'].setValue(1);
-      comp.form.controls['academicYearId'].setValue(2);
-      comp.form.controls['gradeId'].setValue(1);
+      comp.form.controls["documentType"].setValue("DNI");
+      comp.form.controls["documentNumber"].setValue("99.001.101");
+      comp.form.controls["firstNames"].setValue("Ana");
+      comp.form.controls["lastNames"].setValue("Solís");
+      comp.form.controls["birthDate"].setValue("2018-07-10");
+      comp.form.controls["schoolId"].setValue(1);
+      comp.form.controls["academicYearId"].setValue(2);
+      comp.form.controls["gradeId"].setValue(1);
       fixture.detectChanges();
       http
         .expectOne(
-          (r) =>
-            r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/class-groups`,
+          (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/class-groups`,
         )
         .flush(classGroupsFixture);
-      comp.form.controls['classGroupId'].setValue(10);
+      comp.form.controls["classGroupId"].setValue(10);
       comp.onSubmit();
 
       const req = http.expectOne(
@@ -290,9 +288,9 @@ describe('CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0', () => {
       );
       req.flush(apiProblemNotFoundFixture, {
         status: 404,
-        statusText: 'Not Found',
+        statusText: "Not Found",
         headers: new HttpHeaders({
-          'Content-Type': 'application/problem+json',
+          "Content-Type": "application/problem+json",
         }),
       });
       fixture.detectChanges();
@@ -300,7 +298,7 @@ describe('CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0', () => {
       const compiled = fixture.nativeElement as HTMLElement;
       const alert = compiled.querySelector('[role="alert"]');
       expect(alert).toBeTruthy();
-      expect(alert?.getAttribute('aria-live')).toBe('assertive');
+      expect(alert?.getAttribute("aria-live")).toBe("assertive");
       expect(
         compiled.querySelector('[data-testid="enrollment-success"]'),
       ).toBeNull();
@@ -311,7 +309,7 @@ describe('CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0', () => {
   // /student-search
   // ----------------------------------------------------------------
 
-  describe('Ruta /student-search', () => {
+  describe("Ruta /student-search", () => {
     let http: HttpTestingController;
     let fixture: ComponentFixture<StudentSearchComponent>;
 
@@ -330,20 +328,20 @@ describe('CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0', () => {
     it('renderiza exactamente un <h1> con tabindex="-1"', () => {
       flushCatalog(http);
       const compiled = fixture.nativeElement as HTMLElement;
-      const headings = compiled.querySelectorAll('h1');
+      const headings = compiled.querySelectorAll("h1");
       expect(headings.length).toBe(1);
       const h1 = headings[0];
-      expect(h1?.getAttribute('tabindex')).toBe('-1');
-      expect(h1?.textContent?.trim()).toBe('Consulta de estudiantes');
+      expect(h1?.getAttribute("tabindex")).toBe("-1");
+      expect(h1?.textContent?.trim()).toBe("Consulta de estudiantes");
     });
 
-    it('estructura cada grupo de formulario con <fieldset><legend>', () => {
+    it("estructura cada grupo de formulario con <fieldset><legend>", () => {
       flushCatalog(http);
       const compiled = fixture.nativeElement as HTMLElement;
-      const fieldsets = compiled.querySelectorAll('fieldset');
+      const fieldsets = compiled.querySelectorAll("fieldset");
       expect(fieldsets.length).toBeGreaterThanOrEqual(1);
       for (const fs of Array.from(fieldsets)) {
-        const legend = fs.querySelector('legend');
+        const legend = fs.querySelector("legend");
         expect(legend, `fieldset sin <legend>`).toBeTruthy();
         expect(legend?.textContent?.trim().length ?? 0).toBeGreaterThan(0);
       }
@@ -364,24 +362,23 @@ describe('CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0', () => {
         'button[type="submit"]',
       ) as HTMLButtonElement | null;
       expect(submit).toBeTruthy();
-      expect(submit?.getAttribute('aria-busy')).toBe('false');
+      expect(submit?.getAttribute("aria-busy")).toBe("false");
     });
 
-    it('success expone region con resultados y contador aria-live', () => {
+    it("success expone region con resultados y contador aria-live", () => {
       flushCatalog(http);
       const comp = fixture.componentInstance as unknown as {
         form: { controls: Record<string, { setValue(v: unknown): void }> };
         onSubmit(): void;
       };
-      comp.form.controls['schoolId'].setValue(1);
-      comp.form.controls['gradeId'].setValue(1);
-      comp.form.controls['academicYearId'].setValue(2);
+      comp.form.controls["schoolId"].setValue(1);
+      comp.form.controls["gradeId"].setValue(1);
+      comp.form.controls["academicYearId"].setValue(2);
       comp.onSubmit();
 
       http
         .expectOne(
-          (r) =>
-            r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
+          (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
         )
         .flush(enrollmentListResponseFixture);
       fixture.detectChanges();
@@ -400,15 +397,14 @@ describe('CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0', () => {
         form: { controls: Record<string, { setValue(v: unknown): void }> };
         onSubmit(): void;
       };
-      comp.form.controls['schoolId'].setValue(1);
-      comp.form.controls['gradeId'].setValue(1);
-      comp.form.controls['academicYearId'].setValue(2);
+      comp.form.controls["schoolId"].setValue(1);
+      comp.form.controls["gradeId"].setValue(1);
+      comp.form.controls["academicYearId"].setValue(2);
       comp.onSubmit();
 
       http
         .expectOne(
-          (r) =>
-            r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
+          (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
         )
         .flush(emptyEnrollmentListResponseFixture);
       fixture.detectChanges();
@@ -416,7 +412,7 @@ describe('CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0', () => {
       const compiled = fixture.nativeElement as HTMLElement;
       const empty = compiled.querySelector('[data-testid="search-empty"]');
       expect(empty).toBeTruthy();
-      expect(empty?.getAttribute('role')).toBe('status');
+      expect(empty?.getAttribute("role")).toBe("status");
       expect(compiled.querySelector('[role="alert"]')).toBeNull();
     });
 
@@ -426,21 +422,20 @@ describe('CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0', () => {
         form: { controls: Record<string, { setValue(v: unknown): void }> };
         onSubmit(): void;
       };
-      comp.form.controls['schoolId'].setValue(1);
-      comp.form.controls['gradeId'].setValue(1);
-      comp.form.controls['academicYearId'].setValue(2);
+      comp.form.controls["schoolId"].setValue(1);
+      comp.form.controls["gradeId"].setValue(1);
+      comp.form.controls["academicYearId"].setValue(2);
       comp.onSubmit();
 
       http
         .expectOne(
-          (r) =>
-            r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
+          (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
         )
         .flush(apiProblemNotFoundFixture, {
           status: 404,
-          statusText: 'Not Found',
+          statusText: "Not Found",
           headers: new HttpHeaders({
-            'Content-Type': 'application/problem+json',
+            "Content-Type": "application/problem+json",
           }),
         });
       fixture.detectChanges();
@@ -448,7 +443,9 @@ describe('CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0', () => {
       const compiled = fixture.nativeElement as HTMLElement;
       const alert = compiled.querySelector('[role="alert"]');
       expect(alert).toBeTruthy();
-      expect(compiled.querySelector('[data-testid="search-results"]')).toBeNull();
+      expect(
+        compiled.querySelector('[data-testid="search-results"]'),
+      ).toBeNull();
       expect(compiled.querySelector('[data-testid="search-empty"]')).toBeNull();
     });
   });
@@ -457,7 +454,7 @@ describe('CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0', () => {
   // /teacher-contracts
   // ----------------------------------------------------------------
 
-  describe('Ruta /teacher-contracts', () => {
+  describe("Ruta /teacher-contracts", () => {
     let http: HttpTestingController;
     let fixture: ComponentFixture<TeacherContractsComponent>;
 
@@ -476,21 +473,21 @@ describe('CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0', () => {
     it('renderiza exactamente un <h1> con tabindex="-1"', () => {
       flushCatalog(http);
       const compiled = fixture.nativeElement as HTMLElement;
-      const headings = compiled.querySelectorAll('h1');
+      const headings = compiled.querySelectorAll("h1");
       expect(headings.length).toBe(1);
       const h1 = headings[0];
-      expect(h1?.getAttribute('tabindex')).toBe('-1');
-      expect(h1?.textContent?.trim()).toBe('Contratos docentes');
+      expect(h1?.getAttribute("tabindex")).toBe("-1");
+      expect(h1?.textContent?.trim()).toBe("Contratos docentes");
     });
 
-    it('estructura cada grupo de formulario con <fieldset><legend>', () => {
+    it("estructura cada grupo de formulario con <fieldset><legend>", () => {
       flushCatalog(http);
       const compiled = fixture.nativeElement as HTMLElement;
-      const fieldsets = compiled.querySelectorAll('fieldset');
+      const fieldsets = compiled.querySelectorAll("fieldset");
       // Identidad y período + Escuelas + Filtros (consulta).
       expect(fieldsets.length).toBeGreaterThanOrEqual(3);
       for (const fs of Array.from(fieldsets)) {
-        const legend = fs.querySelector('legend');
+        const legend = fs.querySelector("legend");
         expect(legend, `fieldset sin <legend>`).toBeTruthy();
         expect(legend?.textContent?.trim().length ?? 0).toBeGreaterThan(0);
       }
@@ -512,7 +509,7 @@ describe('CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0', () => {
       ) as NodeListOf<HTMLButtonElement>;
       expect(submits.length).toBeGreaterThanOrEqual(2);
       for (const s of Array.from(submits)) {
-        expect(s.getAttribute('aria-busy')).toBe('false');
+        expect(s.getAttribute("aria-busy")).toBe("false");
       }
     });
 
@@ -525,8 +522,8 @@ describe('CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0', () => {
         onToggleSchool(id: number, checked: boolean): void;
         onSubmitCreate(): void;
       };
-      comp.createForm.controls['teacherId'].setValue(5);
-      comp.createForm.controls['startDate'].setValue('2026-03-01');
+      comp.createForm.controls["teacherId"].setValue(5);
+      comp.createForm.controls["startDate"].setValue("2026-03-01");
       comp.onToggleSchool(1, true);
       comp.onSubmitCreate();
 
@@ -535,7 +532,7 @@ describe('CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0', () => {
           (r) =>
             r.url ===
               `${DEFAULT_API_CONFIG.apiBaseUrl}/api/teachers/5/contracts` &&
-            r.method === 'POST',
+            r.method === "POST",
         )
         .flush(teacherContractsCreatedFixture);
       fixture.detectChanges();
@@ -545,7 +542,7 @@ describe('CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0', () => {
         '[data-testid="contracts-create-success"]',
       );
       expect(ok).toBeTruthy();
-      expect(ok?.getAttribute('role')).toBe('status');
+      expect(ok?.getAttribute("role")).toBe("status");
       expect(compiled.querySelector('[role="alert"]')).toBeNull();
     });
 
@@ -557,7 +554,7 @@ describe('CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0', () => {
         };
         onSubmitQuery(): void;
       };
-      comp.queryForm.controls['teacherId'].setValue(5);
+      comp.queryForm.controls["teacherId"].setValue(5);
       comp.onSubmitQuery();
 
       http
@@ -565,7 +562,7 @@ describe('CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0', () => {
           (r) =>
             r.url ===
               `${DEFAULT_API_CONFIG.apiBaseUrl}/api/teachers/5/contracts` &&
-            r.method === 'GET',
+            r.method === "GET",
         )
         .flush(emptyTeacherContractsListedFixture);
       fixture.detectChanges();
@@ -575,7 +572,7 @@ describe('CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0', () => {
         '[data-testid="contracts-query-empty"]',
       );
       expect(empty).toBeTruthy();
-      expect(empty?.getAttribute('role')).toBe('status');
+      expect(empty?.getAttribute("role")).toBe("status");
       expect(compiled.querySelector('[role="alert"]')).toBeNull();
     });
 
@@ -587,7 +584,7 @@ describe('CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0', () => {
         };
         onSubmitQuery(): void;
       };
-      comp.queryForm.controls['teacherId'].setValue(9999);
+      comp.queryForm.controls["teacherId"].setValue(9999);
       comp.onSubmitQuery();
 
       http
@@ -595,13 +592,13 @@ describe('CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0', () => {
           (r) =>
             r.url ===
               `${DEFAULT_API_CONFIG.apiBaseUrl}/api/teachers/9999/contracts` &&
-            r.method === 'GET',
+            r.method === "GET",
         )
         .flush(apiProblemNotFoundFixture, {
           status: 404,
-          statusText: 'Not Found',
+          statusText: "Not Found",
           headers: new HttpHeaders({
-            'Content-Type': 'application/problem+json',
+            "Content-Type": "application/problem+json",
           }),
         });
       fixture.detectChanges();
@@ -611,7 +608,7 @@ describe('CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0', () => {
         '[data-testid="contracts-query-error"]',
       );
       expect(alert).toBeTruthy();
-      expect(alert?.getAttribute('role')).toBe('alert');
+      expect(alert?.getAttribute("role")).toBe("alert");
     });
   });
 });

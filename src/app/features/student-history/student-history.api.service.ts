@@ -1,11 +1,9 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
-import type { Observable } from 'rxjs';
-import { map } from 'rxjs';
-import { API_CONFIG } from '../../core/api/api-config';
-import type {
-  StudentHistoryResponseDto,
-} from '../../core/api/dtos/student-history-item.dto';
+import { HttpClient, HttpParams } from "@angular/common/http";
+import { Injectable, inject } from "@angular/core";
+import type { Observable } from "rxjs";
+import { map } from "rxjs";
+import { API_CONFIG } from "../../core/api/api-config";
+import type { StudentHistoryResponseDto } from "../../core/api/dtos/student-history-item.dto";
 
 /**
  * Parámetros de la operación canónica `getStudentHistory`. Sólo
@@ -26,7 +24,7 @@ function toStudentHistoryHttpParams(
 ): HttpParams {
   let httpParams = new HttpParams();
   if (params.asOfDate) {
-    httpParams = httpParams.set('asOfDate', params.asOfDate);
+    httpParams = httpParams.set("asOfDate", params.asOfDate);
   }
   return httpParams;
 }
@@ -43,7 +41,7 @@ function toStudentHistoryHttpParams(
  * `operationId` declarado en el contrato canónico. El manejo uniforme
  * de errores 4xx/5xx queda delegado al `problemDetailsInterceptor`.
  */
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class StudentHistoryApiService {
   private readonly http = inject(HttpClient);
   private readonly config = inject(API_CONFIG);

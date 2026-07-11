@@ -5,23 +5,23 @@ import {
   computed,
   inject,
   type OnInit,
-} from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+} from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import {
   type FormControl,
   FormGroup,
   NonNullableFormBuilder,
   ReactiveFormsModule,
   Validators,
-} from '@angular/forms';
-import type { RemoteState } from '../../../core/api/remote-state';
-import { ReportFacade } from '../report.facade';
-import { teacherCountsBySectorFiltersToParams } from '../report.mappers';
+} from "@angular/forms";
+import type { RemoteState } from "../../../core/api/remote-state";
+import { ReportFacade } from "../report.facade";
+import { teacherCountsBySectorFiltersToParams } from "../report.mappers";
 import type {
   SectorCountVm,
   TeacherCountsBySectorFiltersVm,
   TeacherCountsBySectorVm,
-} from '../report.vm';
+} from "../report.vm";
 
 interface SectorFiltersFormShape {
   periodStart: FormControl<string>;
@@ -57,12 +57,12 @@ type SectorFiltersFormGroup = FormGroup<SectorFiltersFormShape>;
  * ejercitarse en aislamiento porque la fachada es proveda localmente.
  */
 @Component({
-  selector: 'app-teacher-counts-by-sector',
+  selector: "app-teacher-counts-by-sector",
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule],
   providers: [ReportFacade],
-  templateUrl: './teacher-counts-by-sector.component.html',
-  styleUrl: './teacher-counts-by-sector.component.scss',
+  templateUrl: "./teacher-counts-by-sector.component.html",
+  styleUrl: "./teacher-counts-by-sector.component.scss",
 })
 export class TeacherCountsBySectorComponent implements OnInit {
   private readonly fb = inject(NonNullableFormBuilder);
@@ -72,17 +72,15 @@ export class TeacherCountsBySectorComponent implements OnInit {
   readonly result = this.reports.sectorState;
 
   readonly form: SectorFiltersFormGroup = this.fb.group({
-    periodStart: this.fb.control('', [
+    periodStart: this.fb.control("", [
       Validators.pattern(/^\d{4}-\d{2}-\d{2}$/),
     ]),
-    periodEnd: this.fb.control('', [
-      Validators.pattern(/^\d{4}-\d{2}-\d{2}$/),
-    ]),
+    periodEnd: this.fb.control("", [Validators.pattern(/^\d{4}-\d{2}-\d{2}$/)]),
   });
 
-  readonly isLoading = computed(() => this.result().status === 'loading');
-  readonly isSuccess = computed(() => this.result().status === 'success');
-  readonly hasError = computed(() => this.result().status === 'error');
+  readonly isLoading = computed(() => this.result().status === "loading");
+  readonly isSuccess = computed(() => this.result().status === "success");
+  readonly hasError = computed(() => this.result().status === "error");
 
   /**
    * Indica si los filtros actuales son simétricos. La UI usa este
@@ -97,12 +95,12 @@ export class TeacherCountsBySectorComponent implements OnInit {
 
   readonly successData = computed<TeacherCountsBySectorVm | null>(() => {
     const state = this.result();
-    return state.status === 'success' ? state.data : null;
+    return state.status === "success" ? state.data : null;
   });
 
   readonly errorProblem = computed(() => {
     const state = this.result();
-    return state.status === 'error' ? state.problem : null;
+    return state.status === "error" ? state.problem : null;
   });
 
   readonly errorFields = computed(() => {
@@ -144,8 +142,8 @@ export class TeacherCountsBySectorComponent implements OnInit {
   onReset(): void {
     this.reports.resetSector();
     this.form.reset({
-      periodStart: '',
-      periodEnd: '',
+      periodStart: "",
+      periodEnd: "",
     });
   }
 
