@@ -17,13 +17,17 @@ import { toApiProblem } from "./to-api-problem";
 export const problemDetailsInterceptor: HttpInterceptorFn = (req, next) =>
   next(req).pipe(
     catchError((error: unknown) => {
-      if (error instanceof ApiProblemError) {
-        return throwError(() => error);
-      }
-      const httpError = error as HttpErrorResponse;
-      if (httpError && typeof httpError.status === "number") {
-        return throwError(() => new ApiProblemError(toApiProblem(httpError)));
-      }
-      return throwError(() => error);
+      return throwError(() => normalizeApiError(error));
     }),
   );
+
+export const normalizeApiError = (error: unknown): unknown => {
+  if (error instanceof ApiProblemError) {
+    return error;
+  }
+  const httpError = error as HttpErrorResponse;
+  if (httpError && typeof httpError.status === "number") {
+    return new ApiProblemError(toApiProblem(httpError));
+  }
+  return error;
+};
