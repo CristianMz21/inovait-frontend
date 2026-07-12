@@ -11,7 +11,7 @@
  *      Reporta PASS si responde 2xx dentro del timeout, FAIL en caso
  *      contrario con el código de error de bajo nivel.
  *
- *   2. `OPTIONS http://localhost:5000/api/catalogs/schools` con los
+ *   2. `OPTIONS http://localhost:5000/api/schools` con los
  *      headers de un preflight CORS desde
  *      `Origin: http://localhost:4200`. Reporta PASS si el backend
  *      responde con `Access-Control-Allow-Origin` que cubra el origen,
@@ -32,7 +32,7 @@
 import { request } from 'node:http';
 
 const DEFAULT_HEALTH_URL = 'http://localhost:5000/health';
-const DEFAULT_PREFLIGHT_URL = 'http://localhost:5000/api/catalogs/schools';
+const DEFAULT_PREFLIGHT_URL = 'http://localhost:5000/api/schools';
 const DEFAULT_ORIGIN = 'http://localhost:4200';
 const DEFAULT_TIMEOUT_MS = 5000;
 

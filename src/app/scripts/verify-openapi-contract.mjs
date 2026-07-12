@@ -36,7 +36,9 @@ const AUTHORIZED_CHECKSUM =
 // Sucesores aprobados explícitamente. Vacío por defecto; sólo se añaden
 // commits verificados manualmente por mantenimiento.
 const APPROVED_SUCCESSORS = new Set([
-  // 'abc123...', // ejemplo: commit sucesor explícitamente aprobado
+  // Backend production-model-v2.0.0 completion (103/103 tasks); contract
+  // tree verified byte-identical to the authorized baseline.
+  "5d8e0f81e1195c3f70a84caeae5f8bda013f785e",
 ]);
 
 // Orden canónico declarado en `quickstart.md`.
@@ -187,12 +189,15 @@ function assertAuthorizedCommit(contractsDir) {
 }
 
 function computeChecksum(contractsDir) {
+  // Reproduces the canonical pipeline from quickstart.md exactly:
+  // `sha256sum <files-in-order> | sha256sum`, where each input line is
+  // "<hex>  <relative-path>\n" (two spaces, trailing newline).
   const sha = createHash("sha256");
   for (const rel of CONTRACT_FILES) {
     const absolute = resolve(contractsDir, rel);
     const buffer = readFileSync(absolute);
     const fileHash = createHash("sha256").update(buffer).digest("hex");
-    sha.update(fileHash);
+    sha.update(`${fileHash}  ${rel}\n`);
   }
   return sha.digest("hex");
 }
