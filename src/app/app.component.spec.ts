@@ -341,7 +341,20 @@ describe("App", () => {
       expect(main.inert).toBe(false);
     });
 
-    it("focuses the destination heading (not left behind inert) when a different-route nav link closes the drawer", async () => {
+    it("closes the drawer and calls focus() on the destination heading when a different-route nav link is clicked (drawer-close wiring only)", async () => {
+      // NOTE: this test does NOT guard the suspected inert/focus race.
+      // jsdom 28.1.0's `Element.focus()` does not check inert ancestors at
+      // all (unlike a real browser, where `focus()` on a descendant of an
+      // `[inert]` element is a silent no-op per the HTML spec), so this
+      // assertion passes unconditionally regardless of whether `<main>`'s
+      // `[inert]` removal races `onRouteActivate`'s focus microtask. All it
+      // proves is that the drawer-close-on-nav-click wiring calls
+      // `heading.focus()` with the right element in an environment that
+      // doesn't enforce inert. The real guard for the inert race is the
+      // Playwright test "drawer navigation to a different route closes the
+      // drawer and moves focus to the destination heading" in
+      // e2e/frontend-remediation.spec.ts (mobile-chromium project), which
+      // runs in real Chromium where inert actually blocks focus.
       const fixture = TestBed.createComponent(App);
       const router = TestBed.inject(Router);
       fixture.detectChanges();
@@ -365,10 +378,6 @@ describe("App", () => {
       fixture.detectChanges();
       await fixture.whenStable();
 
-      // Regression guard for the suspected inert/focus race: `onRouteActivate`
-      // queues a microtask that focuses the destination `<main> h1`; if the
-      // drawer's `[inert]` removal from `<main>` lags behind that microtask,
-      // `heading.focus()` is a silent no-op per the HTML spec.
       const heading = compiled.querySelector<HTMLElement>("main h1")!;
       expect(document.activeElement).toBe(heading);
       expect(heading.textContent?.trim()).toBe("Consulta de estudiantes");

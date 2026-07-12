@@ -88,6 +88,46 @@ test("keyboard navigation moves focus to each route heading", async ({
   ).toBeFocused();
 });
 
+test("drawer navigation to a different route closes the drawer and moves focus to the destination heading", async ({
+  appPage,
+}, testInfo) => {
+  // The drawer only exists below the 1024px breakpoint (see
+  // app.component.scss `.ec-hamburger` display rule); on desktop-chromium
+  // the hamburger is `display: none` and never actionable.
+  test.skip(
+    testInfo.project.name !== "mobile-chromium",
+    "the drawer only exists below the 1024px breakpoint",
+  );
+
+  await appPage.goto("/enrollments");
+  const hamburger = appPage.getByLabel("Abrir menú de navegación");
+  await hamburger.click();
+  await expect(hamburger).toHaveAttribute("aria-expanded", "true");
+
+  // Real-browser guard for the suspected inert/focus race: with the drawer
+  // open, `<main>` is `[inert]`. Clicking a nav link to a DIFFERENT route
+  // closes the drawer (removing `[inert]` from `<main>`) and triggers
+  // `onRouteActivate`'s `queueMicrotask(() => heading.focus())`. If the
+  // `[inert]` DOM removal lags the focus microtask (zoneless CD flush is
+  // itself microtask-scheduled), `focus()` is a silent no-op per the HTML
+  // spec — jsdom does not enforce this, so only a real browser can prove it.
+  await appPage.getByRole("link", { name: "Consulta de estudiantes" }).click();
+
+  await expect(hamburger).toHaveAttribute("aria-expanded", "false");
+  await expect(
+    appPage.getByRole("heading", { level: 1, name: "Consulta de estudiantes" }),
+  ).toBeVisible();
+
+  const activeElement = await appPage.evaluate(() => ({
+    tagName: document.activeElement?.tagName,
+    text: document.activeElement?.textContent?.trim(),
+  }));
+  expect(activeElement).toEqual({
+    tagName: "H1",
+    text: "Consulta de estudiantes",
+  });
+});
+
 test("enrollment cascade synchronizes native and ARIA disabled state", async ({
   appPage,
 }) => {
