@@ -5,7 +5,8 @@ import {
 } from "@angular/common/http/testing";
 import { TestBed } from "@angular/core/testing";
 import { provideHttpClient } from "@angular/common/http";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { throwError } from "rxjs";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   API_CONFIG,
   DEFAULT_API_CONFIG,
@@ -225,5 +226,30 @@ describe("StudentSearchFacade", () => {
     expect(retryReq.request.params.get("asOfDate")).toBe("2026-07-10");
     retryReq.flush(emptyEnrollmentListResponseFixture);
     expect(facade.result().status).toBe("empty");
+  });
+
+  it("termina en error seguro ante un fallo inesperado no normalizado", () => {
+    vi.spyOn(TestBed.inject(StudentSearchApiService), "list").mockReturnValue(
+      throwError(() => new Error("unexpected")),
+    );
+
+    facade.search(completeFilters);
+
+    expect(facade.result()).toMatchObject({
+      status: "error",
+      problem: { code: "unknown_error" },
+    });
+  });
+
+  it("cancela el GET pendiente al destruir la fachada", () => {
+    facade.search(completeFilters);
+    const request = http.expectOne(
+      (candidate) =>
+        candidate.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
+    );
+
+    TestBed.resetTestingModule();
+
+    expect(request.cancelled).toBe(true);
   });
 });

@@ -15,6 +15,7 @@ import {
   Validators,
 } from "@angular/forms";
 import { CatalogFacade } from "../../core/catalogs/catalog.facade";
+import { CatalogStatusComponent } from "../../core/catalogs/catalog-status.component";
 import type { RemoteState } from "../../core/api/remote-state";
 import { StudentSearchFacade } from "./student-search.facade";
 import { studentSearchFiltersToParams } from "./student-search.mappers";
@@ -61,7 +62,7 @@ type StudentSearchFormGroup = FormGroup<StudentSearchFormShape>;
 @Component({
   selector: "app-student-search",
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, CatalogStatusComponent],
   providers: [StudentSearchFacade],
   templateUrl: "./student-search.component.html",
   styleUrl: "./student-search.component.scss",
@@ -72,6 +73,9 @@ export class StudentSearchComponent implements OnInit {
   private readonly search = inject(StudentSearchFacade);
 
   readonly result = this.search.result;
+  readonly schoolsState = this.catalog.schoolsState;
+  readonly gradesState = this.catalog.gradesState;
+  readonly academicYearsState = this.catalog.academicYearsState;
 
   readonly form: StudentSearchFormGroup = this.fb.group({
     schoolId: this.fb.control<number | null>(null, [requiredValidator]),
@@ -152,6 +156,18 @@ export class StudentSearchComponent implements OnInit {
 
   onRetry(): void {
     this.search.retry();
+  }
+
+  retrySchools(): void {
+    this.catalog.loadSchools();
+  }
+
+  retryGrades(): void {
+    this.catalog.loadGrades();
+  }
+
+  retryAcademicYears(): void {
+    this.catalog.loadAcademicYears();
   }
 
   onReset(): void {

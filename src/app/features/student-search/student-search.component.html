@@ -1,16 +1,36 @@
 <section class="search" aria-labelledby="search-title">
   <h1 id="search-title" tabindex="-1">Consulta de estudiantes</h1>
-  <p class="search-lede">
+  <p id="search-lede" class="search-lede">
     Seleccione la combinación <strong>Escuela</strong>, <strong>Grado</strong> y
     <strong>Año académico</strong> para listar las inscripciones vigentes. La
     fecha de referencia para la edad es opcional.
   </p>
+
+  <app-catalog-status
+    [state]="schoolsState()"
+    label="escuelas"
+    testId="search-schools"
+    (retry)="retrySchools()"
+  />
+  <app-catalog-status
+    [state]="gradesState()"
+    label="grados"
+    testId="search-grades"
+    (retry)="retryGrades()"
+  />
+  <app-catalog-status
+    [state]="academicYearsState()"
+    label="años académicos"
+    testId="search-years"
+    (retry)="retryAcademicYears()"
+  />
 
   <form
     class="search-form"
     [formGroup]="form"
     (ngSubmit)="onSubmit()"
     novalidate
+    aria-label="Filtros de consulta de estudiantes"
     aria-describedby="search-lede"
   >
     <fieldset [disabled]="isLoading()">
@@ -154,6 +174,7 @@
       class="search-results"
       role="region"
       aria-labelledby="results-title"
+      tabindex="0"
       data-testid="search-results"
     >
       <h2 id="results-title">Inscripciones encontradas</h2>
@@ -201,11 +222,16 @@
                   class="search-history"
                   disabled
                   aria-disabled="true"
-                  aria-describedby="history-locked-help"
+                  [attr.aria-describedby]="
+                    'history-locked-help-' + row.enrollmentId
+                  "
                 >
                   Ver historial
                 </button>
-                <small id="history-locked-help" class="search-help">
+                <small
+                  [id]="'history-locked-help-' + row.enrollmentId"
+                  class="search-help"
+                >
                   Disponible tras la apertura de P1.
                 </small>
               </td>

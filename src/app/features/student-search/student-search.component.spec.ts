@@ -1,5 +1,5 @@
 import { HttpHeaders } from "@angular/common/http";
-import { TestBed } from "@angular/core/testing";
+import { type ComponentFixture, TestBed } from "@angular/core/testing";
 import { provideHttpClient } from "@angular/common/http";
 import {
   HttpTestingController,
@@ -26,6 +26,7 @@ import { StudentSearchComponent } from "./student-search.component";
 describe("StudentSearchComponent", () => {
   let http: HttpTestingController;
   let component: StudentSearchComponent;
+  let fixture: ComponentFixture<StudentSearchComponent>;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -38,7 +39,7 @@ describe("StudentSearchComponent", () => {
       ],
     });
     http = TestBed.inject(HttpTestingController);
-    const fixture = TestBed.createComponent(StudentSearchComponent);
+    fixture = TestBed.createComponent(StudentSearchComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
@@ -68,6 +69,73 @@ describe("StudentSearchComponent", () => {
     expect(component.academicYearOptions().length).toBe(
       academicYearsFixture.length,
     );
+  });
+
+  it("muestra error de catálogo y permite reintentar grados", () => {
+    http
+      .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/schools`)
+      .flush(schoolsFixture);
+    http
+      .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/grades`)
+      .flush(apiProblemNotFoundFixture, {
+        status: 404,
+        statusText: "Not Found",
+        headers: new HttpHeaders({
+          "Content-Type": "application/problem+json",
+        }),
+      });
+    http
+      .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/academic-years`)
+      .flush(academicYearsFixture);
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.textContent).toContain("No se pudieron cargar grados");
+    const retry = Array.from(host.querySelectorAll("button")).find((button) =>
+      button.textContent?.includes("Reintentar grados"),
+    );
+
+    retry?.click();
+
+    http
+      .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/grades`)
+      .flush(gradesFixture);
+    expect(retry).toBeDefined();
+  });
+
+  it("permite reintentar escuelas y años desde sus alertas", () => {
+    flushInitialCatalogs();
+    component.retrySchools();
+    http
+      .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/schools`)
+      .flush(apiProblemNotFoundFixture, {
+        status: 404,
+        statusText: "Not Found",
+      });
+    component.retryAcademicYears();
+    http
+      .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/academic-years`)
+      .flush(apiProblemNotFoundFixture, {
+        status: 404,
+        statusText: "Not Found",
+      });
+    fixture.detectChanges();
+    const buttons = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll("button"),
+    );
+    buttons
+      .find((button) => button.textContent?.includes("Reintentar escuelas"))
+      ?.click();
+    http
+      .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/schools`)
+      .flush(schoolsFixture);
+    buttons
+      .find((button) =>
+        button.textContent?.includes("Reintentar años académicos"),
+      )
+      ?.click();
+    http
+      .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/academic-years`)
+      .flush(academicYearsFixture);
   });
 
   it("bloquea el botón Buscar hasta completar la combinación académica", () => {

@@ -1,6 +1,7 @@
-import { Injectable, inject, signal } from "@angular/core";
+import { DestroyRef, Injectable, inject, signal } from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import type { Subscription } from "rxjs";
-import { ApiProblemError } from "../../core/api/api-problem-error";
+import { toSafeApiProblem } from "../../core/api/to-safe-api-problem";
 import {
   empty as emptyState,
   errorState,
@@ -45,6 +46,7 @@ import type {
 @Injectable()
 export class StudentSearchFacade {
   private readonly api = inject(StudentSearchApiService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly state =
     signal<RemoteState<readonly StudentSearchResultVm[]>>(idle());
   private subscription: Subscription | null = null;
@@ -122,32 +124,33 @@ export class StudentSearchFacade {
     const requestKey = `student-search#${this.sequence}`;
     this.state.set(loading<readonly StudentSearchResultVm[]>(requestKey));
 
-    this.subscription = this.api.list(params).subscribe({
-      next: (items) => {
-        if (this.isStale(requestKey)) {
-          return;
-        }
-        if (items.length === 0) {
-          this.state.set(emptyState("noResults"));
-          return;
-        }
-        this.state.set(success(items.map(enrollmentListItemToResult)));
-      },
-      error: (err: unknown) => {
-        if (this.isStale(requestKey)) {
-          return;
-        }
-        const problem = err instanceof ApiProblemError ? err.problem : null;
-        if (!problem) {
-          return;
-        }
-        this.state.set(errorState<readonly StudentSearchResultVm[]>(problem));
-      },
-      complete: () => {
-        // El backend cierra el observable tras la respuesta única; no
-        // se requiere lógica adicional aquí.
-      },
-    });
+    this.subscription = this.api
+      .list(params)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (items) => {
+          if (this.isStale(requestKey)) {
+            return;
+          }
+          if (items.length === 0) {
+            this.state.set(emptyState("noResults"));
+            return;
+          }
+          this.state.set(success(items.map(enrollmentListItemToResult)));
+        },
+        error: (err: unknown) => {
+          if (this.isStale(requestKey)) {
+            return;
+          }
+          this.state.set(
+            errorState<readonly StudentSearchResultVm[]>(toSafeApiProblem(err)),
+          );
+        },
+        complete: () => {
+          // El backend cierra el observable tras la respuesta única; no
+          // se requiere lógica adicional aquí.
+        },
+      });
   }
 
   /**
