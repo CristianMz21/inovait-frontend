@@ -15,10 +15,10 @@
     aria-label="Filtros de docentes por sector"
     aria-describedby="sector-lede"
   >
-    <fieldset [disabled]="isLoading()">
+    <fieldset class="ec-card" [disabled]="isLoading()">
       <legend>Período</legend>
 
-      <label class="sector-field">
+      <label class="sector-field ec-field">
         <span>Inicio del período (opcional)</span>
         <input
           id="sector-period-start"
@@ -28,7 +28,7 @@
         />
       </label>
 
-      <label class="sector-field">
+      <label class="sector-field ec-field">
         <span>Fin del período (opcional)</span>
         <input
           id="sector-period-end"
@@ -46,7 +46,7 @@
     <div class="sector-actions">
       <button
         type="submit"
-        class="sector-submit"
+        class="sector-submit ec-btn ec-btn--secondary"
         [disabled]="!canSubmit() || isLoading()"
         [attr.aria-busy]="isLoading() ? 'true' : 'false'"
       >
@@ -58,7 +58,7 @@
       </button>
       <button
         type="button"
-        class="sector-cancel"
+        class="sector-cancel ec-btn ec-btn--outline"
         (click)="onReset()"
         [disabled]="isLoading()"
       >
@@ -69,7 +69,7 @@
 
   @if (isLoading()) {
     <p
-      class="sector-status"
+      class="sector-status ec-alert ec-alert--info"
       role="status"
       aria-live="polite"
       data-testid="sector-loading"
@@ -80,32 +80,43 @@
 
   @if (hasError()) {
     <div
-      class="sector-error"
+      class="sector-error ec-alert ec-alert--error"
       role="alert"
       aria-live="assertive"
       data-testid="sector-error"
     >
+      <app-icon name="error" />
       @if (errorProblem(); as problem) {
-        <p class="sector-error-title">
-          <strong>{{ problem.title }}</strong>
-          <span class="sector-error-status">(HTTP {{ problem.status }})</span>
-        </p>
-        @if (problem.detail) {
-          <p>{{ problem.detail }}</p>
-        }
-        @if (errorFields().length > 0) {
-          <ul class="sector-error-fields">
-            @for (entry of errorFields(); track entry.field) {
-              @for (msg of entry.messages; track msg) {
-                <li>
-                  <code>{{ entry.field }}</code
-                  >: {{ msg }}
-                </li>
+        <div class="sector-error__body">
+          <p class="sector-error-title">
+            <strong>{{ problem.title }}</strong>
+            <span class="sector-error-status">
+              (HTTP {{ problem.status }})
+            </span>
+          </p>
+          @if (problem.detail) {
+            <p>{{ problem.detail }}</p>
+          }
+          @if (errorFields().length > 0) {
+            <ul class="sector-error-fields">
+              @for (entry of errorFields(); track entry.field) {
+                @for (msg of entry.messages; track msg) {
+                  <li>
+                    <code>{{ entry.field }}</code
+                    >: {{ msg }}
+                  </li>
+                }
               }
-            }
-          </ul>
-        }
-        <button type="button" (click)="onRetry()">Reintentar</button>
+            </ul>
+          }
+          <button
+            type="button"
+            class="ec-btn ec-btn--outline"
+            (click)="onRetry()"
+          >
+            Reintentar
+          </button>
+        </div>
       }
     </div>
   }
@@ -118,6 +129,24 @@
       data-testid="sector-results"
     >
       <h2 id="sector-results-title">Docentes distintos por sector</h2>
+
+      <div class="sector-kpis">
+        <div class="ec-kpi">
+          <p class="ec-kpi__label">{{ sectorLabel(data.sectors[0]) }}</p>
+          <p class="ec-kpi__value">
+            {{ data.sectors[0].distinctTeacherCount }}
+          </p>
+          <p class="ec-kpi__hint">Docentes distintos</p>
+        </div>
+        <div class="ec-kpi">
+          <p class="ec-kpi__label">{{ sectorLabel(data.sectors[1]) }}</p>
+          <p class="ec-kpi__value">
+            {{ data.sectors[1].distinctTeacherCount }}
+          </p>
+          <p class="ec-kpi__hint">Docentes distintos</p>
+        </div>
+      </div>
+
       <p class="sector-context" role="status" aria-live="polite">
         Período <strong>{{ data.periodStart }}</strong> a
         <strong>{{ data.periodEnd }}</strong>
@@ -125,27 +154,29 @@
         {{ data.totalDistinctTeacherCount === 1 ? "docente" : "docentes" }}
       </p>
 
-      <table class="sector-table">
-        <caption class="visually-hidden">
-          Docentes distintos por sector. Dos sectores canónicos con conteos
-          exactos reportados por el backend (deduplicación por teacherId
-          delegada al backend).
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col">Sector</th>
-            <th scope="col">Docentes distintos</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (sector of data.sectors; track sector.id) {
+      <div class="ec-table">
+        <table>
+          <caption class="visually-hidden">
+            Docentes distintos por sector. Dos sectores canónicos con conteos
+            exactos reportados por el backend (deduplicación por teacherId
+            delegada al backend).
+          </caption>
+          <thead>
             <tr>
-              <td>{{ sectorLabel(sector) }}</td>
-              <td>{{ sector.distinctTeacherCount }}</td>
+              <th scope="col">Sector</th>
+              <th scope="col">Docentes distintos</th>
             </tr>
-          }
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            @for (sector of data.sectors; track sector.id) {
+              <tr>
+                <td>{{ sectorLabel(sector) }}</td>
+                <td class="ec-numeric">{{ sector.distinctTeacherCount }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
     </div>
   }
 </section>

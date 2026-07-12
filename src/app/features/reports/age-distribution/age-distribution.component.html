@@ -34,10 +34,10 @@
     aria-label="Filtros de distribución por edad"
     aria-describedby="age-lede"
   >
-    <fieldset [disabled]="isLoading()">
+    <fieldset class="ec-card" [disabled]="isLoading()">
       <legend>Filtros</legend>
 
-      <label class="age-field">
+      <label class="age-field ec-field">
         <span>Año académico</span>
         <select
           id="age-academic-year-id"
@@ -52,7 +52,7 @@
         </select>
       </label>
 
-      <label class="age-field">
+      <label class="age-field ec-field">
         <span>Escuela (opcional)</span>
         <select id="age-school-id" formControlName="schoolId">
           <option [ngValue]="null">Todas</option>
@@ -62,7 +62,7 @@
         </select>
       </label>
 
-      <label class="age-field">
+      <label class="age-field ec-field">
         <span>Grado (opcional)</span>
         <select id="age-grade-id" formControlName="gradeId">
           <option [ngValue]="null">Todos</option>
@@ -72,7 +72,7 @@
         </select>
       </label>
 
-      <label class="age-field">
+      <label class="age-field ec-field">
         <span>Fecha de referencia (opcional)</span>
         <input id="age-as-of-date" type="date" formControlName="asOfDate" />
       </label>
@@ -81,7 +81,7 @@
     <div class="age-actions">
       <button
         type="submit"
-        class="age-submit"
+        class="age-submit ec-btn ec-btn--secondary"
         [disabled]="form.invalid || isLoading()"
         [attr.aria-busy]="isLoading() ? 'true' : 'false'"
       >
@@ -93,7 +93,7 @@
       </button>
       <button
         type="button"
-        class="age-cancel"
+        class="age-cancel ec-btn ec-btn--outline"
         (click)="onReset()"
         [disabled]="isLoading()"
       >
@@ -104,7 +104,7 @@
 
   @if (isLoading()) {
     <p
-      class="age-status"
+      class="age-status ec-alert ec-alert--info"
       role="status"
       aria-live="polite"
       data-testid="age-loading"
@@ -115,32 +115,41 @@
 
   @if (hasError()) {
     <div
-      class="age-error"
+      class="age-error ec-alert ec-alert--error"
       role="alert"
       aria-live="assertive"
       data-testid="age-error"
     >
+      <app-icon name="error" />
       @if (errorProblem(); as problem) {
-        <p class="age-error-title">
-          <strong>{{ problem.title }}</strong>
-          <span class="age-error-status">(HTTP {{ problem.status }})</span>
-        </p>
-        @if (problem.detail) {
-          <p>{{ problem.detail }}</p>
-        }
-        @if (errorFields().length > 0) {
-          <ul class="age-error-fields">
-            @for (entry of errorFields(); track entry.field) {
-              @for (msg of entry.messages; track msg) {
-                <li>
-                  <code>{{ entry.field }}</code
-                  >: {{ msg }}
-                </li>
+        <div class="age-error__body">
+          <p class="age-error-title">
+            <strong>{{ problem.title }}</strong>
+            <span class="age-error-status">(HTTP {{ problem.status }})</span>
+          </p>
+          @if (problem.detail) {
+            <p>{{ problem.detail }}</p>
+          }
+          @if (errorFields().length > 0) {
+            <ul class="age-error-fields">
+              @for (entry of errorFields(); track entry.field) {
+                @for (msg of entry.messages; track msg) {
+                  <li>
+                    <code>{{ entry.field }}</code
+                    >: {{ msg }}
+                  </li>
+                }
               }
-            }
-          </ul>
-        }
-        <button type="button" (click)="onRetry()">Reintentar</button>
+            </ul>
+          }
+          <button
+            type="button"
+            class="ec-btn ec-btn--outline"
+            (click)="onRetry()"
+          >
+            Reintentar
+          </button>
+        </div>
       }
     </div>
   }
@@ -153,6 +162,25 @@
       data-testid="age-results"
     >
       <h2 id="age-results-title">Resultados de distribución por edad</h2>
+
+      <div class="age-kpis">
+        <div class="ec-kpi ec-kpi--featured">
+          <p class="ec-kpi__label">
+            <app-icon name="star" />
+            Rango destacado · {{ bandLabel(data.bands[0]) }}
+          </p>
+          <p class="ec-kpi__value">{{ data.bands[0].count }}</p>
+        </div>
+        <div class="ec-kpi">
+          <p class="ec-kpi__label">{{ bandLabel(data.bands[1]) }}</p>
+          <p class="ec-kpi__value">{{ data.bands[1].count }}</p>
+        </div>
+        <div class="ec-kpi">
+          <p class="ec-kpi__label">{{ bandLabel(data.bands[2]) }}</p>
+          <p class="ec-kpi__value">{{ data.bands[2].count }}</p>
+        </div>
+      </div>
+
       <p class="age-context" role="status" aria-live="polite">
         Año académico <strong>{{ data.academicYearId }}</strong> · Fecha de
         referencia <strong>{{ data.asOfDate }}</strong> · Total
@@ -160,28 +188,30 @@
         {{ data.totalCount === 1 ? "inscripción" : "inscripciones" }}
       </p>
 
-      <table class="age-table">
-        <caption class="visually-hidden">
-          Distribución por edad. Tres bandas canónicas con conteos exactos
-          reportados por el backend.
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col">Banda</th>
-            <th scope="col">Rango</th>
-            <th scope="col">Inscripciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (band of data.bands; track band.id) {
+      <div class="ec-table">
+        <table>
+          <caption class="visually-hidden">
+            Distribución por edad. Tres bandas canónicas con conteos exactos
+            reportados por el backend.
+          </caption>
+          <thead>
             <tr>
-              <td>{{ bandLabel(band) }}</td>
-              <td>{{ bandRange(band) }}</td>
-              <td>{{ band.count }}</td>
+              <th scope="col">Banda</th>
+              <th scope="col">Rango</th>
+              <th scope="col">Inscripciones</th>
             </tr>
-          }
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            @for (band of data.bands; track band.id) {
+              <tr>
+                <td>{{ bandLabel(band) }}</td>
+                <td>{{ bandRange(band) }}</td>
+                <td class="ec-numeric">{{ band.count }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
     </div>
   }
 </section>

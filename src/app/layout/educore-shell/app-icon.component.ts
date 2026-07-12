@@ -17,7 +17,8 @@ export type AppIconName =
   | "event_available"
   | "check_circle"
   | "error"
-  | "update";
+  | "update"
+  | "star";
 
 /**
  * Stroke-based path data for each icon, expressed on a 24x24 grid. Kept as a
@@ -40,6 +41,7 @@ const ICON_PATHS: Readonly<Record<AppIconName, string>> = {
   check_circle: "M12 3A9 9 0 1 0 12 21A9 9 0 1 0 12 3ZM7.5 12.5l3 3 6-6.5",
   error: "M12 3A9 9 0 1 0 12 21A9 9 0 1 0 12 3ZM12 8v5M12 16.5v.01",
   update: "M4 12a8 8 0 0 1 14-5.3M20 4v5h-5M20 12a8 8 0 0 1-14 5.3M4 20v-5h5",
+  star: "M12 2L14.9 8.5L22 9.3L16.8 14.1L18.2 21L12 17.5L5.8 21L7.2 14.1L2 9.3L9.1 8.5Z",
 };
 
 /**

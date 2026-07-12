@@ -15,6 +15,7 @@ import {
   Validators,
 } from "@angular/forms";
 import type { RemoteState } from "../../../core/api/remote-state";
+import { AppIconComponent } from "../../../layout/educore-shell/app-icon.component";
 import { ReportFacade } from "../report.facade";
 import { teacherCountsBySectorFiltersToParams } from "../report.mappers";
 import type {
@@ -59,7 +60,7 @@ type SectorFiltersFormGroup = FormGroup<SectorFiltersFormShape>;
 @Component({
   selector: "app-teacher-counts-by-sector",
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, AppIconComponent],
   providers: [ReportFacade],
   templateUrl: "./teacher-counts-by-sector.component.html",
   styleUrl: "./teacher-counts-by-sector.component.scss",

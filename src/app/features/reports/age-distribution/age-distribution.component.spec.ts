@@ -241,6 +241,45 @@ describe("AgeDistributionComponent (CT-AGE-RPT)", () => {
     expect(headers.length).toBe(3);
   });
 
+  // -- Renderizado DOM: KPIs de bandas (lock-in, EduCore) -----------------
+
+  it("renderiza la tarjeta KPI destacada para 3-7 y dos tarjetas KPI estándar con los valores correctos", () => {
+    flushCatalogs(http);
+    component.form.patchValue({ academicYearId: 2 });
+    component.onSubmit();
+    http.expectOne((r) => r.url === ageUrl).flush(ageDistributionFixture);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const kpis = compiled.querySelectorAll(".age-kpis .ec-kpi");
+    expect(kpis.length).toBe(3);
+
+    const [featured, second, third] = Array.from(kpis);
+    expect(featured?.classList.contains("ec-kpi--featured")).toBe(true);
+    expect(featured?.querySelector(".ec-kpi__value")?.textContent?.trim()).toBe(
+      "4",
+    );
+    expect(featured?.querySelector(".ec-kpi__label")?.textContent).toContain(
+      "3 a 7 años",
+    );
+
+    expect(second?.classList.contains("ec-kpi--featured")).toBe(false);
+    expect(second?.querySelector(".ec-kpi__value")?.textContent?.trim()).toBe(
+      "6",
+    );
+    expect(second?.querySelector(".ec-kpi__label")?.textContent?.trim()).toBe(
+      "8 a 12 años",
+    );
+
+    expect(third?.classList.contains("ec-kpi--featured")).toBe(false);
+    expect(third?.querySelector(".ec-kpi__value")?.textContent?.trim()).toBe(
+      "2",
+    );
+    expect(third?.querySelector(".ec-kpi__label")?.textContent?.trim()).toBe(
+      "Mayores de 12 años",
+    );
+  });
+
   it("200 con ceros expone success sin error y conteos en 0", () => {
     flushCatalogs(http);
     component.form.patchValue({ academicYearId: 2 });

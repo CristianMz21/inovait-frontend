@@ -23,10 +23,10 @@
     aria-label="Filtros de escuelas líderes"
     aria-describedby="top-lede"
   >
-    <fieldset [disabled]="isLoading()">
+    <fieldset class="ec-card" [disabled]="isLoading()">
       <legend>Filtros</legend>
 
-      <label class="top-field">
+      <label class="top-field ec-field">
         <span>Año académico</span>
         <select
           id="top-academic-year-id"
@@ -45,7 +45,7 @@
     <div class="top-actions">
       <button
         type="submit"
-        class="top-submit"
+        class="top-submit ec-btn ec-btn--secondary"
         [disabled]="form.invalid || isLoading()"
         [attr.aria-busy]="isLoading() ? 'true' : 'false'"
       >
@@ -57,7 +57,7 @@
       </button>
       <button
         type="button"
-        class="top-cancel"
+        class="top-cancel ec-btn ec-btn--outline"
         (click)="onReset()"
         [disabled]="isLoading()"
       >
@@ -68,7 +68,7 @@
 
   @if (isLoading()) {
     <p
-      class="top-status"
+      class="top-status ec-alert ec-alert--info"
       role="status"
       aria-live="polite"
       data-testid="top-loading"
@@ -79,48 +79,65 @@
 
   @if (hasError()) {
     <div
-      class="top-error"
+      class="top-error ec-alert ec-alert--error"
       role="alert"
       aria-live="assertive"
       data-testid="top-error"
     >
+      <app-icon name="error" />
       @if (errorProblem(); as problem) {
-        <p class="top-error-title">
-          <strong>{{ problem.title }}</strong>
-          <span class="top-error-status">(HTTP {{ problem.status }})</span>
-        </p>
-        @if (problem.detail) {
-          <p>{{ problem.detail }}</p>
-        }
-        @if (errorFields().length > 0) {
-          <ul class="top-error-fields">
-            @for (entry of errorFields(); track entry.field) {
-              @for (msg of entry.messages; track msg) {
-                <li>
-                  <code>{{ entry.field }}</code
-                  >: {{ msg }}
-                </li>
+        <div class="top-error__body">
+          <p class="top-error-title">
+            <strong>{{ problem.title }}</strong>
+            <span class="top-error-status">(HTTP {{ problem.status }})</span>
+          </p>
+          @if (problem.detail) {
+            <p>{{ problem.detail }}</p>
+          }
+          @if (errorFields().length > 0) {
+            <ul class="top-error-fields">
+              @for (entry of errorFields(); track entry.field) {
+                @for (msg of entry.messages; track msg) {
+                  <li>
+                    <code>{{ entry.field }}</code
+                    >: {{ msg }}
+                  </li>
+                }
               }
-            }
-          </ul>
-        }
-        <button type="button" (click)="onRetry()">Reintentar</button>
+            </ul>
+          }
+          <button
+            type="button"
+            class="ec-btn ec-btn--outline"
+            (click)="onRetry()"
+          >
+            Reintentar
+          </button>
+        </div>
       }
     </div>
   }
 
   @if (isEmpty()) {
     <div
-      class="top-empty"
+      class="top-empty ec-alert ec-alert--info"
       role="status"
       aria-live="polite"
       data-testid="top-empty"
     >
-      <p>
-        El año académico seleccionado no tiene inscripciones. No hay escuelas
-        líderes para mostrar.
-      </p>
-      <button type="button" (click)="onRetry()">Reintentar</button>
+      <div>
+        <p>
+          El año académico seleccionado no tiene inscripciones. No hay escuelas
+          líderes para mostrar.
+        </p>
+        <button
+          type="button"
+          class="ec-btn ec-btn--outline"
+          (click)="onRetry()"
+        >
+          Reintentar
+        </button>
+      </div>
     </div>
   }
 
@@ -141,30 +158,37 @@
         }
       </p>
 
-      <table class="top-table">
-        <caption class="visually-hidden">
-          Escuelas líderes por matrícula. Lista en el orden estable del backend
-          (por school.name ascendente y luego school.id). Los empates en el
-          enrollmentCount máximo se conservan como múltiples filas del mismo
-          conteo.
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col">Escuela</th>
-            <th scope="col">Sector</th>
-            <th scope="col">Inscripciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (school of data.schools; track school.schoolId) {
+      <div class="ec-table">
+        <table>
+          <caption class="visually-hidden">
+            Escuelas líderes por matrícula. Lista en el orden estable del
+            backend (por school.name ascendente y luego school.id). Los empates
+            en el enrollmentCount máximo se conservan como múltiples filas del
+            mismo conteo.
+          </caption>
+          <thead>
             <tr>
-              <td>{{ school.schoolName }}</td>
-              <td>{{ school.sectorLabel }}</td>
-              <td>{{ school.enrollmentCount }}</td>
+              <th scope="col">Escuela</th>
+              <th scope="col">Sector</th>
+              <th scope="col">Inscripciones</th>
             </tr>
-          }
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            @for (school of data.schools; track school.schoolId) {
+              <tr>
+                <td>
+                  {{ school.schoolName }}
+                  <span class="ec-badge ec-badge--temporal ec-badge--current">
+                    Líder de matrícula
+                  </span>
+                </td>
+                <td>{{ school.sectorLabel }}</td>
+                <td class="ec-numeric">{{ school.enrollmentCount }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
     </div>
   }
 </section>

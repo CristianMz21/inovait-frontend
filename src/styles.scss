@@ -426,6 +426,121 @@ h4 {
   cursor: pointer;
 }
 
+/* ==========================================================================
+ * EduCore shared primitives · Phase 5 (Reports)
+ * `.ec-segmented`: compact pill-track control for an internal nav or a
+ * two-way toggle. The active item is selected purely by attribute — either
+ * `aria-current="location"` (nav links) or `aria-pressed="true"` (toggle
+ * buttons) — never by a bespoke "active" class, so the primitive works for
+ * both semantics without the consumer duplicating state into a class.
+ * `.ec-kpi`: headline metric card (`.ec-card` look + a large tabular-nums
+ * value). `.ec-kpi--featured` inverts to the primary surface for the single
+ * "highlighted" metric among a group.
+ * ========================================================================== */
+
+.ec-segmented {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  background: var(--app-border-subtle);
+  border-radius: var(--app-radius-pill);
+}
+
+.ec-segmented__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-space-2);
+  border: none;
+  border-radius: var(--app-radius-pill);
+  padding: 8px 16px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--app-muted);
+  background: transparent;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.ec-segmented__item[aria-current="location"],
+.ec-segmented__item[aria-pressed="true"] {
+  background: var(--app-header-bg);
+  color: var(--app-text);
+  box-shadow: 0 1px 3px rgba(20, 33, 61, 0.12);
+}
+
+.ec-segmented__item:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: 2px;
+}
+
+.ec-kpi {
+  background: var(--app-header-bg);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-card);
+  padding: var(--app-space-5);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--app-space-3);
+}
+
+.ec-kpi__label {
+  display: flex;
+  align-items: center;
+  gap: var(--app-space-2);
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--app-muted);
+}
+
+.ec-kpi__value {
+  margin: 0;
+  font-family: var(--app-font-heading);
+  font-weight: 800;
+  font-size: 34px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--app-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.ec-kpi__hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--app-muted);
+}
+
+.ec-kpi--featured {
+  background: var(--app-primary);
+  border-color: var(--app-primary);
+}
+
+.ec-kpi--featured .ec-kpi__label,
+.ec-kpi--featured .ec-kpi__value {
+  color: #ffffff;
+}
+
+.ec-kpi--featured .ec-kpi__value {
+  font-size: 40px;
+}
+
+.ec-kpi--featured .ec-kpi__hint {
+  color: var(--app-sidebar-fg-muted);
+}
+
+.ec-kpi--featured app-icon {
+  color: var(--app-teal-bright);
+}
+
 .catalog-status {
   display: flex;
   align-items: center;

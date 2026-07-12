@@ -18,6 +18,7 @@ import {
 } from "@angular/forms";
 import { CatalogFacade } from "../../../core/catalogs/catalog.facade";
 import { CatalogStatusComponent } from "../../../core/catalogs/catalog-status.component";
+import { AppIconComponent } from "../../../layout/educore-shell/app-icon.component";
 import type { RemoteState } from "../../../core/api/remote-state";
 import { ReportFacade } from "../report.facade";
 import { topSchoolsFiltersToParams } from "../report.mappers";
@@ -64,7 +65,7 @@ type TopFiltersFormGroup = FormGroup<TopFiltersFormShape>;
 @Component({
   selector: "app-top-schools",
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, CatalogStatusComponent],
+  imports: [ReactiveFormsModule, CatalogStatusComponent, AppIconComponent],
   providers: [ReportFacade],
   templateUrl: "./top-schools.component.html",
   styleUrl: "./top-schools.component.scss",

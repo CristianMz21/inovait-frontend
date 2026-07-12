@@ -186,6 +186,32 @@ describe("TopSchoolsComponent (CT-TOP-RPT)", () => {
     ]);
   });
 
+  // -- Renderizado DOM: badge "Líder de matrícula" (lock-in, EduCore) ---
+
+  it('renderiza el badge "Líder de matrícula" en cada fila empatada sin agregar columnas', () => {
+    flushAcademicYears(http);
+    component.form.patchValue({ academicYearId: 2 });
+    component.onSubmit();
+    http.expectOne((r) => r.url === topUrl).flush(topSchoolsFixture);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const rows = compiled.querySelectorAll(".ec-table tbody tr");
+    expect(rows.length).toBe(2);
+
+    for (const row of Array.from(rows)) {
+      const badge = row.querySelector(
+        "td:first-child .ec-badge.ec-badge--temporal.ec-badge--current",
+      );
+      expect(badge).not.toBeNull();
+      expect(badge?.textContent?.trim()).toBe("Líder de matrícula");
+    }
+
+    // La columna "Resultado" no existe: el badge decora la celda de
+    // escuela existente para preservar el contrato de 3 `th[scope=col]`.
+    expect(compiled.querySelectorAll('th[scope="col"]').length).toBe(3);
+  });
+
   it("submit() con un solo líder (sin empates) muestra una sola fila", () => {
     flushAcademicYears(http);
     component.form.patchValue({ academicYearId: 2 });

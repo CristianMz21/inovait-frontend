@@ -142,6 +142,39 @@ describe("TeacherCountsBySectorComponent (CT-SECTOR-RPT)", () => {
     expect(headers.length).toBe(2);
   });
 
+  // -- Renderizado DOM: tarjetas KPI por sector (lock-in, EduCore) -------
+
+  it("renderiza dos tarjetas KPI (Público/Privado) con los conteos correctos", () => {
+    component.form.patchValue({
+      periodStart: "2026-07-01",
+      periodEnd: "2026-07-10",
+    });
+    component.onSubmit();
+    http
+      .expectOne((r) => r.url === sectorUrl)
+      .flush(teacherCountsBySectorFixture);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const kpis = compiled.querySelectorAll(".sector-kpis .ec-kpi");
+    expect(kpis.length).toBe(2);
+
+    const [publicKpi, privateKpi] = Array.from(kpis);
+    expect(
+      publicKpi?.querySelector(".ec-kpi__label")?.textContent?.trim(),
+    ).toBe("Público");
+    expect(
+      publicKpi?.querySelector(".ec-kpi__value")?.textContent?.trim(),
+    ).toBe("3");
+
+    expect(
+      privateKpi?.querySelector(".ec-kpi__label")?.textContent?.trim(),
+    ).toBe("Privado");
+    expect(
+      privateKpi?.querySelector(".ec-kpi__value")?.textContent?.trim(),
+    ).toBe("2");
+  });
+
   it("submit() con filtros vacíos envía GET sin query string", () => {
     component.form.patchValue({ periodStart: "", periodEnd: "" });
     component.onSubmit();

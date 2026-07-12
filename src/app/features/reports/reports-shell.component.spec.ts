@@ -100,6 +100,23 @@ describe("ReportsShellComponent (WU10-RPT)", () => {
     ).toContain("Distribución por edad");
   });
 
+  it("renderiza la barra .ec-segmented y marca el item activo con aria-current", () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+    const track = compiled.querySelector("ul.reports-shell-tabs.ec-segmented");
+    expect(track).toBeTruthy();
+
+    const items = track?.querySelectorAll("a.ec-segmented__item") ?? [];
+    expect(items.length).toBe(3);
+
+    const active = Array.from(items).filter(
+      (item) => item.getAttribute("aria-current") === "location",
+    );
+    expect(active.length).toBe(1);
+    expect(
+      active[0]?.querySelector(".reports-shell-link-label")?.textContent,
+    ).toContain("Distribución por edad");
+  });
+
   it("actualiza la sección activa con signals y cancela la suscripción al destruir", () => {
     fragment$.next("sector-report");
     fixture.detectChanges();

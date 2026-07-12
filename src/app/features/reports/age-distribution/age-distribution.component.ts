@@ -18,6 +18,7 @@ import {
 } from "@angular/forms";
 import { CatalogFacade } from "../../../core/catalogs/catalog.facade";
 import { CatalogStatusComponent } from "../../../core/catalogs/catalog-status.component";
+import { AppIconComponent } from "../../../layout/educore-shell/app-icon.component";
 import type { RemoteState } from "../../../core/api/remote-state";
 import { ReportFacade } from "../report.facade";
 import { ageDistributionFiltersToParams } from "../report.mappers";
@@ -65,7 +66,7 @@ type AgeFiltersFormGroup = FormGroup<AgeFiltersFormShape>;
 @Component({
   selector: "app-age-distribution",
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, CatalogStatusComponent],
+  imports: [ReactiveFormsModule, CatalogStatusComponent, AppIconComponent],
   providers: [ReportFacade],
   templateUrl: "./age-distribution.component.html",
   styleUrl: "./age-distribution.component.scss",

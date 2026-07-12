@@ -1,10 +1,11 @@
 <div class="reports-shell" aria-label="Reportes operativos">
   <nav class="reports-shell-nav" aria-label="Navegación interna de reportes">
     <p class="reports-shell-kicker">Reportes operativos</p>
-    <ul>
+    <ul class="reports-shell-tabs ec-segmented">
       @for (section of sections(); track section.id) {
         <li>
           <a
+            class="ec-segmented__item"
             [routerLink]="['/reports']"
             [fragment]="section.id"
             [attr.aria-current]="isActive(section.id) ? 'location' : null"
