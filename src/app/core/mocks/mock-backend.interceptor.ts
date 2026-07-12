@@ -1,5 +1,5 @@
 import type { HttpEvent, HttpRequest } from "@angular/common/http";
-import { HttpErrorResponse, HttpResponse } from "@angular/common/http";
+import { HttpErrorResponse } from "@angular/common/http";
 import {
   type HttpHandlerFn,
   type HttpInterceptorFn,
@@ -7,9 +7,10 @@ import {
 import { inject, isDevMode } from "@angular/core";
 import { Observable, throwError } from "rxjs";
 import { API_CONFIG } from "../api/api-config";
+import { normalizeApiError } from "../api/problem-details.interceptor";
 import { environment } from "../../../environments/environment";
+import { extractPathParams, matchRoute } from "./mock-route-matcher";
 import { MOCK_ROUTES } from "./mock-routes";
-import { mockOk } from "./mock-response";
 import type {
   MockHandlerContext,
   MockHttpMethod,
@@ -30,88 +31,109 @@ import type {
  * UI shows a clear error instead of silently failing through to the
  * real backend.
  */
-export const mockBackendInterceptor: HttpInterceptorFn = (
-  req: HttpRequest<unknown>,
-  next: HttpHandlerFn,
-): Observable<HttpEvent<unknown>> => {
-  if (!environment.useMocks) {
-    return next(req);
-  }
+interface MockInterceptorOptions {
+  readonly enabled: boolean;
+  readonly loggingEnabled?: boolean;
+  readonly routes?: readonly MockRoute[];
+  readonly logger?: Pick<Console, "info" | "warn">;
+}
 
-  const config = inject(API_CONFIG);
-  const apiBase = stripTrailingSlash(config.apiBaseUrl);
-  const path = stripApiBase(req.url, apiBase);
-
-  // Only intercept `/api/*` requests, leave everything else (assets, etc.)
-  // alone.
-  if (!path.startsWith("/api/")) {
-    return next(req);
-  }
-
-  const route = matchRoute(req.method as MockHttpMethod, path);
-  if (!route) {
-    if (isDevMode()) {
-      // eslint-disable-next-line no-console -- intentional dev log
-      console.warn(
-        `[MOCK] no mock registered for ${req.method} ${path} — returning 404`,
-      );
+export const createMockBackendInterceptor =
+  (options: MockInterceptorOptions): HttpInterceptorFn =>
+  (
+    req: HttpRequest<unknown>,
+    next: HttpHandlerFn,
+  ): Observable<HttpEvent<unknown>> => {
+    if (!options.enabled) {
+      return next(req);
     }
-    return throwError(
-      () =>
-        new HttpErrorResponse({
-          status: 404,
-          statusText: "Not Found",
-          url: req.url,
-          error: {
-            type: "https://inovait.local/problems/mock_not_found",
-            title: "Mock no registrado",
-            status: 404,
-            code: "mock_not_found",
-            detail: `No mock handler is registered for ${req.method} ${path}`,
-          },
-        }),
-    );
-  }
 
-  const ctx = buildContext(req, path, route);
-  const start =
-    typeof performance !== "undefined" ? performance.now() : Date.now();
-  return new Observable<HttpEvent<unknown>>((subscriber) => {
-    const sub = route.handler(ctx).subscribe({
-      next: (body) => {
-        const end =
-          typeof performance !== "undefined" ? performance.now() : Date.now();
-        if (isDevMode()) {
-          // eslint-disable-next-line no-console -- intentional dev log
-          console.info(
-            `[MOCK] ${req.method} ${path} → 200 in ${Math.round(end - start)}ms (${route.description ?? "no description"})`,
-          );
-        }
-        subscriber.next(
-          new HttpResponse({
-            body,
-            status: 200,
-            url: req.url,
-          }),
+    const config = inject(API_CONFIG);
+    const apiBase = stripTrailingSlash(config.apiBaseUrl);
+    const path = stripApiBase(req.url, apiBase);
+    const loggingEnabled = options.loggingEnabled ?? isDevMode();
+    const logger = options.logger ?? Reflect.get(globalThis, "console");
+
+    // Only intercept `/api/*` requests, leave everything else (assets, etc.)
+    // alone.
+    if (!path.startsWith("/api/")) {
+      return next(req);
+    }
+
+    const route = matchRoute(
+      req.method as MockHttpMethod,
+      path,
+      options.routes ?? MOCK_ROUTES,
+    );
+    if (!route) {
+      if (loggingEnabled) {
+        logMock(
+          logger,
+          "warn",
+          `[MOCK] no mock registered for ${req.method} — returning 404`,
         );
-        subscriber.complete();
-      },
-      error: (err) => {
-        // Handlers can return error observables (e.g. mockProblem). When
-        // they do, propagate the error as an HttpErrorResponse.
-        const wrapped = wrapAsHttpError(err, req.url);
-        if (isDevMode()) {
-          // eslint-disable-next-line no-console -- intentional dev log
-          console.info(
-            `[MOCK] ${req.method} ${path} → ${wrapped.status} ${wrapped.statusText}`,
-          );
-        }
-        subscriber.error(wrapped);
-      },
+      }
+      const notFound = new HttpErrorResponse({
+        status: 404,
+        statusText: "Not Found",
+        url: req.url,
+        error: {
+          type: "https://inovait.local/problems/mock_not_found",
+          title: "Mock no registrado",
+          status: 404,
+          code: "mock_not_found",
+          detail: `No mock handler is registered for ${req.method}`,
+        },
+      });
+      return throwError(() => normalizeApiError(notFound));
+    }
+
+    const ctx = buildContext(req, path, route);
+    const start =
+      typeof performance !== "undefined" ? performance.now() : Date.now();
+    return new Observable<HttpEvent<unknown>>((subscriber) => {
+      const sub = route.handler(ctx).subscribe({
+        next: (response) => {
+          const end =
+            typeof performance !== "undefined" ? performance.now() : Date.now();
+          if (loggingEnabled) {
+            logMock(
+              logger,
+              "info",
+              `[MOCK] ${req.method} ${route.pattern} → ${response.status} in ${Math.round(end - start)}ms (${route.description ?? "no description"})`,
+            );
+          }
+          subscriber.next(response.clone({ url: req.url }));
+          subscriber.complete();
+        },
+        error: (err) => {
+          // Handlers can return error observables (e.g. mockProblem). When
+          // they do, propagate the error as an HttpErrorResponse.
+          const wrapped = wrapAsHttpError(err, req.url);
+          if (loggingEnabled) {
+            logMock(
+              logger,
+              "info",
+              `[MOCK] ${req.method} ${route.pattern} → ${wrapped.status} ${wrapped.statusText}`,
+            );
+          }
+          subscriber.error(normalizeApiError(wrapped));
+        },
+      });
+      return () => sub.unsubscribe();
     });
-    return () => sub.unsubscribe();
-  });
-};
+  };
+
+export const mockBackendInterceptor: HttpInterceptorFn =
+  createMockBackendInterceptor({ enabled: environment.useMocks });
+
+function logMock(
+  logger: Pick<Console, "info" | "warn">,
+  level: "info" | "warn",
+  message: string,
+): void {
+  logger[level](message);
+}
 
 function buildContext(
   req: HttpRequest<unknown>,
@@ -126,73 +148,6 @@ function buildContext(
     body: req.body,
     request: req,
   };
-}
-
-/**
- * Matches a request (method + path) against the route table.
- *
- * Iterates in declaration order and returns the first route whose method
- * matches and whose pattern matches the path. Returns `undefined` if no
- * route matches, which causes the interceptor to emit a 404.
- */
-function matchRoute(
-  method: MockHttpMethod,
-  path: string,
-): MockRoute | undefined {
-  for (const route of MOCK_ROUTES) {
-    if (route.method !== method) continue;
-    if (matchPath(route.pattern, path)) return route;
-  }
-  return undefined;
-}
-
-/**
- * Matches a path against a pattern. A pattern is a slash-delimited path
- * where each segment is either a literal (must match exactly) or a
- * `{name}` placeholder (matches any single segment).
- *
- * Examples:
- *   matchPath("/api/schools", "/api/schools") === true
- *   matchPath("/api/teachers/{id}/contracts", "/api/teachers/42/contracts") === true
- *   matchPath("/api/schools", "/api/teachers") === false
- */
-function matchPath(pattern: string, path: string): boolean {
-  const patternSegments = pattern.split("/").filter(Boolean);
-  const pathSegments = path.split("/").filter(Boolean);
-  if (patternSegments.length !== pathSegments.length) return false;
-  for (let i = 0; i < patternSegments.length; i++) {
-    const p = patternSegments[i];
-    const v = pathSegments[i];
-    if (p === undefined || v === undefined) return false;
-    if (p.startsWith("{") && p.endsWith("}")) continue;
-    if (p !== v) return false;
-  }
-  return true;
-}
-
-/**
- * Extracts dynamic path parameters from a path that matched a pattern.
- * Only segments captured by `{name}` placeholders are returned.
- */
-function extractPathParams(
-  pattern: string,
-  path: string,
-): Readonly<Record<string, string>> {
-  const patternSegments = pattern.split("/").filter(Boolean);
-  const pathSegments = path.split("/").filter(Boolean);
-  const params: Record<string, string> = {};
-  for (let i = 0; i < patternSegments.length; i++) {
-    const p = patternSegments[i];
-    if (p === undefined) continue;
-    if (p.startsWith("{") && p.endsWith("}")) {
-      const key = p.slice(1, -1);
-      const v = pathSegments[i];
-      if (v !== undefined) {
-        params[key] = decodeURIComponent(v);
-      }
-    }
-  }
-  return params;
 }
 
 /**
@@ -259,7 +214,3 @@ function wrapAsHttpError(err: unknown, url: string): HttpErrorResponse {
     error: errorBody,
   });
 }
-
-// Re-export `mockOk` so test files can build custom routes via the same
-// helpers without reaching into the response module.
-export { mockOk };

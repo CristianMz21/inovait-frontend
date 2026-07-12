@@ -12,10 +12,7 @@ import {
 } from "../../../testing/fixtures/age-distribution.fixture";
 import { classGroupsFixture } from "../../../testing/fixtures/class-groups.fixture";
 import { createEnrollmentResponseFixture } from "../../../testing/fixtures/enrollment-create-response.fixture";
-import {
-  enrollmentListResponseFixture,
-  emptyEnrollmentListResponseFixture,
-} from "../../../testing/fixtures/enrollments-list.fixture";
+import { enrollmentListResponseFixture } from "../../../testing/fixtures/enrollments-list.fixture";
 import { schoolsFixture } from "../../../testing/fixtures/schools.fixture";
 import { academicYearsFixture } from "../../../testing/fixtures/academic-years.fixture";
 import { gradesFixture } from "../../../testing/fixtures/grades.fixture";
@@ -29,7 +26,6 @@ import {
 import {
   teacherContractsCreatedFixture,
   teacherContractsListedFixture,
-  emptyTeacherContractsListedFixture,
 } from "../../../testing/fixtures/teacher-contracts.fixture";
 import {
   teacherCountsBySectorFixture,
@@ -41,6 +37,15 @@ import {
 } from "../../../testing/fixtures/top-schools.fixture";
 import { mockOk, mockProblem } from "./mock-response";
 import type { MockRoute } from "./mock-types";
+import { calculateCompletedYears, isValidDateOnly } from "./date-only";
+import {
+  validateEnrollmentBody,
+  validateTeacherContractBody,
+} from "./mock-request-validation";
+import {
+  currentLocalDateOnly,
+  evaluateTeacherContract,
+} from "./teacher-contract-date";
 
 /**
  * Filter helpers: take a list and apply simple predicate-based filters.
@@ -72,6 +77,14 @@ const filterByAcademicYear = <T extends { academicYearId: number }>(
   academicYearId === undefined
     ? list
     : list.filter((x) => x.academicYearId === Number(academicYearId));
+
+const isPositiveInteger = (value: unknown): boolean =>
+  typeof value === "number"
+    ? Number.isInteger(value) && value > 0
+    : typeof value === "string" && /^[1-9]\d*$/.test(value);
+
+const optionalIdIsValid = (value: string | undefined): boolean =>
+  value === undefined || isPositiveInteger(value);
 
 /**
  * Mock route table for the Inovait API.
@@ -126,6 +139,13 @@ export const MOCK_ROUTES: readonly MockRoute[] = [
     pattern: "/api/class-groups",
     description: "List class groups (filtered)",
     handler: ({ params }) => {
+      if (
+        !optionalIdIsValid(params["schoolId"]) ||
+        !optionalIdIsValid(params["gradeId"]) ||
+        !optionalIdIsValid(params["academicYearId"])
+      ) {
+        return mockProblem(400, "invalid_request", "Identificador inválido");
+      }
       const filtered = filterByAcademicYear(
         filterByGrade(
           filterBySchool(classGroupsFixture, params["schoolId"]),
@@ -140,11 +160,20 @@ export const MOCK_ROUTES: readonly MockRoute[] = [
     method: "GET",
     pattern: "/api/schools/{id}/teachers",
     description: "List teachers working at a school",
-    handler: ({ pathParams }) => {
+    handler: ({ pathParams, params }) => {
       // Fixture data: every teacher is implicitly assigned to school 1 in
       // the canonical fixtures, so we filter by `schoolId === 1` when the
       // requested id is 1, otherwise return an empty list.
       const schoolId = Number(pathParams["id"]);
+      if (!isPositiveInteger(schoolId)) {
+        return mockProblem(400, "invalid_request", "schoolId inválido");
+      }
+      if (
+        params["asOfDate"] !== undefined &&
+        !isValidDateOnly(params["asOfDate"])
+      ) {
+        return mockProblem(400, "invalid_request", "asOfDate inválido");
+      }
       const teachersAtSchool =
         schoolId === 1
           ? teachersFixture.map((t, i) => ({
@@ -172,16 +201,29 @@ export const MOCK_ROUTES: readonly MockRoute[] = [
       const gradeId = params["gradeId"];
       const academicYearId = params["academicYearId"];
       const asOfDate = params["asOfDate"];
-      const filtered = enrollmentListResponseFixture.filter(
-        (row: EnrollmentListItem) => {
+      if (
+        !isPositiveInteger(schoolId) ||
+        !isPositiveInteger(gradeId) ||
+        !isPositiveInteger(academicYearId)
+      ) {
+        return mockProblem(400, "invalid_request", "Filtros inválidos");
+      }
+      if (asOfDate !== undefined && !isValidDateOnly(asOfDate)) {
+        return mockProblem(400, "invalid_request", "asOfDate inválido");
+      }
+      const filtered = enrollmentListResponseFixture
+        .filter((row: EnrollmentListItem) => {
           if (schoolId && row.school.id !== Number(schoolId)) return false;
           if (gradeId && row.grade.id !== Number(gradeId)) return false;
           if (academicYearId && row.academicYear.id !== Number(academicYearId))
             return false;
-          if (asOfDate && row.birthDate !== asOfDate) return false;
           return true;
-        },
-      );
+        })
+        .map((row) =>
+          asOfDate
+            ? { ...row, age: calculateCompletedYears(row.birthDate, asOfDate) }
+            : row,
+        );
       return mockOk(filtered);
     },
   },
@@ -190,15 +232,26 @@ export const MOCK_ROUTES: readonly MockRoute[] = [
     pattern: "/api/enrollments",
     description: "Create enrollment",
     handler: ({ body }) => {
-      const req = body as CreateEnrollmentRequest | null;
-      if (!req?.student?.documentNumber) {
+      const validationErrors = validateEnrollmentBody(body);
+      if (validationErrors !== null) {
         return mockProblem(400, "invalid_request", "Solicitud inválida", {
-          errors: { document: ["documentNumber requerido"] },
+          errors: validationErrors,
         });
+      }
+      const req = body as CreateEnrollmentRequest;
+      if (req.student.birthDate > currentLocalDateOnly()) {
+        return mockProblem(
+          422,
+          "business_rule_violation",
+          "La fecha de nacimiento no puede ser futura",
+          { errors: { "student.birthDate": ["No puede ser futura."] } },
+        );
       }
       // Echo back the request id as a stable response. The fixture is the
       // canonical happy-path response from the OpenAPI example.
-      return mockOk<CreateEnrollmentResponse>(createEnrollmentResponseFixture);
+      return mockOk<CreateEnrollmentResponse>(createEnrollmentResponseFixture, {
+        status: 201,
+      });
     },
   },
 
@@ -211,6 +264,11 @@ export const MOCK_ROUTES: readonly MockRoute[] = [
     handler: ({ pathParams, params }) => {
       const documentNumber = pathParams["documentNumber"];
       const asOfDate = params["asOfDate"];
+      // The current backend OpenAPI omits this query parameter, but the
+      // existing frontend capability explicitly propagates it end to end.
+      if (asOfDate !== undefined && !isValidDateOnly(asOfDate)) {
+        return mockProblem(400, "invalid_request", "asOfDate inválido");
+      }
       if (documentNumber === "99.001.101") {
         const fixture =
           asOfDate === "2026-07-10"
@@ -236,20 +294,24 @@ export const MOCK_ROUTES: readonly MockRoute[] = [
   {
     method: "GET",
     pattern: "/api/teachers/{teacherId}/contracts",
-    description: "List teacher contracts (filtered by asOfDate)",
+    description: "List all teacher contracts evaluated at asOfDate",
     handler: ({ pathParams, params }) => {
       const teacherId = Number(pathParams["teacherId"]);
       const asOfDate = params["asOfDate"];
+      if (!isPositiveInteger(teacherId)) {
+        return mockProblem(400, "invalid_request", "teacherId inválido");
+      }
       if (teacherId === 9999) {
         return mockProblem(404, "resource_not_found", "Docente no encontrado");
       }
-      if (asOfDate && asOfDate < "2026-07-01") {
-        return mockOk<readonly TeacherContractResponse[]>(
-          emptyTeacherContractsListedFixture,
-        );
+      if (asOfDate !== undefined && !isValidDateOnly(asOfDate)) {
+        return mockProblem(400, "invalid_request", "asOfDate inválido");
       }
+      const evaluatedAt = asOfDate ?? currentLocalDateOnly();
       return mockOk<readonly TeacherContractResponse[]>(
-        teacherContractsListedFixture,
+        teacherContractsListedFixture.map((contract) =>
+          evaluateTeacherContract(contract, evaluatedAt),
+        ),
       );
     },
   },
@@ -257,14 +319,36 @@ export const MOCK_ROUTES: readonly MockRoute[] = [
     method: "POST",
     pattern: "/api/teachers/{teacherId}/contracts",
     description: "Create teacher contracts (atomic)",
-    handler: ({ body }) => {
-      const req = body as { schoolIds?: readonly number[] } | null;
-      if (!req?.schoolIds || req.schoolIds.length === 0) {
+    handler: ({ body, pathParams }) => {
+      if (!isPositiveInteger(Number(pathParams["teacherId"]))) {
+        return mockProblem(400, "invalid_request", "teacherId inválido");
+      }
+      const validationErrors = validateTeacherContractBody(body);
+      if (validationErrors !== null) {
+        return mockProblem(400, "invalid_request", "Solicitud inválida", {
+          errors: validationErrors,
+        });
+      }
+      const req = body as {
+        readonly schoolIds: readonly number[];
+        readonly startDate: string;
+        readonly endDate?: string | null;
+      };
+      if (new Set(req.schoolIds).size !== req.schoolIds.length) {
         return mockProblem(
-          422,
-          "business_rule_violation",
-          "Debe seleccionar al menos una escuela",
+          409,
+          "teacher_contract_conflict",
+          "Escuela repetida",
         );
+      }
+      if (
+        req.endDate !== undefined &&
+        req.endDate !== null &&
+        req.endDate < req.startDate
+      ) {
+        return mockProblem(422, "business_rule_violation", "Período inválido", {
+          errors: { endDate: ["Debe ser igual o posterior a startDate."] },
+        });
       }
       if (req.schoolIds.includes(1)) {
         return mockProblem(
@@ -275,6 +359,7 @@ export const MOCK_ROUTES: readonly MockRoute[] = [
       }
       return mockOk<readonly TeacherContractResponse[]>(
         teacherContractsCreatedFixture,
+        { status: 201 },
       );
     },
   },
@@ -286,7 +371,11 @@ export const MOCK_ROUTES: readonly MockRoute[] = [
     pattern: "/api/reports/age-distribution",
     description: "Age distribution report",
     handler: ({ params }) => {
-      if (!params["academicYearId"]) {
+      if (
+        !isPositiveInteger(params["academicYearId"]) ||
+        !optionalIdIsValid(params["schoolId"]) ||
+        !optionalIdIsValid(params["gradeId"])
+      ) {
         return mockProblem(
           400,
           "invalid_request",
@@ -296,10 +385,39 @@ export const MOCK_ROUTES: readonly MockRoute[] = [
           },
         );
       }
-      if (params["academicYearId"] === "0") {
-        return mockOk<AgeDistributionResponseDto>(emptyAgeDistributionFixture);
+      const includedEnrollments = enrollmentListResponseFixture.filter(
+        (row) =>
+          row.academicYear.id === Number(params["academicYearId"]) &&
+          (params["schoolId"] === undefined ||
+            row.school.id === Number(params["schoolId"])) &&
+          (params["gradeId"] === undefined ||
+            row.grade.id === Number(params["gradeId"])),
+      );
+      const asOfDate = params["asOfDate"];
+      if (asOfDate !== undefined && !isValidDateOnly(asOfDate)) {
+        return mockProblem(400, "invalid_request", "asOfDate inválido");
       }
-      return mockOk<AgeDistributionResponseDto>(ageDistributionFixture);
+      if (
+        asOfDate !== undefined &&
+        includedEnrollments.some((row) => asOfDate < row.birthDate)
+      ) {
+        return mockProblem(
+          422,
+          "as_of_date_invalid",
+          "La fecha de referencia no es válida",
+        );
+      }
+      if (params["academicYearId"] === "1") {
+        return mockOk<AgeDistributionResponseDto>({
+          ...emptyAgeDistributionFixture,
+          academicYearId: 1,
+          ...(asOfDate ? { asOfDate } : {}),
+        });
+      }
+      return mockOk<AgeDistributionResponseDto>({
+        ...ageDistributionFixture,
+        ...(asOfDate ? { asOfDate } : {}),
+      });
     },
   },
   {
@@ -307,14 +425,14 @@ export const MOCK_ROUTES: readonly MockRoute[] = [
     pattern: "/api/reports/top-schools",
     description: "Top schools report",
     handler: ({ params }) => {
-      if (!params["academicYearId"]) {
+      if (!isPositiveInteger(params["academicYearId"])) {
         return mockProblem(
           400,
           "invalid_request",
           "academicYearId es requerido",
         );
       }
-      if (params["academicYearId"] === "0") {
+      if (params["academicYearId"] === "1") {
         return mockOk<readonly TopSchoolResponseDto[]>(emptyTopSchoolsFixture);
       }
       return mockOk<readonly TopSchoolResponseDto[]>(topSchoolsFixture);
@@ -327,6 +445,12 @@ export const MOCK_ROUTES: readonly MockRoute[] = [
     handler: ({ params }) => {
       const periodStart = params["periodStart"];
       const periodEnd = params["periodEnd"];
+      if (
+        (periodStart !== undefined && !isValidDateOnly(periodStart)) ||
+        (periodEnd !== undefined && !isValidDateOnly(periodEnd))
+      ) {
+        return mockProblem(400, "invalid_request", "Período mal formado");
+      }
       if ((periodStart && !periodEnd) || (!periodStart && periodEnd)) {
         return mockProblem(422, "period_invalid", "El período no es válido");
       }
@@ -337,57 +461,13 @@ export const MOCK_ROUTES: readonly MockRoute[] = [
       }
       return mockOk<TeacherCountsBySectorResponseDto>(
         periodStart
-          ? teacherCountsBySectorFixture
+          ? {
+              ...teacherCountsBySectorFixture,
+              periodStart,
+              periodEnd: periodEnd ?? periodStart,
+            }
           : emptyTeacherCountsBySectorFixture,
       );
     },
   },
 ];
-
-// Re-export so test files can assert against the canonical empty list
-// without reaching into the testing folder.
-export { emptyEnrollmentListResponseFixture };
-
-/**
- * Public exports of the path-matching helpers. The interceptor uses them
- * internally, and the route table's unit tests use them to assert against
- * the matcher behavior in isolation. Not part of the public API surface;
- * marked with an underscore prefix by convention.
- *
- * @internal
- */
-export const _matchPath = (pattern: string, path: string): boolean => {
-  const patternSegments = pattern.split("/").filter(Boolean);
-  const pathSegments = path.split("/").filter(Boolean);
-  if (patternSegments.length !== pathSegments.length) return false;
-  for (let i = 0; i < patternSegments.length; i++) {
-    const p = patternSegments[i];
-    const v = pathSegments[i];
-    if (p === undefined || v === undefined) return false;
-    if (p.startsWith("{") && p.endsWith("}")) continue;
-    if (p !== v) return false;
-  }
-  return true;
-};
-
-/** @internal */
-export const _extractPathParams = (
-  pattern: string,
-  path: string,
-): Readonly<Record<string, string>> => {
-  const patternSegments = pattern.split("/").filter(Boolean);
-  const pathSegments = path.split("/").filter(Boolean);
-  const params: Record<string, string> = {};
-  for (let i = 0; i < patternSegments.length; i++) {
-    const p = patternSegments[i];
-    if (p === undefined) continue;
-    if (p.startsWith("{") && p.endsWith("}")) {
-      const key = p.slice(1, -1);
-      const v = pathSegments[i];
-      if (v !== undefined) {
-        params[key] = decodeURIComponent(v);
-      }
-    }
-  }
-  return params;
-};

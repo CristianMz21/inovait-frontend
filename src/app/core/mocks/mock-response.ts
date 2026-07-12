@@ -1,12 +1,16 @@
-import { HttpHeaders, HttpResponse } from "@angular/common/http";
-import { Observable, delay, of, throwError } from "rxjs";
+import {
+  HttpErrorResponse,
+  HttpHeaders,
+  HttpResponse,
+} from "@angular/common/http";
+import { Observable, mergeMap, of, throwError, timer } from "rxjs";
 
 /**
  * Configurable knobs for every mock response.
  *
  * - `delayMs` simulates network latency so the UI exercises the same
  *   loading paths it would against the real backend. Default: 120ms.
- * - `status` is the HTTP status code (default 200 for happy path).
+ * - `status` is the HTTP status code for successful responses (default 200).
  * - `headers` are merged with the default `Content-Type: application/json`
  *   so callers can override specific keys without losing the JSON hint.
  */
@@ -16,14 +20,21 @@ export interface MockResponseOptions {
   readonly headers?: Record<string, string | readonly string[]>;
 }
 
+interface MockProblemOptions extends Omit<MockResponseOptions, "status"> {
+  readonly type?: string;
+  readonly detail?: string;
+  readonly instance?: string;
+  readonly errors?: Readonly<Record<string, readonly string[]>>;
+}
+
 const DEFAULT_LATENCY_MS = 120;
 
-const applyDelay = <T>(
+export const applyDelay = <T>(
   source: Observable<T>,
   delayMs?: number,
 ): Observable<T> => {
   const ms = delayMs ?? DEFAULT_LATENCY_MS;
-  return ms > 0 ? source.pipe(delay(ms)) : source;
+  return ms > 0 ? timer(ms).pipe(mergeMap(() => source)) : source;
 };
 
 /**
@@ -36,34 +47,27 @@ const applyDelay = <T>(
 export function mockOk<T>(
   body: T,
   options: MockResponseOptions = {},
-): Observable<T> {
+): Observable<HttpResponse<T>> {
   const response = new HttpResponse<T>({
     body,
     status: options.status ?? 200,
     headers: mergeDefaultHeaders(options.headers),
   });
-  // `HttpResponse` exposes `body` publicly, but `Observable<T>` from the
-  // interceptor should emit just the body. We extract it back out.
-  return applyDelay(of(response.body as T), options.delayMs);
+  return applyDelay(of(response), options.delayMs);
 }
 
 /**
  * Builds a mock error response using the Inovait `ProblemDetails` shape.
  *
- * The interceptor wraps this into a thrown `HttpErrorResponse`, so callers
- * that subscribe via `catchError` will see the same `error.problem.code`
- * structure they see against the real backend.
+ * The positional `status` is the single source of truth for both HTTP and
+ * ProblemDetails status. The interceptor propagates the HttpErrorResponse so
+ * consumers receive the same normalized API problem as with the backend.
  */
 export function mockProblem(
   status: number,
   code: string,
   title: string,
-  options: MockResponseOptions & {
-    readonly type?: string;
-    readonly detail?: string;
-    readonly instance?: string;
-    readonly errors?: Readonly<Record<string, readonly string[]>>;
-  } = {},
+  options: MockProblemOptions = {},
 ): Observable<never> {
   const problem = {
     type: options.type ?? `https://inovait.local/problems/${code}`,
@@ -74,16 +78,12 @@ export function mockProblem(
     instance: options.instance,
     errors: options.errors,
   };
-  const error = {
+  const error = new HttpErrorResponse({
     status,
     statusText: title,
-    name: "HttpErrorResponse",
-    message: `${status} ${title}`,
     error: problem,
     headers: mergeDefaultHeaders(options.headers, "application/problem+json"),
-    ok: false,
-    statusText$ok: undefined,
-  };
+  });
   return applyDelay(
     throwError(() => error),
     options.delayMs,

@@ -1,5 +1,5 @@
 import type { Observable } from "rxjs";
-import type { HttpRequest } from "@angular/common/http";
+import type { HttpRequest, HttpResponse } from "@angular/common/http";
 
 /**
  * HTTP methods the mock backend can intercept.
@@ -44,7 +44,7 @@ export interface MockHandlerContext {
  */
 export type MockHandler<TResponse> = (
   context: MockHandlerContext,
-) => Observable<TResponse>;
+) => Observable<HttpResponse<TResponse>>;
 
 /**
  * Definition of a single mock route.
