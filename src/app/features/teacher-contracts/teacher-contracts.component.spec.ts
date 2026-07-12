@@ -423,6 +423,56 @@ describe("TeacherContractsComponent (CT form/list remoto)", () => {
     expect(component.effectiveTone("Cancelled")).toBe("expired");
   });
 
+  // -- Renderizado DOM: tono de badge → clase (lock-in, EduCore) -----
+
+  it("renderiza las celdas de estado con la clase de tono y la etiqueta correctas", () => {
+    flushInitialCatalogs();
+    component.queryForm.patchValue({ teacherId: 5 });
+
+    component.onSubmitQuery();
+    http
+      .expectOne((r) => r.url === url(5) && r.method === "GET")
+      .flush(teacherContractsListedFixture);
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const rows =
+      host.querySelectorAll<HTMLTableRowElement>(".ec-table tbody tr");
+    expect(rows.length).toBe(2);
+    const [cancelledRow, confirmedRow] = Array.from(rows);
+
+    // Fila 0 (fixture[0]): persistedStatus "Cancelled" -> tono "closed";
+    // effectiveStatus "Cancelled" -> tono "expired". Los tonos difieren
+    // entre sí, por lo que una interpolación persistedTone/effectiveTone
+    // invertida en el template haría fallar estas dos aserciones.
+    const cancelledPersistedBadge = cancelledRow.querySelector(
+      "td:nth-child(3) .ec-badge.ec-badge--status.ec-badge--closed",
+    );
+    expect(cancelledPersistedBadge).not.toBeNull();
+    expect(cancelledPersistedBadge?.textContent?.trim()).toBe("Cancelado");
+
+    const cancelledTemporalBadge = cancelledRow.querySelector(
+      "td:nth-child(4) .ec-badge.ec-badge--temporal.ec-badge--expired",
+    );
+    expect(cancelledTemporalBadge).not.toBeNull();
+    expect(cancelledTemporalBadge?.textContent?.trim()).toBe("Cancelado");
+
+    // Fila 1 (fixture[1]): persistedStatus "Confirmed" -> tono "active";
+    // effectiveStatus "Effective" -> tono "current". De nuevo, ambos
+    // tonos difieren entre sí para descartar un swap de interpolación.
+    const confirmedPersistedBadge = confirmedRow.querySelector(
+      "td:nth-child(3) .ec-badge.ec-badge--status.ec-badge--active",
+    );
+    expect(confirmedPersistedBadge).not.toBeNull();
+    expect(confirmedPersistedBadge?.textContent?.trim()).toBe("Vigente");
+
+    const confirmedTemporalBadge = confirmedRow.querySelector(
+      "td:nth-child(4) .ec-badge.ec-badge--temporal.ec-badge--current",
+    );
+    expect(confirmedTemporalBadge).not.toBeNull();
+    expect(confirmedTemporalBadge?.textContent?.trim()).toBe("Vigente");
+  });
+
   // -- Single-flight: no se duplica ni cancela una escritura en curso --
 
   it("ignora un segundo submit y mantiene el botón disabled single-flight", () => {
