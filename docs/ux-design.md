@@ -17,10 +17,11 @@ Custom properties (`--app-*`) en `:root`; única fuente de verdad, consumida por
 | Superficie | `--app-bg` / `--app-header-bg` | `#f7f8f4` / `#ffffff` |
 | Texto | `--app-text` / `--app-muted` / `--app-text-alt` / `--app-text-tertiary` | `#172033` / `#475467` / `#344054` / `#98a2b3` |
 | Borde | `--app-border` / `--app-border-soft` / `--app-border-subtle` | `#d7dce5` / `#e4e7ec` / `#eef0f4` |
-| Acento | `--app-accent` / `--app-accent-soft` | `#3949ab` / `#eaf2ff` |
-| Semánticos | `--app-success` / `--app-error` / `--app-warning` / `--app-info` (+ variantes `-soft`) | `#18794e` / `#b42318` / `#a15c00` / `#175cd3` |
+| Acento | `--app-accent` | `#3949ab` |
+| Semánticos | `--app-success` / `--app-error` / `--app-warning` / `--app-info` (+ variantes `-soft`) | `#18794e` / `#b42318` / `#7a4e0c` / `#1849a9` |
 | Marca EduCore | `--app-primary` / `--app-sidebar-bg` / `--app-sidebar-active` | `#14213d` / `#14213d` / `#22325a` |
 | Acento secundario | `--app-accent-teal` / `--app-teal-bright` | `#147d78` / `#4fd1c7` |
+| Espaciado | `--app-space-1`…`--app-space-6` (consumidos) / `--app-space-7` / `--app-space-8` (reservados, completan la escala 8-pt) | `4px`…`32px` / `40px` / `48px` |
 
 `--app-muted` (`#475467`) es el gris de texto secundario más usado en toda la app — encabezados de tabla, ayudas, leyendas — y es uno de los tres literales que el contrato de a11y (`src/app/a11y/`) verifica que existan en la hoja global.
 

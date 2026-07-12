@@ -3,13 +3,13 @@
  * accesibilidad (foco visible, contraste alto, soporte de zoom 200%).
  */
 
-@import "@fontsource/manrope/500.css";
-@import "@fontsource/manrope/600.css";
-@import "@fontsource/manrope/700.css";
-@import "@fontsource/manrope/800.css";
-@import "@fontsource/inter/400.css";
-@import "@fontsource/inter/500.css";
-@import "@fontsource/inter/600.css";
+@import "@fontsource/manrope/latin-500.css";
+@import "@fontsource/manrope/latin-600.css";
+@import "@fontsource/manrope/latin-700.css";
+@import "@fontsource/manrope/latin-800.css";
+@import "@fontsource/inter/latin-400.css";
+@import "@fontsource/inter/latin-500.css";
+@import "@fontsource/inter/latin-600.css";
 
 :root {
   --app-bg: #f7f8f4;
@@ -18,7 +18,6 @@
   --app-text: #172033;
   --app-border: #d7dce5;
   --app-accent: #3949ab;
-  --app-accent-soft: #eaf2ff;
   --app-error: #b42318;
   --app-error-soft: #fdecea;
   --app-success: #18794e;
@@ -40,9 +39,9 @@
   --app-text-alt: #344054;
   --app-border-soft: #e4e7ec;
   --app-border-subtle: #eef0f4;
-  --app-warning: #a15c00;
+  --app-warning: #7a4e0c;
   --app-warning-soft: #fff4db;
-  --app-info: #175cd3;
+  --app-info: #1849a9;
   --app-info-soft: #eaf2ff;
   /* Shape */
   --app-radius-card: 16px;
@@ -190,7 +189,7 @@ h4 {
 
 .ec-btn--secondary {
   background: var(--app-accent);
-  color: #ffffff;
+  color: var(--app-primary-fg);
 }
 
 .ec-btn--secondary:hover:not(:disabled) {
@@ -258,13 +257,13 @@ h4 {
 .ec-alert--warning {
   background: var(--app-warning-soft);
   border-color: #f0dca6;
-  color: #7a4e0c;
+  color: var(--app-warning);
 }
 
 .ec-alert--info {
   background: var(--app-info-soft);
   border-color: #c7dbfb;
-  color: #1849a9;
+  color: var(--app-info);
 }
 
 .ec-table {
@@ -342,27 +341,21 @@ h4 {
   border-color: #c8e6d5;
 }
 
-.ec-badge--suspended {
-  background: var(--app-warning-soft);
-  color: #7a4e0c;
-  border-color: #f0dca6;
-}
-
 .ec-badge--closed {
   background: var(--app-border-subtle);
-  color: #475467;
+  color: var(--app-muted);
   border-color: var(--app-border-soft);
 }
 
 .ec-badge--current {
   background: var(--app-teal-surface);
-  color: #0f5f5b;
+  color: var(--app-accent-teal-hover);
   border-color: var(--app-teal-surface-strong);
 }
 
 .ec-badge--upcoming {
   background: var(--app-info-soft);
-  color: #1849a9;
+  color: var(--app-info);
   border-color: #c7dbfb;
 }
 
@@ -370,12 +363,6 @@ h4 {
   background: #f4f1f0;
   color: #7a5c54;
   border-color: #e2d8d4;
-}
-
-.ec-badge--open-ended {
-  background: #f3f0fa;
-  color: #5b4b8a;
-  border-color: #ddd3f0;
 }
 
 .ec-legend {
@@ -415,7 +402,7 @@ h4 {
 .ec-chip-toggle:has(> input:checked) {
   background: var(--app-teal-surface);
   border-color: var(--app-teal-surface-strong);
-  color: #0f5f5b;
+  color: var(--app-accent-teal-hover);
 }
 
 .ec-chip-toggle:has(> input:focus-visible) {
@@ -432,11 +419,10 @@ h4 {
 
 /* ==========================================================================
  * EduCore shared primitives · Phase 5 (Reports)
- * `.ec-segmented`: compact pill-track control for an internal nav or a
- * two-way toggle. The active item is selected purely by attribute — either
- * `aria-current="location"` (nav links) or `aria-pressed="true"` (toggle
- * buttons) — never by a bespoke "active" class, so the primitive works for
- * both semantics without the consumer duplicating state into a class.
+ * `.ec-segmented`: compact pill-track control for an internal nav. The
+ * active item is selected purely by `aria-current="location"` — never by a
+ * bespoke "active" class — so the primitive stays declarative without the
+ * consumer duplicating state into a class.
  * `.ec-kpi`: headline metric card (`.ec-card` look + a large tabular-nums
  * value). `.ec-kpi--featured` inverts to the primary surface for the single
  * "highlighted" metric among a group.
@@ -471,8 +457,7 @@ h4 {
     box-shadow 0.15s ease;
 }
 
-.ec-segmented__item[aria-current="location"],
-.ec-segmented__item[aria-pressed="true"] {
+.ec-segmented__item[aria-current="location"] {
   background: var(--app-header-bg);
   color: var(--app-text);
   box-shadow: 0 1px 3px rgba(20, 33, 61, 0.12);
@@ -530,7 +515,7 @@ h4 {
 
 .ec-kpi--featured .ec-kpi__label,
 .ec-kpi--featured .ec-kpi__value {
-  color: #ffffff;
+  color: var(--app-primary-fg);
 }
 
 .ec-kpi--featured .ec-kpi__value {

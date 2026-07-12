@@ -1,7 +1,5 @@
-/// <reference types="node" />
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { readGlobalStyles } from "../../testing/global-styles.test-helper";
 
 /**
  * CT-A11Y-TOKENS — Fundación EduCore (Fase 1 del re-skin).
@@ -23,25 +21,15 @@ import { describe, expect, it } from "vitest";
  *     no se pierden con el cambio de paleta.
  */
 describe("CT-A11Y-TOKENS — Contrato de tokens EduCore", () => {
-  function readStyles(): string {
-    // Resuelto desde la raíz del workspace (no desde `import.meta.url`):
-    // el bundler de specs de Vitest reubica los módulos de test al
-    // empaquetar la suite completa, por lo que una ruta relativa al
-    // propio archivo no es estable entre una corrida enfocada (`--include`)
-    // y la corrida completa (`ng test`).
-    const stylesPath = resolve(process.cwd(), "src/styles.scss");
-    return readFileSync(stylesPath, "utf-8");
-  }
-
   it("mantiene el contrato heredado de tokens de contraste", () => {
-    const css = readStyles();
+    const css = readGlobalStyles();
     expect(css).toContain("--app-muted");
     expect(css).toContain("--app-accent");
     expect(css).toContain("--app-border");
   });
 
   it("expone las nuevas familias de tokens EduCore (paleta, forma, tipografía)", () => {
-    const css = readStyles();
+    const css = readGlobalStyles();
     expect(css).toContain("--app-primary");
     expect(css).toContain("--app-sidebar-bg");
     expect(css).toContain("--app-accent-teal");
@@ -52,13 +40,13 @@ describe("CT-A11Y-TOKENS — Contrato de tokens EduCore", () => {
   });
 
   it("conserva la media query de 320 px y prefers-reduced-motion", () => {
-    const css = readStyles();
+    const css = readGlobalStyles();
     expect(css).toContain("max-width: 320px");
     expect(css).toContain("prefers-reduced-motion");
   });
 
   it("conserva el invariante de contención responsiva (min-inline-size)", () => {
-    const css = readStyles();
+    const css = readGlobalStyles();
     expect(css).toContain("min-inline-size");
   });
 });

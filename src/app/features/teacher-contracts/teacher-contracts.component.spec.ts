@@ -416,7 +416,7 @@ describe("TeacherContractsComponent (CT form/list remoto)", () => {
     expect(component.effectiveTone("Effective")).toBe("current");
     expect(component.effectiveTone("Expired")).toBe("expired");
     // Un contrato cancelado no tiene tono temporal propio en la paleta
-    // (current/upcoming/expired/open-ended): "expired" es el más cercano
+    // (current/upcoming/expired): "expired" es el más cercano
     // semánticamente ("ya no vigente"), y el texto ("Cancelado", vía
     // effectiveLabel()) sigue siendo la señal que lo distingue de un
     // vencimiento natural — el color nunca es la única señal.

@@ -212,15 +212,15 @@ export class TeacherContractsComponent implements OnInit {
    * Tono visual (`.ec-badge--*`) del estado efectivo. Presentacional puro,
    * igual que {@link persistedTone}.
    *
-   * La paleta temporal (`current`/`upcoming`/`expired`/`open-ended`) no
-   * modela un contrato cancelado como un estado propio: "expired" es el
-   * tono más cercano ("ya no vigente"), y el texto (`effectiveLabel()`
-   * sigue devolviendo "Cancelado") es la señal que lo distingue de un
+   * La paleta temporal (`current`/`upcoming`/`expired`) no modela un
+   * contrato cancelado como un estado propio: "expired" es el tono más
+   * cercano ("ya no vigente"), y el texto (`effectiveLabel()` sigue
+   * devolviendo "Cancelado") es la señal que lo distingue de un
    * vencimiento natural — el color nunca es la única señal.
    */
   effectiveTone(
     status: TeacherContractResultVm["effectiveStatus"],
-  ): "current" | "upcoming" | "expired" | "open-ended" {
+  ): "current" | "upcoming" | "expired" {
     switch (status) {
       case "Upcoming":
         return "upcoming";

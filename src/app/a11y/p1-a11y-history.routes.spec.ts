@@ -1,6 +1,3 @@
-/// <reference types="node" />
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { HttpHeaders } from "@angular/common/http";
 import { provideHttpClient } from "@angular/common/http";
 import {
@@ -25,6 +22,7 @@ import {
   studentHistoryFixture,
   studentHistorySecondYearFixture,
 } from "../../testing/fixtures";
+import { readGlobalStyles } from "../../testing/global-styles.test-helper";
 
 const historyUrl = `${DEFAULT_API_CONFIG.apiBaseUrl}/api/students/DNI/99.001.101/history`;
 
@@ -105,19 +103,14 @@ describe("CT-A11Y-RPT-HIST — Hardening accesibilidad ruta historial", () => {
     });
   }
 
-  // Lee `src/styles.scss` directamente (mismo mecanismo que
-  // `a11y/educore-tokens.spec.ts`) en lugar de grepear el `<style>`
-  // compilado de CADA componente: la propiedad protegida es que los tokens
-  // de contraste y las media queries responsivas existan una única vez en
-  // la hoja global, disponibles para cualquier consumidor — no que un
-  // componente puntual siga referenciando el literal en su propio CSS
-  // compilado (acoplamiento que se rompe en cuanto ese componente termina
-  // de migrar a los primitivos `.ec-*` compartidos).
-  function readGlobalStyles(): string {
-    const stylesPath = resolve(process.cwd(), "src/styles.scss");
-    return readFileSync(stylesPath, "utf-8");
-  }
-
+  // Lee `src/styles.scss` directamente (vía `readGlobalStyles()`, mismo
+  // mecanismo que `a11y/educore-tokens.spec.ts`) en lugar de grepear el
+  // `<style>` compilado de CADA componente: la propiedad protegida es que
+  // los tokens de contraste y las media queries responsivas existan una
+  // única vez en la hoja global, disponibles para cualquier consumidor — no
+  // que un componente puntual siga referenciando el literal en su propio
+  // CSS compilado (acoplamiento que se rompe en cuanto ese componente
+  // termina de migrar a los primitivos `.ec-*` compartidos).
   function expectResponsiveContrastTokens(): void {
     const css = readGlobalStyles();
     expect(css).toContain("max-width: 320px");
