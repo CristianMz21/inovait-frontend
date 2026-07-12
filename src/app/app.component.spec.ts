@@ -305,6 +305,75 @@ describe("App", () => {
       expect(hamburger.getAttribute("aria-expanded")).toBe("false");
     });
 
+    it("closes when the active route's own nav link is clicked (same-route click fires no NavigationEnd)", async () => {
+      const fixture = TestBed.createComponent(App);
+      const router = TestBed.inject(Router);
+      fixture.detectChanges();
+
+      await router.navigateByUrl("/enrollments");
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      const hamburger =
+        compiled.querySelector<HTMLButtonElement>(HAMBURGER_SELECTOR)!;
+      hamburger.click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+      expect(hamburger.getAttribute("aria-expanded")).toBe("true");
+
+      const activeLink = Array.from(compiled.querySelectorAll("nav a")).find(
+        (a) => a.textContent?.trim() === "Matrículas",
+      ) as HTMLAnchorElement;
+      expect(activeLink.getAttribute("aria-current")).toBe("page");
+
+      // Angular's default `onSameUrlNavigation` is `'ignore'`: clicking the
+      // link of the already-active route fires no NavigationEnd, so closing
+      // must not depend solely on the router-events subscription.
+      activeLink.click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(hamburger.getAttribute("aria-expanded")).toBe("false");
+      const main = compiled.querySelector<HTMLElement & { inert: boolean }>(
+        "main#main",
+      )!;
+      expect(main.inert).toBe(false);
+    });
+
+    it("focuses the destination heading (not left behind inert) when a different-route nav link closes the drawer", async () => {
+      const fixture = TestBed.createComponent(App);
+      const router = TestBed.inject(Router);
+      fixture.detectChanges();
+
+      await router.navigateByUrl("/enrollments");
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      const hamburger =
+        compiled.querySelector<HTMLButtonElement>(HAMBURGER_SELECTOR)!;
+      hamburger.click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+      expect(hamburger.getAttribute("aria-expanded")).toBe("true");
+
+      const link = Array.from(compiled.querySelectorAll("nav a")).find(
+        (a) => a.textContent?.trim() === "Consulta de estudiantes",
+      ) as HTMLAnchorElement;
+      link.click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      // Regression guard for the suspected inert/focus race: `onRouteActivate`
+      // queues a microtask that focuses the destination `<main> h1`; if the
+      // drawer's `[inert]` removal from `<main>` lags behind that microtask,
+      // `heading.focus()` is a silent no-op per the HTML spec.
+      const heading = compiled.querySelector<HTMLElement>("main h1")!;
+      expect(document.activeElement).toBe(heading);
+      expect(heading.textContent?.trim()).toBe("Consulta de estudiantes");
+    });
+
     it("marks main, top bar and footer inert only while open, and never the rail", async () => {
       const fixture = TestBed.createComponent(App);
       fixture.detectChanges();

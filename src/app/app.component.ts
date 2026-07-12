@@ -83,6 +83,8 @@ export class App {
   private readonly router = inject(Router);
   private readonly hamburgerButton =
     viewChild<ElementRef<HTMLButtonElement>>("hamburgerButton");
+  private readonly firstNavLink =
+    viewChild<ElementRef<HTMLAnchorElement>>("firstNavLink");
 
   protected readonly navItems = NAV_ITEMS;
   readonly routeAnnouncement = signal("");
@@ -123,12 +125,20 @@ export class App {
   protected openDrawer(): void {
     this.drawerOpen.set(true);
     queueMicrotask(() => {
-      this.host.nativeElement
-        .querySelector<HTMLElement>('nav[aria-label="Navegación principal"] a')
-        ?.focus();
+      this.firstNavLink()?.nativeElement.focus();
     });
   }
 
+  /**
+   * Closes the drawer. Also wired as `(click)` on every nav link (see the
+   * template): a nav-link click to the ALREADY-ACTIVE route is a same-URL
+   * navigation, and Angular's default `onSameUrlNavigation` is `'ignore'` —
+   * no `NavigationEnd` fires, so the `Router.events` subscription below
+   * never runs. Closing on click keeps the drawer correct independent of
+   * whether navigation actually occurs. (A single delegated listener on the
+   * `<nav>` container was considered, but `<nav>` itself isn't an
+   * interactive element, which the a11y lint rules correctly reject.)
+   */
   protected closeDrawer(): void {
     if (!this.drawerOpen()) {
       return;

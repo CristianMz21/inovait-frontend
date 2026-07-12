@@ -233,10 +233,11 @@
 
 @media (max-width: 1023px) {
   .ec-rail {
+    // z-index: 120 already set on the base rule above; it still applies at
+    // this breakpoint, so it is not repeated here.
     position: fixed;
     inset: 0 auto 0 0;
     height: 100vh;
-    z-index: 120;
     transform: translateX(-100%);
     transition: transform 0.25s ease;
   }

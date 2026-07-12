@@ -42,10 +42,12 @@
     <nav aria-label="Navegación principal" class="ec-nav">
       @for (item of navItems; track item.path) {
         <a
+          #firstNavLink
           [routerLink]="item.path"
           routerLinkActive="ec-nav-link--active"
           ariaCurrentWhenActive="page"
           class="ec-nav-link"
+          (click)="closeDrawer()"
         >
           <app-icon [name]="item.icon" />
           <span>{{ item.label }}</span>
