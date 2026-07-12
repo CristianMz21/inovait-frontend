@@ -1,0 +1,50 @@
+name: Frontend CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.11.1
+          cache: npm
+      - run: npm install --global npm@11.6.2
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint:eslint
+      - run: npm run lint:style
+      - run: npm run test:coverage
+      - run: npm run build:development
+      - run: npm run build:production
+      - run: ./node_modules/.bin/playwright install --with-deps chromium
+      - name: Run development mock and production no-mock E2E with axe
+        run: npm run e2e
+      - run: npm audit
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage
+          if-no-files-found: error
+      - name: Upload Playwright artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts
+          path: |
+            playwright-report
+            playwright-report-production
+            test-results/playwright
+            test-results/playwright-production
+          if-no-files-found: ignore
