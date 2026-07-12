@@ -406,6 +406,55 @@ test("teacher contracts and reports load catalogs and submit mocked forms", asyn
   await assertNoAxeViolations(appPage, "age report success");
 });
 
+test("reports tabs are keyboard operable and contained at mobile width", async ({
+  appPage,
+}, testInfo) => {
+  // Mobile containment is the point of this test; desktop-chromium already
+  // covers the same tablist markup via the "five operative screens" test.
+  test.skip(
+    testInfo.project.name !== "mobile-chromium",
+    "this test targets mobile-width containment",
+  );
+
+  await appPage.goto("/reports");
+  await waitForTerminalInitialState(appPage, "/reports");
+
+  const tabs = appPage.getByRole("tab");
+  await expect(tabs).toHaveCount(3);
+  await expect(appPage.locator('[role="tabpanel"]:not([hidden])')).toHaveCount(
+    1,
+  );
+  await expect
+    .poll(() =>
+      appPage.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    )
+    .toBe(true);
+
+  const ageTab = appPage.getByRole("tab", { name: "Distribución por edad" });
+  const sectorTab = appPage.getByRole("tab", { name: "Docentes por sector" });
+  await expect(ageTab).toHaveAttribute("aria-selected", "true");
+  await expect(sectorTab).toHaveAttribute("aria-selected", "false");
+
+  await ageTab.focus();
+  await appPage.keyboard.press("ArrowRight");
+  await expect(sectorTab).toBeFocused();
+  await expect(ageTab).toHaveAttribute("aria-selected", "true");
+  await expect(sectorTab).toHaveAttribute("aria-selected", "false");
+
+  await appPage.keyboard.press("Enter");
+  await expect(sectorTab).toHaveAttribute("aria-selected", "true");
+  await expect(ageTab).toHaveAttribute("aria-selected", "false");
+  await expect(appPage.locator("#sector-report")).toBeVisible();
+  await expect(appPage.locator('[role="tabpanel"]:not([hidden])')).toHaveCount(
+    1,
+  );
+  await expect.poll(() => new URL(appPage.url()).hash).toBe("#sector-report");
+
+  await assertNoAxeViolations(appPage, "reports tabs mobile");
+});
+
 async function waitForTerminalInitialState(
   page: Page,
   path: string,
