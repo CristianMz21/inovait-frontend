@@ -114,6 +114,11 @@ describe("StudentHistoryComponent (CT-HIST-COMP)", () => {
     expect(time?.getAttribute("datetime")).toBe("2026-03-02");
     expect(compiled.querySelectorAll(".history-assignment").length).toBe(1);
     expect(compiled.querySelector('[role="alert"]')).toBeNull();
+
+    const identityMeta = compiled.querySelector(".history-identity-meta");
+    expect(identityMeta?.textContent).toContain("2018-07-10");
+    expect(identityMeta?.textContent).toContain("DNI");
+    expect(identityMeta?.textContent).toContain("99.001.101");
   });
 
   it("success con 2 años preserva el orden estable (desc por academicYear.startDate)", () => {
@@ -141,6 +146,39 @@ describe("StudentHistoryComponent (CT-HIST-COMP)", () => {
     expect(times[1]?.getAttribute("datetime")).toBe("2025-03-03");
     const assignmentsYear1 = items[0]?.querySelectorAll(".history-assignment");
     expect(assignmentsYear1?.length).toBe(2);
+  });
+
+  it("marca el año actual con el badge/punto teal y el histórico con el tono neutro", () => {
+    component.form.patchValue({
+      documentType: "DNI",
+      documentNumber: "99.001.101",
+    });
+    component.onSubmit();
+    fixture.detectChanges();
+    http
+      .expectOne((r) => r.url === baseUrl)
+      .flush(studentHistorySecondYearFixture);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const items = compiled.querySelectorAll("li.history-entry");
+    expect(items.length).toBe(2);
+
+    const [currentEntry, historicalEntry] = Array.from(items);
+
+    expect(currentEntry?.classList.contains("history-entry--current")).toBe(
+      true,
+    );
+    const currentBadge = currentEntry?.querySelector(".ec-badge");
+    expect(currentBadge?.classList.contains("ec-badge--current")).toBe(true);
+    expect(currentBadge?.textContent?.trim()).toBe("Actual");
+
+    expect(historicalEntry?.classList.contains("history-entry--current")).toBe(
+      false,
+    );
+    const historicalBadge = historicalEntry?.querySelector(".ec-badge");
+    expect(historicalBadge?.classList.contains("ec-badge--closed")).toBe(true);
+    expect(historicalBadge?.textContent?.trim()).toBe("Histórico");
   });
 
   it("inscripciones sin asignaciones muestran teachingAssignments: []", () => {

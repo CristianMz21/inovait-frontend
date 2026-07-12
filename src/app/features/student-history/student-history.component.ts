@@ -17,6 +17,7 @@ import {
 } from "@angular/forms";
 import { ActivatedRoute } from "@angular/router";
 import { distinctUntilChanged, map } from "rxjs";
+import { AppIconComponent } from "../../layout/educore-shell/app-icon.component";
 import { StudentHistoryFacade } from "./student-history.facade";
 import { studentHistoryFiltersToParams } from "./student-history.mappers";
 import { StudentHistoryNavigationHandoff } from "./student-history.navigation";
@@ -67,7 +68,7 @@ type StudentHistoryFormGroup = FormGroup<StudentHistoryFormShape>;
 @Component({
   selector: "app-student-history",
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, AppIconComponent],
   providers: [StudentHistoryFacade],
   templateUrl: "./student-history.component.html",
   styleUrl: "./student-history.component.scss",

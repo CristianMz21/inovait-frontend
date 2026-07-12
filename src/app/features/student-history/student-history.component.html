@@ -7,7 +7,7 @@
   </p>
 
   <form
-    class="history-form"
+    class="history-form ec-card"
     [formGroup]="form"
     (ngSubmit)="onSubmit()"
     novalidate
@@ -17,7 +17,7 @@
     <fieldset [disabled]="isLoading()">
       <legend>Identidad del estudiante</legend>
 
-      <label class="history-field">
+      <label class="history-field ec-field">
         <span>Tipo de documento</span>
         <input
           id="history-document-type"
@@ -32,7 +32,7 @@
         />
       </label>
 
-      <label class="history-field">
+      <label class="history-field ec-field">
         <span>Número de documento</span>
         <input
           id="history-document-number"
@@ -51,7 +51,7 @@
     <div class="history-actions">
       <button
         type="submit"
-        class="history-submit"
+        class="history-submit ec-btn ec-btn--secondary"
         [disabled]="form.invalid || isLoading()"
         [attr.aria-busy]="isLoading() ? 'true' : 'false'"
       >
@@ -63,7 +63,7 @@
       </button>
       <button
         type="button"
-        class="history-cancel"
+        class="history-cancel ec-btn ec-btn--outline"
         (click)="onReset()"
         [disabled]="isLoading()"
       >
@@ -74,59 +74,80 @@
 
   @if (isLoading()) {
     <p
-      class="history-status"
+      class="history-status ec-alert ec-alert--info"
       role="status"
       aria-live="polite"
       data-testid="history-loading"
     >
-      Consultando historial académico…
+      <app-icon name="update" />
+      <span>Consultando historial académico…</span>
     </p>
   }
 
   @if (hasError()) {
     <div
-      class="history-error"
+      class="history-error ec-alert ec-alert--error"
       role="alert"
       aria-live="assertive"
       data-testid="history-error"
     >
+      <app-icon name="error" />
       @if (errorProblem(); as problem) {
-        <p class="history-error-title">
-          <strong>{{ problem.title }}</strong>
-          <span class="history-error-status">(HTTP {{ problem.status }})</span>
-        </p>
-        @if (problem.detail) {
-          <p>{{ problem.detail }}</p>
-        }
-        @if (errorFields().length > 0) {
-          <ul class="history-error-fields">
-            @for (entry of errorFields(); track entry.field) {
-              @for (msg of entry.messages; track msg) {
-                <li>
-                  <code>{{ entry.field }}</code
-                  >: {{ msg }}
-                </li>
+        <div class="history-error__body">
+          <p class="history-error-title">
+            <strong>{{ problem.title }}</strong>
+            <span class="history-error-status"
+              >(HTTP {{ problem.status }})</span
+            >
+          </p>
+          @if (problem.detail) {
+            <p>{{ problem.detail }}</p>
+          }
+          @if (errorFields().length > 0) {
+            <ul class="history-error-fields">
+              @for (entry of errorFields(); track entry.field) {
+                @for (msg of entry.messages; track msg) {
+                  <li>
+                    <code>{{ entry.field }}</code
+                    >: {{ msg }}
+                  </li>
+                }
               }
-            }
-          </ul>
-        }
-        <button type="button" (click)="onRetry()">Reintentar</button>
+            </ul>
+          }
+          <button
+            type="button"
+            class="ec-btn ec-btn--outline"
+            (click)="onRetry()"
+          >
+            Reintentar
+          </button>
+        </div>
       }
     </div>
   }
 
   @if (isEmpty()) {
     <div
-      class="history-empty"
+      class="history-empty ec-alert ec-alert--info"
       role="status"
       aria-live="polite"
       data-testid="history-empty"
     >
-      <p>
-        La identidad consultada es válida pero no tiene inscripciones
-        registradas.
-      </p>
-      <button type="button" (click)="onRetry()">Reintentar</button>
+      <app-icon name="badge" />
+      <div>
+        <p>
+          La identidad consultada es válida pero no tiene inscripciones
+          registradas.
+        </p>
+        <button
+          type="button"
+          class="ec-btn ec-btn--outline"
+          (click)="onRetry()"
+        >
+          Reintentar
+        </button>
+      </div>
     </div>
   }
 
@@ -136,33 +157,62 @@
       aria-labelledby="history-results-title"
       data-testid="history-results"
     >
-      <h2 id="history-results-title">
-        Línea de tiempo de {{ data.identity.fullName }}
-      </h2>
-      <p class="history-context" role="status" aria-live="polite">
-        {{ data.identity.documentType }} · {{ data.identity.documentNumber }} ·
-        {{ data.enrollments.length }}
-        @if (data.enrollments.length === 1) {
-          inscripción
-        } @else {
-          inscripciones
-        }
-      </p>
+      <header class="history-identity ec-card">
+        <h2 id="history-results-title">
+          Línea de tiempo de {{ data.identity.fullName }}
+        </h2>
+        <p class="history-context" role="status" aria-live="polite">
+          {{ data.identity.documentType }} ·
+          {{ data.identity.documentNumber }} ·
+          {{ data.enrollments.length }}
+          @if (data.enrollments.length === 1) {
+            inscripción
+          } @else {
+            inscripciones
+          }
+        </p>
+        <dl class="history-identity-meta">
+          <div>
+            <dt>Documento</dt>
+            <dd>
+              {{ data.identity.documentType }} ·
+              {{ data.identity.documentNumber }}
+            </dd>
+          </div>
+          <div>
+            <dt>Fecha de nacimiento</dt>
+            <dd>{{ data.identity.birthDate }}</dd>
+          </div>
+          <div>
+            <dt>Años registrados</dt>
+            <dd>{{ data.enrollments.length }}</dd>
+          </div>
+        </dl>
+      </header>
 
       <ol class="history-list">
         @for (entry of data.enrollments; track entry.enrollmentId) {
-          <li class="history-entry">
+          <li
+            class="history-entry"
+            [class.history-entry--current]="entry.academicYearIsCurrent"
+          >
             <article
-              class="history-card"
+              class="history-card ec-card"
               [attr.aria-labelledby]="'entry-' + entry.enrollmentId"
             >
               <header class="history-card-header">
                 <h3 [id]="'entry-' + entry.enrollmentId">
                   {{ entry.academicYearName }}
-                  @if (entry.academicYearIsCurrent) {
-                    <span class="history-current">(actual)</span>
-                  }
                 </h3>
+                @if (entry.academicYearIsCurrent) {
+                  <span class="ec-badge ec-badge--temporal ec-badge--current">
+                    Actual
+                  </span>
+                } @else {
+                  <span class="ec-badge ec-badge--temporal ec-badge--closed">
+                    Histórico
+                  </span>
+                }
                 <time
                   class="visually-hidden"
                   [attr.datetime]="entry.academicYearStartDate"

@@ -574,89 +574,13 @@ h4 {
   max-width: 70ch;
 }
 
-.history-form fieldset {
-  border: 1px solid var(--app-border);
-  border-radius: 6px;
-  padding: 1rem 1.25rem;
-  display: grid;
-  gap: 0.75rem;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  background: var(--app-header-bg);
-}
-
-.history-form legend {
-  padding: 0 0.5rem;
-  font-weight: 600;
-}
-
-.history-field {
-  display: block;
-  font-size: 0.9rem;
-  margin-bottom: 0.75rem;
-}
-
-.history-field > span {
-  display: block;
-  margin-bottom: 0.25rem;
-  color: var(--app-muted);
-}
-
-.history-field :where(input, select) {
-  font-family: inherit;
-  font-size: 1rem;
-  line-height: 1.45;
-  padding: 0.45rem 0.6rem;
-  border-radius: 4px;
-  border: 1px solid var(--app-border);
-  background: var(--app-bg);
-  color: inherit;
-  display: inline-block;
-  min-height: 2.25rem;
-}
-
-.history-field :where(input, select)[disabled] {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.history-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  align-items: center;
-}
-
-:where(.history-submit, .history-cancel) {
-  font: inherit;
-  padding: 0.55rem 1.1rem;
-  border-radius: 4px;
-  border: 1px solid var(--app-accent);
-  cursor: pointer;
-}
-
-.history-submit {
-  background: var(--app-accent);
-  color: #ffffff;
-}
-
-.history-cancel {
-  background: transparent;
-  color: var(--app-accent);
-}
-
-:where(.history-submit, .history-cancel)[disabled] {
-  cursor: not-allowed;
-  opacity: 0.65;
-}
-
+/* `.ec-card` keeps a fixed 24px pad on every screen that uses it; at the
+ * 320px floor that padding alone eats a meaningful slice of the already
+ * tight content width, so every card tightens up one notch here instead
+ * of every consumer repeating the same override. */
 @media (max-width: 320px) {
-  .history-form fieldset {
-    grid-template-columns: 1fr;
-  }
-
-  .history-actions {
-    flex-direction: column;
-    align-items: stretch;
+  .ec-card {
+    padding: var(--app-space-4);
   }
 }
 
