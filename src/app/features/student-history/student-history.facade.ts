@@ -1,6 +1,7 @@
-import { Injectable, inject, signal } from "@angular/core";
+import { DestroyRef, Injectable, inject, signal } from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import type { Subscription } from "rxjs";
-import { ApiProblemError } from "../../core/api/api-problem-error";
+import { toSafeApiProblem } from "../../core/api/to-safe-api-problem";
 import {
   empty as emptyState,
   errorState,
@@ -52,6 +53,7 @@ import type {
 @Injectable()
 export class StudentHistoryFacade {
   private readonly api = inject(StudentHistoryApiService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly state = signal<RemoteState<StudentHistoryVm>>(idle());
   private subscription: Subscription | null = null;
   private sequence = 0;
@@ -127,36 +129,35 @@ export class StudentHistoryFacade {
     const requestKey = `student-history#${this.sequence}`;
     this.state.set(loading<StudentHistoryVm>(requestKey));
 
-    this.subscription = this.api.getStudentHistory(params).subscribe({
-      next: (dto) => {
-        if (this.isStale(requestKey)) {
-          return;
-        }
-        if (dto.enrollments.length === 0) {
-          // El contrato declara `200 []` como respuesta válida para
-          // "identidad sin inscripciones". Se mapea a `empty('noResults')`,
-          // NO a `error`, para mantener la paridad con `top-schools`.
-          this.state.set(emptyState<StudentHistoryVm>("noResults"));
-          return;
-        }
-        const vm = studentHistoryResponseToVm(dto);
-        this.state.set(success(vm));
-      },
-      error: (err: unknown) => {
-        if (this.isStale(requestKey)) {
-          return;
-        }
-        const problem = err instanceof ApiProblemError ? err.problem : null;
-        if (!problem) {
-          return;
-        }
-        this.state.set(errorState<StudentHistoryVm>(problem));
-      },
-      complete: () => {
-        // El backend cierra el observable tras la respuesta única; no
-        // se requiere lógica adicional aquí.
-      },
-    });
+    this.subscription = this.api
+      .getStudentHistory(params)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (dto) => {
+          if (this.isStale(requestKey)) {
+            return;
+          }
+          if (dto.enrollments.length === 0) {
+            // El contrato declara `200 []` como respuesta válida para
+            // "identidad sin inscripciones". Se mapea a `empty('noResults')`,
+            // NO a `error`, para mantener la paridad con `top-schools`.
+            this.state.set(emptyState<StudentHistoryVm>("noResults"));
+            return;
+          }
+          const vm = studentHistoryResponseToVm(dto);
+          this.state.set(success(vm));
+        },
+        error: (err: unknown) => {
+          if (this.isStale(requestKey)) {
+            return;
+          }
+          this.state.set(errorState<StudentHistoryVm>(toSafeApiProblem(err)));
+        },
+        complete: () => {
+          // El backend cierra el observable tras la respuesta única; no
+          // se requiere lógica adicional aquí.
+        },
+      });
   }
 
   /**

@@ -346,6 +346,19 @@ describe("StudentHistoryComponent (CT-HIST-COMP)", () => {
     expect(component.isSuccess()).toBe(true);
   });
 
+  it("cancela la consulta pendiente al destruir la ruta", () => {
+    component.form.patchValue({
+      documentType: "DNI",
+      documentNumber: "99.001.101",
+    });
+    component.onSubmit();
+    const request = http.expectOne((candidate) => candidate.url === baseUrl);
+
+    fixture.destroy();
+
+    expect(request.cancelled).toBe(true);
+  });
+
   it("incluye media query 320 px, prefers-reduced-motion y tokens de contraste", () => {
     const css = Array.from(document.head.querySelectorAll("style"))
       .map((style) => style.textContent ?? "")

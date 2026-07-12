@@ -5,7 +5,8 @@ import {
   provideHttpClientTesting,
 } from "@angular/common/http/testing";
 import { TestBed } from "@angular/core/testing";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { throwError } from "rxjs";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   API_CONFIG,
   DEFAULT_API_CONFIG,
@@ -261,5 +262,28 @@ describe("StudentHistoryFacade (CT-HIST-FAC)", () => {
     expect(retryReq.request.params.get("asOfDate")).toBe("2026-07-10");
     retryReq.flush(studentHistoryFixture);
     expect(facade.result().status).toBe("success");
+  });
+
+  it("termina en error seguro ante un fallo inesperado no normalizado", () => {
+    vi.spyOn(
+      TestBed.inject(StudentHistoryApiService),
+      "getStudentHistory",
+    ).mockReturnValue(throwError(() => new Error("unexpected")));
+
+    facade.loadHistory(completeFilters);
+
+    expect(facade.result()).toMatchObject({
+      status: "error",
+      problem: { code: "unknown_error" },
+    });
+  });
+
+  it("cancela el GET pendiente al destruir la fachada", () => {
+    facade.loadHistory(completeFilters);
+    const request = http.expectOne((candidate) => candidate.url === historyUrl);
+
+    TestBed.resetTestingModule();
+
+    expect(request.cancelled).toBe(true);
   });
 });

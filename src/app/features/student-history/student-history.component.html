@@ -1,6 +1,6 @@
 <section class="history" aria-labelledby="history-title">
   <h1 id="history-title" tabindex="-1">Historial académico-docente</h1>
-  <p class="history-lede">
+  <p id="history-lede" class="history-lede">
     Ingrese el <strong>tipo</strong> y <strong>número de documento</strong> del
     estudiante para consultar su línea de tiempo académica (escuela, grado,
     grupo y año) con las asignaciones docentes de cada año. La fecha de
@@ -12,6 +12,7 @@
     [formGroup]="form"
     (ngSubmit)="onSubmit()"
     novalidate
+    aria-label="Consulta de historial académico-docente"
     aria-describedby="history-lede"
   >
     <fieldset [disabled]="isLoading()">

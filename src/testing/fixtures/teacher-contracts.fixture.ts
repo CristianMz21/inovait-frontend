@@ -47,7 +47,7 @@ export const teacherContractsListedFixture: readonly TeacherContractResponse[] =
       startDate: "2025-03-03",
       endDate: "2025-12-19",
       persistedStatus: "Cancelled",
-      effectiveStatus: "Expired",
+      effectiveStatus: "Cancelled",
       evaluatedAt: "2026-07-10",
     },
     {
