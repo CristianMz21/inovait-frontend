@@ -61,7 +61,7 @@ module.exports = tseslint.config(
     rules: {
       ...angularTemplate.configs.recommended.rules,
       ...angularTemplate.configs.accessibility.rules,
-      '@angular-eslint/template/no-positive-tabindex': 'off',
+      '@angular-eslint/template/no-positive-tabindex': 'error',
     },
     languageOptions: {
       parser: angularTemplateParser,

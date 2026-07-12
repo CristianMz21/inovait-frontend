@@ -9,7 +9,6 @@
 npm-debug.log
 yarn-error.log
 pnpm-debug.log
-package-lock.json
 yarn.lock
 pnpm-lock.yaml
 
@@ -24,6 +23,9 @@ pnpm-lock.yaml
 /.sass-cache
 /connect.lock
 /coverage
+/playwright-report
+/playwright-report-production
+/test-results
 /libpeerconnection.log
 npm-debug.log
 yarn-error.log
