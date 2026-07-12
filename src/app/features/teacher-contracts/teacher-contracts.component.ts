@@ -17,6 +17,7 @@ import {
   Validators,
 } from "@angular/forms";
 import { CatalogFacade } from "../../core/catalogs/catalog.facade";
+import { CatalogStatusComponent } from "../../core/catalogs/catalog-status.component";
 import type { RemoteState } from "../../core/api/remote-state";
 import { TeacherContractsFacade } from "./teacher-contracts.facade";
 import { teacherContractsFormToRequest } from "./teacher-contracts.mappers";
@@ -68,7 +69,7 @@ type TeacherQueryFormGroup = FormGroup<TeacherQueryFormShape>;
 @Component({
   selector: "app-teacher-contracts",
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, CatalogStatusComponent],
   providers: [TeacherContractsFacade],
   templateUrl: "./teacher-contracts.component.html",
   styleUrl: "./teacher-contracts.component.scss",
@@ -81,6 +82,8 @@ export class TeacherContractsComponent implements OnInit {
 
   readonly createResult = this.contracts.createResult;
   readonly listResult = this.contracts.listResult;
+  readonly teachersState = this.catalog.teachersState;
+  readonly schoolsState = this.catalog.schoolsState;
 
   // -- Formulario de creación -----------------------------------------
 
@@ -215,6 +218,14 @@ export class TeacherContractsComponent implements OnInit {
       });
   }
 
+  retryTeachers(): void {
+    this.catalog.loadTeachers();
+  }
+
+  retrySchools(): void {
+    this.catalog.loadSchools();
+  }
+
   // -- Acciones de creación --------------------------------------------
 
   onSubmitCreate(): void {
@@ -255,6 +266,12 @@ export class TeacherContractsComponent implements OnInit {
       this.selectedSchoolIds.add(schoolId);
     } else {
       this.selectedSchoolIds.delete(schoolId);
+    }
+  }
+
+  onSchoolCheckboxChange(schoolId: number, event: Event): void {
+    if (event.target instanceof HTMLInputElement) {
+      this.onToggleSchool(schoolId, event.target.checked);
     }
   }
 

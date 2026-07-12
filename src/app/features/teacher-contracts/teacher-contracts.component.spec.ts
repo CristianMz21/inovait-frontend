@@ -1,5 +1,5 @@
 import { HttpHeaders } from "@angular/common/http";
-import { TestBed } from "@angular/core/testing";
+import { type ComponentFixture, TestBed } from "@angular/core/testing";
 import { provideHttpClient } from "@angular/common/http";
 import {
   HttpTestingController,
@@ -32,6 +32,7 @@ function url(teacherId: number): string {
 describe("TeacherContractsComponent (CT form/list remoto)", () => {
   let http: HttpTestingController;
   let component: TeacherContractsComponent;
+  let fixture: ComponentFixture<TeacherContractsComponent>;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -44,7 +45,7 @@ describe("TeacherContractsComponent (CT form/list remoto)", () => {
       ],
     });
     http = TestBed.inject(HttpTestingController);
-    const fixture = TestBed.createComponent(TeacherContractsComponent);
+    fixture = TestBed.createComponent(TeacherContractsComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
@@ -72,6 +73,57 @@ describe("TeacherContractsComponent (CT form/list remoto)", () => {
       teachersFixture.length,
     );
     expect(component.schoolOptions().length).toBe(schoolsFixture.length);
+  });
+
+  it("muestra error de catálogo y permite reintentar docentes", () => {
+    http
+      .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/teachers`)
+      .flush(apiProblemNotFoundFixture, {
+        status: 404,
+        statusText: "Not Found",
+        headers: new HttpHeaders({
+          "Content-Type": "application/problem+json",
+        }),
+      });
+    http
+      .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/schools`)
+      .flush(schoolsFixture);
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.textContent).toContain("No se pudieron cargar docentes");
+    const retry = Array.from(host.querySelectorAll("button")).find((button) =>
+      button.textContent?.includes("Reintentar docentes"),
+    );
+
+    retry?.click();
+
+    http
+      .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/teachers`)
+      .flush(teachersFixture);
+    expect(retry).toBeDefined();
+  });
+
+  it("permite reintentar escuelas desde el alert de catálogo", () => {
+    http
+      .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/teachers`)
+      .flush(teachersFixture);
+    http
+      .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/schools`)
+      .flush(apiProblemNotFoundFixture, {
+        status: 404,
+        statusText: "Not Found",
+      });
+    fixture.detectChanges();
+    const retry = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll("button"),
+    ).find((button) => button.textContent?.includes("Reintentar escuelas"));
+
+    retry?.click();
+
+    http
+      .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/schools`)
+      .flush(schoolsFixture);
+    expect(retry).toBeDefined();
   });
 
   // -- Creación: submit bloqueado hasta tener selección completa ------
@@ -249,7 +301,7 @@ describe("TeacherContractsComponent (CT form/list remoto)", () => {
     expect(rows).not.toBeNull();
     expect(rows?.length).toBe(2);
     expect(rows?.[0].persistedStatus).toBe("Cancelled");
-    expect(rows?.[0].effectiveStatus).toBe("Expired");
+    expect(rows?.[0].effectiveStatus).toBe("Cancelled");
     expect(rows?.[1].persistedStatus).toBe("Confirmed");
   });
 
@@ -350,9 +402,9 @@ describe("TeacherContractsComponent (CT form/list remoto)", () => {
     expect(component.queryForm.controls.teacherId.value).toBeNull();
   });
 
-  // -- Atomicidad: cambio de escuelas durante loading cancela previo --
+  // -- Single-flight: no se duplica ni cancela una escritura en curso --
 
-  it("cambiar escuelas durante loading cancela el POST previo", () => {
+  it("ignora un segundo submit y mantiene el botón disabled single-flight", () => {
     flushInitialCatalogs();
     component.createForm.patchValue({
       teacherId: 5,
@@ -366,12 +418,21 @@ describe("TeacherContractsComponent (CT form/list remoto)", () => {
 
     component.onToggleSchool(2, true);
     component.onSubmitCreate();
-    const second = http.expectOne(
-      (r) => r.url === url(5) && r.method === "POST",
+    http.expectNone((r) => r.url === url(5) && r.method === "POST");
+    expect(first.cancelled).toBe(false);
+    expect(component.isCreating()).toBe(true);
+    fixture.detectChanges();
+    const nativeElement: unknown = fixture.nativeElement;
+    if (!(nativeElement instanceof HTMLElement)) {
+      throw new Error("Expected an HTMLElement test host");
+    }
+    const submit = nativeElement.querySelector<HTMLButtonElement>(
+      "button[type='submit']",
     );
-    expect(first.cancelled).toBe(true);
+    expect(submit?.disabled).toBe(true);
+    expect(submit?.getAttribute("aria-busy")).toBe("true");
 
-    second.flush(teacherContractsCreatedFixture);
+    first.flush(teacherContractsCreatedFixture);
     expect(component.createSuccess()).not.toBeNull();
   });
 });

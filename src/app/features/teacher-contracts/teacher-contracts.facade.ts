@@ -1,6 +1,7 @@
-import { Injectable, inject, signal } from "@angular/core";
+import { DestroyRef, Injectable, inject, signal } from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import type { Subscription } from "rxjs";
-import { ApiProblemError } from "../../core/api/api-problem-error";
+import { toSafeApiProblem } from "../../core/api/to-safe-api-problem";
 import type { TeacherContractResponse } from "../../core/api/dtos/teacher-contract-response.dto";
 import {
   type RemoteState,
@@ -43,8 +44,8 @@ import type {
  * - El estado `success` sólo se emite cuando el `POST` devuelve `201`
  *   con el array canónico. Cualquier `4xx/5xx` queda mapeado a
  *   `error` y el resultado anterior (si lo había) no se conserva.
- * - La cancelación previa a un nuevo `submit` descarta la respuesta
- *   tardía de un envío obsoleto (cambio de escuelas, fechas, docente).
+ * - Mientras un `POST` está en curso, nuevos submits son no-op: cancelar
+ *   HTTP en el cliente no garantiza rollback de una escritura backend.
  * - La validación local (`teacherContractsFormToRequest`) evita
  *   peticiones inválidas antes de invocar al backend.
  *
@@ -55,6 +56,7 @@ import type {
 @Injectable()
 export class TeacherContractsFacade {
   private readonly api = inject(TeacherContractsApiService);
+  private readonly destroyRef = inject(DestroyRef);
 
   private readonly create =
     signal<RemoteState<readonly TeacherContractResultVm[]>>(idle());
@@ -91,6 +93,9 @@ export class TeacherContractsFacade {
    * inconsistencias locales).
    */
   submit(form: TeacherContractsFormVm): void {
+    if (this.create().status === "loading") {
+      return;
+    }
     const params = teacherContractsFormToRequest(form);
     if (params === null) {
       return;
@@ -173,32 +178,35 @@ export class TeacherContractsFacade {
     const requestKey = `teacher-contracts-create#${this.createSequence}`;
     this.create.set(loading(requestKey));
 
-    this.createSubscription = this.api.create(params).subscribe({
-      next: (response: readonly TeacherContractResponse[]) => {
-        if (this.isStale(this.create(), requestKey)) {
-          return;
-        }
-        if (response.length === 0) {
+    this.createSubscription = this.api
+      .create(params)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response: readonly TeacherContractResponse[]) => {
+          if (this.isStale(this.create(), requestKey)) {
+            return;
+          }
+          if (response.length === 0) {
+            this.create.set(
+              empty<readonly TeacherContractResultVm[]>("noContracts"),
+            );
+            return;
+          }
           this.create.set(
-            empty<readonly TeacherContractResultVm[]>("noContracts"),
+            success(response.map(teacherContractResponseToResult)),
           );
-          return;
-        }
-        this.create.set(success(response.map(teacherContractResponseToResult)));
-      },
-      error: (err: unknown) => {
-        if (this.isStale(this.create(), requestKey)) {
-          return;
-        }
-        const problem = err instanceof ApiProblemError ? err.problem : null;
-        if (!problem) {
-          return;
-        }
-        this.create.set(
-          errorState<readonly TeacherContractResultVm[]>(problem),
-        );
-      },
-    });
+        },
+        error: (err: unknown) => {
+          if (this.isStale(this.create(), requestKey)) {
+            return;
+          }
+          this.create.set(
+            errorState<readonly TeacherContractResultVm[]>(
+              toSafeApiProblem(err),
+            ),
+          );
+        },
+      });
   }
 
   private dispatchList(teacherId: number, asOfDate: string | undefined): void {
@@ -209,6 +217,7 @@ export class TeacherContractsFacade {
 
     this.listSubscription = this.api
       .list({ teacherId, ...(asOfDate ? { asOfDate } : {}) })
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (response: readonly TeacherContractResponse[]) => {
           if (this.isStale(this.list(), requestKey)) {
@@ -226,12 +235,10 @@ export class TeacherContractsFacade {
           if (this.isStale(this.list(), requestKey)) {
             return;
           }
-          const problem = err instanceof ApiProblemError ? err.problem : null;
-          if (!problem) {
-            return;
-          }
           this.list.set(
-            errorState<readonly TeacherContractResultVm[]>(problem),
+            errorState<readonly TeacherContractResultVm[]>(
+              toSafeApiProblem(err),
+            ),
           );
         },
       });

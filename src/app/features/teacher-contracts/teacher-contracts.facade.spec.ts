@@ -5,7 +5,8 @@ import {
 } from "@angular/common/http/testing";
 import { TestBed } from "@angular/core/testing";
 import { provideHttpClient } from "@angular/common/http";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { throwError } from "rxjs";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   API_CONFIG,
   DEFAULT_API_CONFIG,
@@ -135,7 +136,7 @@ describe("TeacherContractsFacade", () => {
     }
   });
 
-  it("submit() cancela el envío previo cuando se reenvía (atomicidad)", () => {
+  it("submit() mantiene single-flight y no cancela ni duplica un POST en curso", () => {
     facade.submit(validForm);
     const first = http.expectOne(
       (r) => r.url === url(5) && r.method === "POST",
@@ -146,14 +147,15 @@ describe("TeacherContractsFacade", () => {
       ...validForm,
       schoolIds: [3],
     });
-    const second = http.expectOne(
-      (r) => r.url === url(5) && r.method === "POST",
+    http.expectNone(
+      (request) =>
+        request !== first.request &&
+        request.url === url(5) &&
+        request.method === "POST",
     );
-    expect(first.cancelled).toBe(true);
+    expect(first.cancelled).toBe(false);
 
-    // La segunda respuesta sí muta el estado; la respuesta tardía del
-    // primer POST se descarta porque su `requestKey` ya no es la vigente.
-    second.flush(teacherContractsCreatedFixture);
+    first.flush(teacherContractsCreatedFixture);
     const state = facade.createResult();
     expect(state.status).toBe("success");
     if (state.status === "success") {
@@ -326,5 +328,43 @@ describe("TeacherContractsFacade", () => {
 
     facade.retryList();
     expect(facade.listResult().status).toBe("loading");
+  });
+
+  it("termina ambos flujos en error seguro ante fallos inesperados", () => {
+    const api = TestBed.inject(TeacherContractsApiService);
+    vi.spyOn(api, "create").mockReturnValue(
+      throwError(() => new Error("unexpected create")),
+    );
+    vi.spyOn(api, "list").mockReturnValue(
+      throwError(() => new Error("unexpected list")),
+    );
+
+    facade.submit(validForm);
+    facade.searchByTeacher(5);
+
+    expect(facade.createResult()).toMatchObject({
+      status: "error",
+      problem: { code: "unknown_error" },
+    });
+    expect(facade.listResult()).toMatchObject({
+      status: "error",
+      problem: { code: "unknown_error" },
+    });
+  });
+
+  it("cancela POST y GET pendientes al destruir la fachada", () => {
+    facade.submit(validForm);
+    facade.searchByTeacher(5);
+    const createRequest = http.expectOne(
+      (candidate) => candidate.url === url(5) && candidate.method === "POST",
+    );
+    const listRequest = http.expectOne(
+      (candidate) => candidate.url === url(5) && candidate.method === "GET",
+    );
+
+    TestBed.resetTestingModule();
+
+    expect(createRequest.cancelled).toBe(true);
+    expect(listRequest.cancelled).toBe(true);
   });
 });

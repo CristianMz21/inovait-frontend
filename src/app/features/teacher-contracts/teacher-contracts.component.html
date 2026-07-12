@@ -1,11 +1,24 @@
 <section class="contracts" aria-labelledby="contracts-title">
   <h1 id="contracts-title" tabindex="-1">Contratos docentes</h1>
-  <p class="contracts-lede">
+  <p id="contracts-lede" class="contracts-lede">
     Cree contratos independientes para un mismo docente en una o varias
     escuelas, o consulte su historial. La creación es <strong>atómica</strong>:
     si el backend rechaza la solicitud por escuela repetida o período
     superpuesto, no se persiste ningún contrato de esa solicitud.
   </p>
+
+  <app-catalog-status
+    [state]="teachersState()"
+    label="docentes"
+    testId="contracts-teachers"
+    (retry)="retryTeachers()"
+  />
+  <app-catalog-status
+    [state]="schoolsState()"
+    label="escuelas"
+    testId="contracts-schools"
+    (retry)="retrySchools()"
+  />
 
   <!-- ============================================================ -->
   <!-- Creación multiescuela                                        -->
@@ -48,6 +61,7 @@
         [formGroup]="createForm"
         (ngSubmit)="onSubmitCreate()"
         novalidate
+        aria-label="Creación de contratos docentes"
         aria-describedby="contracts-lede"
       >
         <fieldset [disabled]="isCreating()">
@@ -113,9 +127,7 @@
                     id="contracts-create-school-{{ opt.value }}"
                     type="checkbox"
                     [checked]="isSchoolSelected(opt.value)"
-                    (change)="
-                      onToggleSchool(opt.value, $any($event.target).checked)
-                    "
+                    (change)="onSchoolCheckboxChange(opt.value, $event)"
                     [attr.aria-label]="opt.label"
                   />
                   <span>{{ opt.label }}</span>
@@ -198,6 +210,7 @@
       [formGroup]="queryForm"
       (ngSubmit)="onSubmitQuery()"
       novalidate
+      aria-label="Consulta de contratos docentes"
     >
       <fieldset [disabled]="isQuerying()">
         <legend>Filtros</legend>

@@ -147,7 +147,7 @@ describe("TeacherContractsMappers", () => {
         "Cancelled",
       );
       expect(teacherContractResponseToResult(first).effectiveStatus).toBe(
-        "Expired",
+        "Cancelled",
       );
       expect(teacherContractResponseToResult(second).persistedStatus).toBe(
         "Confirmed",
