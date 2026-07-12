@@ -105,6 +105,11 @@ body {
   font-family: var(--app-font-body);
   font-size: 16px;
   line-height: 1.45;
+  /* EduCore is a light-only theme. Without this, browsers on dark-mode
+   * systems render native widget surfaces (select dropdown lists, date
+   * pickers, scrollbars) dark while the page's inherited text stays dark
+   * too, making dropdown options unreadable. */
+  color-scheme: light;
 }
 
 body {
@@ -220,13 +225,33 @@ h4 {
   border: 1px solid var(--app-border);
   border-radius: var(--app-radius-control);
   padding: 10px 12px;
+  /* Form controls do not inherit typography or text color from the page by
+   * default; without these the browser renders UA font/black instead of the
+   * design system's Inter/--app-text. */
+  font: inherit;
+  color: var(--app-text);
 }
 
 .ec-field > input:disabled,
 .ec-field > select:disabled {
   background: var(--app-border-subtle);
-  color: var(--app-text-tertiary);
+  /* --app-muted (not tertiary): Chromium's UA stylesheet also dims disabled
+   * selects with opacity 0.7, so a tertiary tone stacked with that dimming
+   * dropped effective contrast below 2:1 and the dependent selects in the
+   * enrollment cascade became unreadable. `opacity: 1` defeats the UA
+   * dilution; the gray surface + muted tone + cursor keep the disabled
+   * affordance visually distinct. */
+  color: var(--app-muted);
+  opacity: 1;
   cursor: not-allowed;
+}
+
+/* The dropdown list is rendered by the browser, not the page; on dark-mode
+ * systems it would otherwise pair its own dark popup surface with the
+ * page's inherited text color. Pin the option colors explicitly. */
+.ec-field > select option {
+  color: var(--app-text);
+  background-color: var(--app-header-bg);
 }
 
 .ec-alert {
