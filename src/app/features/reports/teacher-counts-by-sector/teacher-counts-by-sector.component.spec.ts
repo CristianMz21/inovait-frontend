@@ -85,6 +85,94 @@ describe("TeacherCountsBySectorComponent (CT-SECTOR-RPT)", () => {
     expect(submit?.getAttribute("aria-busy")).toBe("false");
   });
 
+  // -- Idle -----------------------------------------------------------
+
+  it('expone el prompt idle "sector-idle" antes de enviar y lo retira tras el submit', () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('[data-testid="sector-idle"]')).toBeTruthy();
+
+    component.form.patchValue({
+      periodStart: "2026-07-01",
+      periodEnd: "2026-07-10",
+    });
+    component.onSubmit();
+    fixture.detectChanges();
+
+    expect(compiled.querySelector('[data-testid="sector-idle"]')).toBeNull();
+
+    http
+      .expectOne((r) => r.url === sectorUrl)
+      .flush(teacherCountsBySectorFixture);
+  });
+
+  // -- Validación dinámica del período -----------------------------------
+
+  it("un solo extremo completado marca aria-required en el vacío, muestra el error inline y desactiva el botón", () => {
+    component.form.patchValue({ periodStart: "2026-07-01", periodEnd: "" });
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelectorAll('[aria-required="true"]').length).toBe(1);
+
+    const endInput =
+      compiled.querySelector<HTMLInputElement>("#sector-period-end");
+    expect(endInput?.getAttribute("aria-required")).toBe("true");
+
+    const error = compiled.querySelector("#sector-period-end-error");
+    expect(error?.textContent?.trim()).toBe(
+      "Requerido: completa ambos extremos del período (o vacía los dos).",
+    );
+
+    const submit = compiled.querySelector<HTMLButtonElement>(
+      'button[type="submit"]',
+    );
+    expect(submit?.disabled).toBe(true);
+  });
+
+  it("ambos extremos vacíos mantiene el conteo de aria-required en 0", () => {
+    component.form.patchValue({ periodStart: "2026-07-01", periodEnd: "" });
+    fixture.detectChanges();
+
+    component.form.patchValue({ periodStart: "", periodEnd: "" });
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelectorAll('[aria-required="true"]').length).toBe(0);
+  });
+
+  it("fin anterior al inicio muestra la advertencia y desactiva el botón, pero onSubmit() sigue enviando el GET", () => {
+    component.form.patchValue({
+      periodStart: "2026-07-10",
+      periodEnd: "2026-07-01",
+    });
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelectorAll('[aria-required="true"]').length).toBe(0);
+    const error = compiled.querySelector("#sector-period-end-error");
+    expect(error?.textContent?.trim()).toBe(
+      "La fecha de fin debe ser igual o posterior al inicio.",
+    );
+    const submit = compiled.querySelector<HTMLButtonElement>(
+      'button[type="submit"]',
+    );
+    expect(submit?.disabled).toBe(true);
+
+    component.onSubmit();
+    const req = http.expectOne(
+      (r) => r.url === sectorUrl && r.method === "GET",
+    );
+    expect(req.request.params.get("periodStart")).toBe("2026-07-10");
+    expect(req.request.params.get("periodEnd")).toBe("2026-07-01");
+    req.flush(apiProblemPeriodInvalidFixture, {
+      status: 422,
+      statusText: "Unprocessable Entity",
+      headers: new HttpHeaders({
+        "Content-Type": "application/problem+json",
+      }),
+    });
+  });
+
   // -- Estado del formulario --------------------------------------------
 
   it("bloquea el botón Consultar con un solo extremo del período", () => {

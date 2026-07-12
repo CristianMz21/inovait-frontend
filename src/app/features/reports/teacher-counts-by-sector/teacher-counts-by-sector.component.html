@@ -1,10 +1,8 @@
 <section class="sector" aria-labelledby="sector-title">
   <h1 id="sector-title" tabindex="-1">Docentes distintos por sector</h1>
   <p id="sector-lede" class="sector-lede">
-    Indique un <strong>período</strong> (opcional) para obtener el conteo de
-    docentes con contratos vigentes en cada sector. Si lo deja vacío, se usa la
-    fecha actual como <code>periodStart</code> y <code>periodEnd</code>. Debe
-    completar <strong>ambos</strong> extremos o <strong>ninguno</strong>.
+    Consulta el total de docentes con contratos vigentes en los sectores público
+    y privado.
   </p>
 
   <form
@@ -15,30 +13,45 @@
     aria-label="Filtros de docentes por sector"
     aria-describedby="sector-lede"
   >
-    <fieldset class="ec-card" [disabled]="isLoading()">
+    <fieldset class="ec-card sector-grid" [disabled]="isLoading()">
       <legend>Período</legend>
 
       <label class="sector-field ec-field">
-        <span>Inicio del período (opcional)</span>
+        <span>Inicio del período</span>
         <input
           id="sector-period-start"
           type="date"
           formControlName="periodStart"
-          aria-describedby="sector-period-help"
+          [attr.aria-required]="oneDateFilled('start') ? 'true' : null"
+          [attr.aria-describedby]="describedByFor('start')"
         />
+        @if (oneDateFilled("start")) {
+          <span id="sector-period-start-error" class="ec-field-error">
+            Requerido: completa ambos extremos del período (o vacía los dos).
+          </span>
+        }
       </label>
 
       <label class="sector-field ec-field">
-        <span>Fin del período (opcional)</span>
+        <span>Fin del período</span>
         <input
           id="sector-period-end"
           type="date"
           formControlName="periodEnd"
-          aria-describedby="sector-period-help"
+          [attr.aria-required]="oneDateFilled('end') ? 'true' : null"
+          [attr.aria-describedby]="describedByFor('end')"
         />
+        @if (oneDateFilled("end")) {
+          <span id="sector-period-end-error" class="ec-field-error">
+            Requerido: completa ambos extremos del período (o vacía los dos).
+          </span>
+        } @else if (hasDateRangeError()) {
+          <span id="sector-period-end-error" class="ec-field-error">
+            La fecha de fin debe ser igual o posterior al inicio.
+          </span>
+        }
         <small id="sector-period-help" class="sector-help">
-          Debe enviarse junto con el inicio. Si deja uno solo, la consulta se
-          bloquea hasta completar ambos campos (o vaciarlos).
+          Ambos extremos juntos, o ninguno.
         </small>
       </label>
     </fieldset>
@@ -47,7 +60,7 @@
       <button
         type="submit"
         class="sector-submit ec-btn ec-btn--secondary"
-        [disabled]="!canSubmit() || isLoading()"
+        [disabled]="!canSubmit() || isLoading() || hasDateRangeError()"
         [attr.aria-busy]="isLoading() ? 'true' : 'false'"
       >
         @if (isLoading()) {
@@ -62,10 +75,18 @@
         (click)="onReset()"
         [disabled]="isLoading()"
       >
-        Limpiar
+        Limpiar filtros
       </button>
     </div>
   </form>
+
+  @if (isIdle()) {
+    <p class="sector-idle ec-empty-hint" data-testid="sector-idle">
+      <app-icon name="manage_search" />
+      Completa el período y consulta el reporte. Sin período, se usa la fecha
+      actual.
+    </p>
+  }
 
   @if (isLoading()) {
     <p

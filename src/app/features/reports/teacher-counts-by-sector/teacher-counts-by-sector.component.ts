@@ -4,6 +4,7 @@ import {
   DestroyRef,
   computed,
   inject,
+  signal,
   type OnInit,
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
@@ -79,9 +80,22 @@ export class TeacherCountsBySectorComponent implements OnInit {
     periodEnd: this.fb.control("", [Validators.pattern(/^\d{4}-\d{2}-\d{2}$/)]),
   });
 
+  readonly isIdle = computed(() => this.result().status === "idle");
   readonly isLoading = computed(() => this.result().status === "loading");
   readonly isSuccess = computed(() => this.result().status === "success");
   readonly hasError = computed(() => this.result().status === "error");
+
+  /**
+   * Puente reactivo del valor del período. `FormGroup` no es una señal:
+   * sin este puente, `oneDateFilled`/`hasDateRangeError`/`describedByFor`
+   * (que leen el formulario) no participarían del grafo de señales de
+   * Angular y, en una app `zoneless` (ver `provideZonelessChangeDetection`
+   * en `app.config.ts`), la vista `OnPush` nunca se marcaría para
+   * re-chequeo tras un cambio de valor — el binding del template quedaría
+   * desactualizado hasta el próximo evento ajeno. `ngOnInit()` mantiene
+   * esta señal sincronizada con cada emisión de `form.valueChanges`.
+   */
+  private readonly rawPeriod = signal(this.form.getRawValue());
 
   /**
    * Indica si los filtros actuales son simétricos. La UI usa este
@@ -92,6 +106,58 @@ export class TeacherCountsBySectorComponent implements OnInit {
    */
   canSubmit(): boolean {
     return teacherCountsBySectorFiltersToParams(this.toFiltersVm()) !== null;
+  }
+
+  /**
+   * Indica si `which` es el extremo del período que falta completar
+   * cuando el otro ya está definido (exactamente uno de los dos lleno).
+   * Se usa para marcar `[attr.aria-required]` sólo en el campo vacío —
+   * ambos vacíos o ambos llenos devuelven `false` para los dos extremos,
+   * conservando el conteo idle de `aria-required` en 0.
+   */
+  oneDateFilled(which: "start" | "end"): boolean {
+    const raw = this.rawPeriod();
+    const startFilled = raw.periodStart.trim().length > 0;
+    const endFilled = raw.periodEnd.trim().length > 0;
+    if (startFilled === endFilled) {
+      return false;
+    }
+    return which === "start" ? !startFilled : !endFilled;
+  }
+
+  /**
+   * `true` cuando ambos extremos están definidos y `periodEnd` es
+   * anterior a `periodStart` (comparación de strings ISO `YYYY-MM-DD`,
+   * válida porque el orden lexicográfico coincide con el cronológico).
+   * Sólo controla el `[disabled]` del botón — `onSubmit()` no la
+   * consulta, así que el envío directo sigue llegando al backend (que
+   * aplica la regla canónica como `422 period_invalid`).
+   */
+  hasDateRangeError(): boolean {
+    const raw = this.rawPeriod();
+    const start = raw.periodStart.trim();
+    const end = raw.periodEnd.trim();
+    if (start.length === 0 || end.length === 0) {
+      return false;
+    }
+    return end < start;
+  }
+
+  /**
+   * `aria-describedby` del extremo `which`: siempre incluye la ayuda
+   * compartida (`sector-period-help`) y, si corresponde, el id del
+   * mensaje de error inline activo para ese campo.
+   */
+  describedByFor(which: "start" | "end"): string {
+    const ids = ["sector-period-help"];
+    if (which === "start") {
+      if (this.oneDateFilled("start")) {
+        ids.push("sector-period-start-error");
+      }
+    } else if (this.oneDateFilled("end") || this.hasDateRangeError()) {
+      ids.push("sector-period-end-error");
+    }
+    return ids.join(" ");
   }
 
   readonly successData = computed<TeacherCountsBySectorVm | null>(() => {
@@ -116,14 +182,17 @@ export class TeacherCountsBySectorComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    // Mantener el formulario sincronizado: el reset del estado remoto
-    // se invoca explícitamente desde `onReset()`; las teclas
-    // individuales no emiten cambios que disparen un reset implícito.
-    this.form.controls.periodStart.valueChanges
+    // El reset del estado remoto se invoca explícitamente desde
+    // `onReset()`; el cambio de filtros sólo se materializa al pulsar
+    // "Consultar" para mantener la disciplina de cancel-on-switch — este
+    // subscriber NO dispara ninguna consulta. Sólo mantiene `rawPeriod`
+    // (puente de sólo lectura hacia la UI: aria-required dinámico,
+    // errores inline e idle prompt) alineado con el valor vigente de
+    // ambos extremos.
+    this.form.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
-        // No-op: el cambio de filtros sólo se materializa al pulsar
-        // "Consultar" para mantener la disciplina de cancel-on-switch.
+        this.rawPeriod.set(this.form.getRawValue());
       });
   }
 
