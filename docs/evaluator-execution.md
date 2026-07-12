@@ -197,33 +197,63 @@ siguiente con uno de: `PASS` / `FAIL` / `N/A` + observación breve.
 | 17 | Contraste pares críticos | ☐ |  |
 | 18 | Semántica única tabla/caption | ☐ |  |
 
-## Backend integration (T034 — manual integration pending)
+## Backend integration (T034 — walkthrough real completado)
 
-> **Estado**: manual integration pending — see dev-check script.
-> El script `scripts/dev-check-backend.mjs` realiza una verificación
-> previa de alcanzabilidad y CORS. La verificación funcional completa
-> (walkthrough con backend real) sigue siendo una tarea humana.
+> **Estado**: **PASS** — 2026-07-11/12. Walkthrough con backend real
+> ejecutado con `./scripts/deploy-local.sh` del repo backend (ver
+> `../inovait-backend/README.md#despliegue-local-integrado-backend--frontend`).
+> `scripts/dev-check-backend.mjs` PASS y las tres rutas P0 se recorrieron con
+> Playwright contra backend real, configuración `production`, mocks apagados.
 
-### Procedimiento manual
+### Correcciones aplicadas durante la integración
 
-1. Iniciar backend local: `cd ../inovait-backend && dotnet run --project src/Inovait.Api` (o equivalente) hasta exponer `http://localhost:5000/health` con `200 OK`.
-2. Ejecutar la verificación previa: `node scripts/dev-check-backend.mjs`.
-   - PASS: continuar.
-   - FAIL: revisar la salida, corregir CORS / URL y reintentar antes de continuar.
-3. Iniciar frontend: `npm start`.
-4. Recorrer las tres rutas P0 con los pasos 8–11 de la sección `Walkthrough Script` (anuncios) sustituyendo `ProblemDetails` de fixture por respuesta real.
-5. Verificar que las direcciones CORS allow-list incluyen `http://localhost:4200` y que las credenciales no se envían por defecto.
-6. Registrar en la tabla de abajo el resultado y la versión del backend probada.
+- `scripts/dev-check-backend.mjs`: su preflight CORS por defecto apuntaba a
+  la ruta inexistente `/api/catalogs/schools`; se corrigió a `/api/schools`
+  (ruta real del contrato). Sin esta corrección el script fallaba pese a que
+  backend y CORS estaban correctamente configurados.
+- `src/app/scripts/verify-openapi-contract.mjs` (`computeChecksum`): no
+  reproducía fielmente el pipeline canónico `sha256sum <files> | sha256sum`
+  — hasheaba dígitos hex ya calculados en vez de encadenar el pipeline real,
+  por lo que nunca podía igualar su propia constante autorizada. Corregido
+  para reproducir el pipeline exacto.
+
+### Procedimiento ejecutado
+
+1. Backend local levantado con `./scripts/deploy-local.sh` (SQL Server + API en `http://localhost:5000` + seed de demo ficticio).
+2. `node scripts/dev-check-backend.mjs` → **PASS**: `/health` `200`; preflight CORS `OPTIONS /api/schools` → `204` con `Access-Control-Allow-Origin: http://localhost:4200`.
+3. Frontend servido con `ng serve --configuration production` (HTTP real, mocks apagados) en `http://localhost:4200`, vía el mismo script.
+4. Recorrido real (Playwright, backend real) de las tres rutas P0 con los pasos 8–11 de `Walkthrough Script`, sustituyendo `ProblemDetails` de fixture por respuesta real — ver resultados abajo.
+5. CORS allow-list confirmado: solo `http://localhost:4200` (no `127.0.0.1`).
+
+### Resultados del walkthrough
+
+- **`/enrollments`**: cascada Escuela→Año→Grado→Grupo cargada del backend real. Alta de Valentina Rojas Paredes (CE 91.234.567, nacida 2015-05-10) → `201` "Inscripción registrada" con edad calculada 11. Reintento idéntico → `409` renderizado "El estudiante ya tiene una inscripción para el año académico indicado". Hallazgo intermedio ya resuelto: con solo el seed canónico de producción, el alta devolvía `404` "El tipo de documento indicado no existe" (`ProblemDetails` renderizado correctamente) — este hallazgo es el origen de la decisión de sembrar datos de demo ficticios en `deploy-local.sh`.
+- **`/student-search`**: filtros combinados devuelven 1 inscripción con identidad/edad/cadena académica correctas; combinación sin resultados muestra "Sin coincidencias" (`200 []`).
+- **`/teacher-contracts`**: intento multiescuela con solape en North → `409` "La solicitud superpone un contrato existente" **sin persistencia parcial** (verificado: el historial posterior muestra exactamente 2 contratos); alta solo-South → `201` "Se crearon 1 contratos"; historial por docente → 2 contratos con estados persistido/efectivo/evaluado correctos.
+
+### `npm run contract:verify` — FULL PASS
+
+Corrida posterior a la corrección de `computeChecksum` (2026-07-11/12): árbol
+contractual limpio, HEAD del backend `5d8e0f81e1195c3f70a84caeae5f8bda013f785e`
+aprobado como sucesor del baseline `1223630ab99bf1bfaa4f5919fccf5ff539379c8e`,
+checksum combinado `802c13b91bf5c6425d24c540b6841a2abe134e084ea310fc2b7041e32c24a81a`
+reproducido exactamente, 15 `operationId` presentes. Esto supera la
+limitación de commit-check documentada en el gate WU05/WU10/WU11-STU
+(ver esas secciones abajo, que quedan como evidencia histórica del estado
+previo).
 
 ### Tabla de registro de integración
 
+Todas las filas corresponden a la misma corrida de integración, sobre el
+mismo checkout backend (HEAD `5d8e0f81e1195c3f70a84caeae5f8bda013f785e`).
+
 | # | Verificación | Resultado | Backend HEAD/SHA | Fecha | Observación |
 |---|---|---|---|---|---|
-| 1 | `node scripts/dev-check-backend.mjs` | ☐ | ☐ | ☐ |  |
-| 2 | `/enrollments` end-to-end con backend real | ☐ | ☐ | ☐ |  |
-| 3 | `/student-search` end-to-end con backend real | ☐ | ☐ | ☐ |  |
-| 4 | `/teacher-contracts` end-to-end con backend real | ☐ | ☐ | ☐ |  |
-| 5 | CORS preflight `OPTIONS /api/catalogs/schools` | ☐ | ☐ | ☐ |  |
+| 1 | `node scripts/dev-check-backend.mjs` | ✅ PASS | `5d8e0f81e1195c3f70a84caeae5f8bda013f785e` | 2026-07-11/12 | Preflight default corregido a `/api/schools` |
+| 2 | `/enrollments` end-to-end con backend real | ✅ PASS | `5d8e0f81e1195c3f70a84caeae5f8bda013f785e` | 2026-07-11/12 | 201 alta + 409 duplicado; ver hallazgo demo-data arriba |
+| 3 | `/student-search` end-to-end con backend real | ✅ PASS | `5d8e0f81e1195c3f70a84caeae5f8bda013f785e` | 2026-07-11/12 | Filtros con y sin resultados |
+| 4 | `/teacher-contracts` end-to-end con backend real | ✅ PASS | `5d8e0f81e1195c3f70a84caeae5f8bda013f785e` | 2026-07-11/12 | 409 solape sin persistencia parcial + 201 alta |
+| 5 | CORS preflight `OPTIONS /api/schools` | ✅ PASS | `5d8e0f81e1195c3f70a84caeae5f8bda013f785e` | 2026-07-11/12 | `204` + `Access-Control-Allow-Origin: http://localhost:4200`; ruta corregida desde `/api/catalogs/schools` |
 
 ## P0 Gate (T035)
 
@@ -373,7 +403,7 @@ Veredicto parcial:
 - [x] WU02: catálogos + `createEnrollment` con `RemoteState` exclusivo (`idle|loading|success|empty|error`); respuestas obsoletas descartadas por `requestKey`.
 - [x] WU03: `StudentSearchFacade` aplica la misma disciplina de `RemoteState<readonly StudentSearchResultVm[]>` + cancelación + descarte de stale; reutiliza `CatalogFacade` para los filtros académicos.
 - [x] WU04: `TeacherContractsFacade` aplica la misma disciplina para los dos recorridos (`createResult` + `listResult`), con dos slots independientes; reutiliza `CatalogFacade` para docentes y escuelas. La atomicidad multiescuela se garantiza porque `success` sólo se emite cuando el `POST` devuelve `201` con el array canónico.
-- [ ] Walkthrough manual con backend real pendiente (T034).
+- [x] Walkthrough manual con backend real completado (T034, 2026-07-11/12) — ver "Backend integration (T034)" arriba.
 
 ### E02 — Accesibilidad y usabilidad P0
 
@@ -392,7 +422,7 @@ Veredicto parcial:
 
 ### E04 — Integración con backend real / CORS
 
-- [ ] Pendiente de walkthrough manual (T034). Script de verificación previa disponible en `scripts/dev-check-backend.mjs`.
+- [x] Walkthrough manual completado (T034, 2026-07-11/12): `dev-check-backend.mjs` PASS + recorrido real de las tres rutas P0 contra backend real, CORS confirmado (ver "Backend integration (T034)" arriba).
 
 ## P1 Gate Reportes (002 / WU10)
 
@@ -478,24 +508,35 @@ Veredicto parcial:
 | R14 | Zoom 200 % | ☐ |  |
 | R15 | Contraste WCAG 2.2 AA | ☐ |  |
 
-### Backend integration (T034-RPT — manual integration pending)
+### Backend integration (T034-RPT — walkthrough real completado)
 
-> **Estado**: manual integration pending — no se modificó backend durante WU10.
+> **Estado**: **PASS** — 2026-07-11/12, ejecutado junto con el resto de la
+> integración real (ver "Backend integration (T034)" arriba y
+> "Backend integration (T034-STU)" abajo). Backend HEAD/SHA:
+> `5d8e0f81e1195c3f70a84caeae5f8bda013f785e` (sucesor aprobado del baseline
+> `1223630ab99bf1bfaa4f5919fccf5ff539379c8e`). No se modificó backend durante
+> WU10; esta verificación se realizó en una corrida de integración posterior.
 
-1. Iniciar backend local autorizado en `http://localhost:5000`.
-2. Confirmar que el contrato en backend corresponde a commit autorizado `1223630ab99bf1bfaa4f5919fccf5ff539379c8e` o sucesor aprobado.
-3. Ejecutar frontend con `npm start`.
-4. Recorrer `/reports#age-report`, `/reports#sector-report` y `/reports#top-schools-report` con los pasos R5–R11.
-5. Confirmar que no hay llamadas a `/api/students/{documentType}/{documentNumber}/history` ni habilitación accidental de `/student-history`.
-6. Registrar HEAD/SHA backend y observaciones.
+1. Backend local levantado con `./scripts/deploy-local.sh`.
+2. Contrato confirmado: HEAD `5d8e0f81e1195c3f70a84caeae5f8bda013f785e`, aprobado como sucesor por `npm run contract:verify` (FULL PASS).
+3. Frontend servido en configuración `production` (`ng serve --configuration production`, mocks apagados) vía `deploy-local.sh`.
+4. Las tres secciones de `/reports` se recorrieron con Playwright contra backend real.
+5. `/student-history` ya no está bloqueada en esta corrida (historia P1 entregada, ver `T034-STU` abajo); el check original "sin llamadas backend porque la ruta está bloqueada" queda superado por el estado actual del producto y se verifica por separado en `T034-STU`.
+6. HEAD/SHA y observaciones registrados abajo.
+
+### Resultados
+
+- **Distribución por edad**: banda 3–7 → 0, banda 8–12 → 1, banda ≥13 → 0.
+- **Docentes por sector**: Público → 1 (`COUNT DISTINCT` sobre 2 contratos de la misma docente Ana Gomez), Privado → 0 (zero-filled, no omitido).
+- **Escuelas líderes**: North con 1 inscripción.
 
 | # | Verificación | Resultado | Backend HEAD/SHA | Fecha | Observación |
 |---|---|---|---|---|---|
-| R1 | `getAgeDistribution` end-to-end | ☐ | ☐ | ☐ |  |
-| R2 | `getDistinctTeacherCountsBySector` end-to-end | ☐ | ☐ | ☐ |  |
-| R3 | `getTopSchoolsByEnrollment` end-to-end | ☐ | ☐ | ☐ |  |
-| R4 | `/student-history` sin llamadas backend | ☐ | ☐ | ☐ |  |
-| R5 | CORS / reports endpoints | ☐ | ☐ | ☐ |  |
+| R1 | `getAgeDistribution` end-to-end | ✅ PASS | `5d8e0f81e1195c3f70a84caeae5f8bda013f785e` | 2026-07-11/12 | 3–7:0, 8–12:1, ≥13:0 |
+| R2 | `getDistinctTeacherCountsBySector` end-to-end | ✅ PASS | `5d8e0f81e1195c3f70a84caeae5f8bda013f785e` | 2026-07-11/12 | Público:1, Privado:0 (zero-filled) |
+| R3 | `getTopSchoolsByEnrollment` end-to-end | ✅ PASS | `5d8e0f81e1195c3f70a84caeae5f8bda013f785e` | 2026-07-11/12 | North, 1 inscripción |
+| R4 | `/student-history` sin llamadas backend | N/A (superado) | — | 2026-07-11/12 | Historia P1 ya no está bloqueada; verificado por separado en `T034-STU` |
+| R5 | CORS / reports endpoints | ✅ PASS | `5d8e0f81e1195c3f70a84caeae5f8bda013f785e` | 2026-07-11/12 | Mismo allowlist confirmado en `T034` (`http://localhost:4200`) |
 
 ### Gate WU10 (T072)
 
@@ -668,24 +709,36 @@ Veredicto: **FAIL local por entorno backend**. Tracking y limpieza contractual p
 | H14 | Contraste WCAG 2.2 AA | ☐ |  |
 | H15 | `prefers-reduced-motion` honrado | ☐ |  |
 
-### Backend integration (T034-STU — manual integration pending)
+### Backend integration (T034-STU — walkthrough real parcial completado)
 
-> **Estado**: manual integration pending — no se modificó backend durante WU11-STU.
+> **Estado**: **PASS (camino feliz)** — 2026-07-11/12. No se modificó backend
+> durante WU11-STU; esta verificación se realizó en la corrida de integración
+> posterior descrita en "Backend integration (T034)" arriba. El camino feliz
+> (H1) y CORS (H5) quedan verificados contra backend real; H2–H4 (errores
+> canónicos y cancel-on-switch) no se ejercitaron en este walkthrough puntual
+> y siguen cubiertos únicamente por las suites automatizadas
+> (`npm test` 523/523, `npm run e2e` 14/14 mock + 8/8 producción con
+> peticiones interceptadas).
 
-1. Iniciar backend local autorizado en `http://localhost:5000`.
-2. Confirmar que el contrato en backend corresponde a commit autorizado `1223630ab99bf1bfaa4f5919fccf5ff539379c8e` o sucesor aprobado.
-3. Ejecutar frontend con `npm start`.
-4. Recorrer `/student-history` con los pasos H6–H10.
-5. Confirmar que el endpoint invocado es `GET /api/enrollments/students/{documentType}/{documentNumber}/history` (con `asOfDate` opcional como query) y que `/reports/*` no consume `getStudentHistory`.
-6. Registrar HEAD/SHA backend y observaciones.
+1. Backend local levantado con `./scripts/deploy-local.sh`.
+2. Contrato confirmado: HEAD `5d8e0f81e1195c3f70a84caeae5f8bda013f785e`, aprobado como sucesor por `npm run contract:verify` (FULL PASS).
+3. Frontend servido en configuración `production` (mocks apagados) vía `deploy-local.sh`.
+4. Se recorrió `/student-history` con el equivalente al paso H6 (identidad válida → success). H7–H10 (empty, 404, cancel-on-switch, reintentar) no se ejercitaron en esta corrida.
+5. Endpoint confirmado: `GET /api/students/{documentType}/{documentNumber}/history` — coincide con el contrato (`paths/enrollments.yaml:111`) y con la implementación real de `StudentHistoryApiService`. La referencia previa de este documento a `GET /api/enrollments/students/.../history` (también citada en "Notas operativas" más abajo, con origen en `design.md:38`) queda desactualizada: el código y el walkthrough real usan la ruta del contrato, sin el segmento `/enrollments`. `/reports/*` no consume `getStudentHistory`.
+6. Hallazgo benigno confirmado en vivo: el frontend envía un parámetro `asOfDate` en la query de `getStudentHistory` que no está declarado en el contrato; la minimal API del backend lo ignora silenciosamente — sin ruptura observada.
+
+### Resultado
+
+Timeline de Valentina Rojas Paredes: año 2026, North / First Grade / CG-01,
+1 asignación docente ("Mathematics · Ana Gomez").
 
 | # | Verificación | Resultado | Backend HEAD/SHA | Fecha | Observación |
 |---|---|---|---|---|---|
-| H1 | `getStudentHistory` end-to-end (success) | ☐ | ☐ | ☐ |  |
-| H2 | `getStudentHistory` 404 `student_not_found` | ☐ | ☐ | ☐ |  |
-| H3 | `getStudentHistory` 400 `invalid_request` | ☐ | ☐ | ☐ |  |
-| H4 | Cancel-on-switch verificado contra backend | ☐ | ☐ | ☐ |  |
-| H5 | CORS / endpoint de historia | ☐ | ☐ | ☐ |  |
+| H1 | `getStudentHistory` end-to-end (success) | ✅ PASS | `5d8e0f81e1195c3f70a84caeae5f8bda013f785e` | 2026-07-11/12 | Timeline Valentina: 2026, North/First Grade/CG-01, 1 asignación "Mathematics · Ana Gomez" |
+| H2 | `getStudentHistory` 404 `student_not_found` | No ejercitado en este walkthrough | — | 2026-07-11/12 | Cubierto solo por suites automatizadas (mock) |
+| H3 | `getStudentHistory` 400 `invalid_request` | No ejercitado en este walkthrough | — | 2026-07-11/12 | Cubierto solo por suites automatizadas (mock) |
+| H4 | Cancel-on-switch verificado contra backend | No ejercitado en este walkthrough | — | 2026-07-11/12 | Cubierto solo por suites automatizadas (mock) |
+| H5 | CORS / endpoint de historia | ✅ PASS | `5d8e0f81e1195c3f70a84caeae5f8bda013f785e` | 2026-07-11/12 | Mismo allowlist que `T034`; `asOfDate` extra ignorado sin ruptura (ver hallazgo benigno arriba) |
 
 ### Gate WU11-STU (T084)
 

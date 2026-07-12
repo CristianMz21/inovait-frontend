@@ -24,6 +24,12 @@ npm start
 The development build uses the typed in-browser mock backend by default, so no
 backend service is required. The production build defaults to real HTTP.
 
+To run the full stack against the real backend instead of mocks, use
+`../inovait-backend/scripts/deploy-local.sh` (or `deploy-local.ps1` on
+Windows) from the backend repo. It brings up SQL Server, the API, and serves
+this frontend with `ng serve --configuration production` at
+`http://localhost:4200`. See that repo's README for details.
+
 Set `window.__INOVAIT_USE_MOCKS__` before Angular bootstraps to override either
 build default. Only boolean `true` and `false` are accepted; every other value
 fails closed to the build default. This runtime flag has precedence over the build configuration.
