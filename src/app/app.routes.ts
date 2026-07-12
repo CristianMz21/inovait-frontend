@@ -24,13 +24,13 @@ export const routes: Routes = [
     path: "enrollments",
     loadComponent: () =>
       import("./features/enrollments").then((m) => m.EnrollmentCreateComponent),
-    title: "Matrículas · Inovait",
+    title: "Matrículas · EduCore",
   },
   {
     path: "student-search",
     loadComponent: () =>
       import("./features/student-search").then((m) => m.StudentSearchComponent),
-    title: "Consulta de estudiantes · Inovait",
+    title: "Consulta de estudiantes · EduCore",
   },
   {
     path: "teacher-contracts",
@@ -38,13 +38,13 @@ export const routes: Routes = [
       import("./features/teacher-contracts").then(
         (m) => m.TeacherContractsComponent,
       ),
-    title: "Contratos docentes · Inovait",
+    title: "Contratos docentes · EduCore",
   },
   {
     path: "reports",
     loadComponent: () =>
       import("./features/reports").then((m) => m.ReportsShellComponent),
-    title: "Reportes · Inovait",
+    title: "Reportes · EduCore",
   },
   {
     path: "student-history",
@@ -52,7 +52,7 @@ export const routes: Routes = [
       import("./features/student-history").then(
         (m) => m.StudentHistoryComponent,
       ),
-    title: "Historial del estudiante · Inovait",
+    title: "Historial del estudiante · EduCore",
   },
   {
     path: "**",

@@ -1,20 +1,70 @@
-/* Estilos globales de Inovait · WU01 (fundación).
+/* Estilos globales de EduCore · WU01 (fundación).
  * Define tokens de color, tipografía base y normalizaciones para
  * accesibilidad (foco visible, contraste alto, soporte de zoom 200%).
  */
 
+@import "@fontsource/manrope/500.css";
+@import "@fontsource/manrope/600.css";
+@import "@fontsource/manrope/700.css";
+@import "@fontsource/manrope/800.css";
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+
 :root {
-  --app-bg: #f7f8fa;
+  --app-bg: #f7f8f4;
   --app-header-bg: #ffffff;
-  --app-muted: #4a4f55;
-  --app-text: #111827;
-  --app-border: #d0d4d9;
-  --app-accent: #1d4ed8;
-  --app-accent-soft: #eff6ff;
-  --app-error: #b91c1c;
-  --app-error-soft: #fef2f2;
-  --app-success: #166534;
-  --app-success-soft: #f0fdf4;
+  --app-muted: #667085;
+  --app-text: #172033;
+  --app-border: #d7dce5;
+  --app-accent: #3949ab;
+  --app-accent-soft: #eaf2ff;
+  --app-error: #b42318;
+  --app-error-soft: #fdecea;
+  --app-success: #18794e;
+  --app-success-soft: #e8f5ee;
+
+  /* EduCore palette */
+  --app-primary: #14213d;
+  --app-primary-fg: #ffffff;
+  --app-sidebar-bg: #14213d;
+  --app-sidebar-active: #22325a;
+  --app-sidebar-fg: #ffffff;
+  --app-sidebar-fg-muted: rgba(255, 255, 255, 0.72);
+  --app-accent-teal: #147d78;
+  --app-accent-teal-hover: #0f5f5b;
+  --app-teal-surface: #e7f5f3;
+  --app-teal-surface-strong: #c4e4e0;
+  --app-teal-bright: #4fd1c7;
+  --app-text-tertiary: #98a2b3;
+  --app-text-alt: #344054;
+  --app-border-soft: #e4e7ec;
+  --app-border-subtle: #eef0f4;
+  --app-warning: #a15c00;
+  --app-warning-soft: #fff4db;
+  --app-info: #175cd3;
+  --app-info-soft: #eaf2ff;
+  /* Shape */
+  --app-radius-card: 16px;
+  --app-radius-alert: 14px;
+  --app-radius-control: 10px;
+  --app-radius-pill: 999px;
+  /* Type */
+  --app-font-heading:
+    "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    sans-serif;
+  --app-font-body:
+    "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    sans-serif;
+  /* Spacing (8-pt scale) */
+  --app-space-1: 4px;
+  --app-space-2: 8px;
+  --app-space-3: 12px;
+  --app-space-4: 16px;
+  --app-space-5: 24px;
+  --app-space-6: 32px;
+  --app-space-7: 40px;
+  --app-space-8: 48px;
 }
 
 * {
@@ -53,21 +103,20 @@ body {
   padding: 0;
   background: var(--app-bg);
   color: var(--app-text);
-  font-family:
-    "Inter",
-    system-ui,
-    -apple-system,
-    Segoe UI,
-    Roboto,
-    Helvetica,
-    Arial,
-    sans-serif;
+  font-family: var(--app-font-body);
   font-size: 16px;
   line-height: 1.45;
 }
 
 body {
   min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--app-font-heading);
 }
 
 :focus-visible {
@@ -221,9 +270,9 @@ body {
 
 @media (prefers-contrast: more) {
   :root {
-    --app-muted: #1f2937;
-    --app-border: #000000;
-    --app-accent: #0b3a91;
+    --app-muted: #344054; /* darker secondary text */
+    --app-border: #14213d; /* strong border */
+    --app-accent: #2a3781; /* darker indigo for stronger contrast */
   }
 }
 
