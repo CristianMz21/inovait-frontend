@@ -66,13 +66,7 @@
   gap: var(--app-space-4);
 }
 
-.search-form legend {
-  padding: 0 var(--app-space-2);
-  font-family: var(--app-font-heading);
-  font-weight: 600;
-  font-size: 16px;
-  color: var(--app-primary);
-}
+/* Legend styling comes from the global `fieldset.ec-card > legend` rule. */
 
 .search-actions {
   display: flex;

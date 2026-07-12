@@ -26,14 +26,14 @@
   />
 
   <form
-    class="search-form ec-card"
+    class="search-form"
     [formGroup]="form"
     (ngSubmit)="onSubmit()"
     novalidate
     aria-label="Filtros de consulta de estudiantes"
     aria-describedby="search-lede"
   >
-    <fieldset [disabled]="isLoading()">
+    <fieldset class="ec-card" [disabled]="isLoading()">
       <legend>Filtros académicos</legend>
 
       <label class="search-field ec-field">
