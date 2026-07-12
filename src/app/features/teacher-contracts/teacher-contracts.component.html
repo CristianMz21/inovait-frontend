@@ -28,12 +28,17 @@
 
     @if (createSuccess(); as created) {
       <div
-        class="contracts-create-success"
+        class="contracts-create-success ec-card"
         role="status"
         aria-live="polite"
         data-testid="contracts-create-success"
       >
-        <h3>Contratos registrados</h3>
+        <div
+          class="contracts-create-success__header ec-alert ec-alert--success"
+        >
+          <app-icon name="check_circle" />
+          <h3>Contratos registrados</h3>
+        </div>
         <p>
           Se crearon <strong>{{ created.length }}</strong>
           contratos independientes para el docente.
@@ -51,23 +56,27 @@
             </li>
           }
         </ul>
-        <button type="button" (click)="onResetCreate()">
+        <button
+          type="button"
+          class="ec-btn ec-btn--primary"
+          (click)="onResetCreate()"
+        >
           Crear otro contrato
         </button>
       </div>
     } @else {
       <form
-        class="contracts-create-form"
+        class="contracts-create-form ec-card"
         [formGroup]="createForm"
         (ngSubmit)="onSubmitCreate()"
         novalidate
         aria-label="Creación de contratos docentes"
         aria-describedby="contracts-lede"
       >
-        <fieldset [disabled]="isCreating()">
+        <fieldset class="contracts-fields" [disabled]="isCreating()">
           <legend>Identidad y período</legend>
 
-          <label class="contracts-field">
+          <label class="contracts-field ec-field">
             <span>Docente</span>
             <select
               id="contracts-create-teacher-id"
@@ -82,7 +91,7 @@
             </select>
           </label>
 
-          <label class="contracts-field">
+          <label class="contracts-field ec-field">
             <span>Fecha de inicio</span>
             <input
               id="contracts-create-start-date"
@@ -93,7 +102,7 @@
             />
           </label>
 
-          <label class="contracts-field">
+          <label class="contracts-field ec-field">
             <span>Fecha de fin (opcional)</span>
             <input
               id="contracts-create-end-date"
@@ -107,7 +116,7 @@
           </label>
         </fieldset>
 
-        <fieldset [disabled]="isCreating()">
+        <fieldset class="contracts-schools" [disabled]="isCreating()">
           <legend>
             Escuelas
             <small class="contracts-help">
@@ -122,7 +131,7 @@
           <ul class="contracts-school-list">
             @for (opt of schoolOptions(); track opt.value) {
               <li>
-                <label class="contracts-school">
+                <label class="ec-chip-toggle">
                   <input
                     id="contracts-create-school-{{ opt.value }}"
                     type="checkbox"
@@ -140,7 +149,7 @@
         <div class="contracts-actions">
           <button
             type="submit"
-            class="contracts-submit"
+            class="contracts-submit ec-btn ec-btn--primary"
             [disabled]="!isCreateSubmittable() || isCreating()"
             [attr.aria-busy]="isCreating() ? 'true' : 'false'"
           >
@@ -152,7 +161,7 @@
           </button>
           <button
             type="button"
-            class="contracts-cancel"
+            class="contracts-cancel ec-btn ec-btn--outline"
             (click)="onResetCreate()"
             [disabled]="isCreating()"
           >
@@ -162,36 +171,43 @@
 
         @if (hasCreateError()) {
           <div
-            class="contracts-error"
+            class="contracts-error ec-alert ec-alert--error"
             role="alert"
             aria-live="assertive"
             data-testid="contracts-create-error"
           >
+            <app-icon name="error" />
             @if (createErrorProblem(); as problem) {
-              <p class="contracts-error-title">
-                <strong>{{ problem.title }}</strong>
-                <span class="contracts-error-status">
-                  (HTTP {{ problem.status }})
-                </span>
-              </p>
-              @if (problem.detail) {
-                <p>{{ problem.detail }}</p>
-              }
-              @if (createErrorFields().length > 0) {
-                <ul class="contracts-error-fields">
-                  @for (entry of createErrorFields(); track entry.field) {
-                    @for (msg of entry.messages; track msg) {
-                      <li>
-                        <code>{{ entry.field }}</code
-                        >: {{ msg }}
-                      </li>
+              <div class="contracts-error__body">
+                <p class="contracts-error-title">
+                  <strong>{{ problem.title }}</strong>
+                  <span class="contracts-error-status">
+                    (HTTP {{ problem.status }})
+                  </span>
+                </p>
+                @if (problem.detail) {
+                  <p>{{ problem.detail }}</p>
+                }
+                @if (createErrorFields().length > 0) {
+                  <ul class="contracts-error-fields">
+                    @for (entry of createErrorFields(); track entry.field) {
+                      @for (msg of entry.messages; track msg) {
+                        <li>
+                          <code>{{ entry.field }}</code
+                          >: {{ msg }}
+                        </li>
+                      }
                     }
-                  }
-                </ul>
-              }
-              <button type="button" (click)="onRetryCreate()">
-                Reintentar
-              </button>
+                  </ul>
+                }
+                <button
+                  type="button"
+                  class="ec-btn ec-btn--outline"
+                  (click)="onRetryCreate()"
+                >
+                  Reintentar
+                </button>
+              </div>
             }
           </div>
         }
@@ -206,16 +222,16 @@
     <h2 id="query-title">Historial de contratos por docente</h2>
 
     <form
-      class="contracts-query-form"
+      class="contracts-query-form ec-card"
       [formGroup]="queryForm"
       (ngSubmit)="onSubmitQuery()"
       novalidate
       aria-label="Consulta de contratos docentes"
     >
-      <fieldset [disabled]="isQuerying()">
+      <fieldset class="contracts-fields" [disabled]="isQuerying()">
         <legend>Filtros</legend>
 
-        <label class="contracts-field">
+        <label class="contracts-field ec-field">
           <span>Docente</span>
           <select
             id="contracts-query-teacher-id"
@@ -230,20 +246,24 @@
           </select>
         </label>
 
-        <label class="contracts-field">
+        <label class="contracts-field ec-field">
           <span>Fecha de referencia (opcional)</span>
           <input
             id="contracts-query-as-of-date"
             type="date"
             formControlName="asOfDate"
+            aria-describedby="query-asof-help"
           />
+          <small id="query-asof-help" class="contracts-help">
+            Si se omite, la vigencia se evalúa con la fecha actual.
+          </small>
         </label>
       </fieldset>
 
       <div class="contracts-actions">
         <button
           type="submit"
-          class="contracts-submit"
+          class="contracts-submit ec-btn ec-btn--secondary"
           [disabled]="queryForm.invalid || isQuerying()"
           [attr.aria-busy]="isQuerying() ? 'true' : 'false'"
         >
@@ -255,7 +275,7 @@
         </button>
         <button
           type="button"
-          class="contracts-cancel"
+          class="contracts-cancel ec-btn ec-btn--outline"
           (click)="onResetQuery()"
           [disabled]="isQuerying()"
         >
@@ -266,7 +286,7 @@
 
     @if (isQuerying()) {
       <p
-        class="contracts-status"
+        class="contracts-status ec-alert ec-alert--info"
         role="status"
         aria-live="polite"
         data-testid="contracts-query-loading"
@@ -277,38 +297,56 @@
 
     @if (isQueryEmpty()) {
       <div
-        class="contracts-empty"
+        class="contracts-empty ec-alert ec-alert--info"
         role="status"
         aria-live="polite"
         data-testid="contracts-query-empty"
       >
-        <h3>Sin contratos</h3>
-        <p>
-          El docente no tiene contratos registrados. Verifique la identidad
-          seleccionada.
-        </p>
-        <button type="button" (click)="onRetryQuery()">Reintentar</button>
+        <app-icon name="badge" />
+        <div>
+          <h3>Sin contratos</h3>
+          <p>
+            El docente no tiene contratos registrados. Verifique la identidad
+            seleccionada.
+          </p>
+          <button
+            type="button"
+            class="ec-btn ec-btn--outline"
+            (click)="onRetryQuery()"
+          >
+            Reintentar
+          </button>
+        </div>
       </div>
     }
 
     @if (hasQueryError()) {
       <div
-        class="contracts-error"
+        class="contracts-error ec-alert ec-alert--error"
         role="alert"
         aria-live="assertive"
         data-testid="contracts-query-error"
       >
+        <app-icon name="error" />
         @if (queryErrorProblem(); as problem) {
-          <p class="contracts-error-title">
-            <strong>{{ problem.title }}</strong>
-            <span class="contracts-error-status">
-              (HTTP {{ problem.status }})
-            </span>
-          </p>
-          @if (problem.detail) {
-            <p>{{ problem.detail }}</p>
-          }
-          <button type="button" (click)="onRetryQuery()">Reintentar</button>
+          <div class="contracts-error__body">
+            <p class="contracts-error-title">
+              <strong>{{ problem.title }}</strong>
+              <span class="contracts-error-status">
+                (HTTP {{ problem.status }})
+              </span>
+            </p>
+            @if (problem.detail) {
+              <p>{{ problem.detail }}</p>
+            }
+            <button
+              type="button"
+              class="ec-btn ec-btn--outline"
+              (click)="onRetryQuery()"
+            >
+              Reintentar
+            </button>
+          </div>
         }
       </div>
     }
@@ -325,37 +363,69 @@
           {{ rows.length }}
           {{ rows.length === 1 ? "contrato" : "contratos" }}
         </p>
-        <table class="contracts-table">
-          <caption class="visually-hidden">
-            Contratos históricos del docente. El orden refleja el devuelto por
-            el backend.
-          </caption>
-          <thead>
-            <tr>
-              <th scope="col">Escuela</th>
-              <th scope="col">Período</th>
-              <th scope="col">Estado persistido</th>
-              <th scope="col">Estado efectivo</th>
-              <th scope="col">Evaluado</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (row of rows; track row.id) {
+        <div class="ec-legend">
+          <span class="ec-legend-item">
+            <span class="ec-badge ec-badge--status ec-badge--active">
+              Vigente
+            </span>
+            Estado persistido: condición administrativa del contrato.
+          </span>
+          <span class="ec-legend-item">
+            <span class="ec-badge ec-badge--temporal ec-badge--upcoming">
+              Próximo
+            </span>
+            Estado efectivo: vigencia según las fechas al día de consulta.
+          </span>
+        </div>
+        <div class="ec-table">
+          <table>
+            <caption class="visually-hidden">
+              Contratos históricos del docente. El orden refleja el devuelto por
+              el backend.
+            </caption>
+            <thead>
               <tr>
-                <td>
-                  {{ row.schoolName }}
-                  <small class="contracts-school-sector">
-                    ({{ row.schoolSector }})
-                  </small>
-                </td>
-                <td>{{ dateRangeLabel(row) }}</td>
-                <td>{{ persistedLabel(row.persistedStatus) }}</td>
-                <td>{{ effectiveLabel(row.effectiveStatus) }}</td>
-                <td>{{ row.evaluatedAt }}</td>
+                <th scope="col">Escuela</th>
+                <th scope="col">Período</th>
+                <th scope="col">Estado persistido</th>
+                <th scope="col">Estado efectivo</th>
+                <th scope="col">Evaluado</th>
               </tr>
-            }
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              @for (row of rows; track row.id) {
+                <tr>
+                  <td>
+                    {{ row.schoolName }}
+                    <small class="contracts-school-sector">
+                      ({{ row.schoolSector }})
+                    </small>
+                  </td>
+                  <td>{{ dateRangeLabel(row) }}</td>
+                  <td>
+                    <span
+                      class="ec-badge ec-badge--status ec-badge--{{
+                        persistedTone(row.persistedStatus)
+                      }}"
+                    >
+                      {{ persistedLabel(row.persistedStatus) }}
+                    </span>
+                  </td>
+                  <td>
+                    <span
+                      class="ec-badge ec-badge--temporal ec-badge--{{
+                        effectiveTone(row.effectiveStatus)
+                      }}"
+                    >
+                      {{ effectiveLabel(row.effectiveStatus) }}
+                    </span>
+                  </td>
+                  <td>{{ row.evaluatedAt }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
       </div>
     }
   </section>

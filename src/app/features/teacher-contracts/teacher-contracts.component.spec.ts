@@ -402,6 +402,27 @@ describe("TeacherContractsComponent (CT form/list remoto)", () => {
     expect(component.queryForm.controls.teacherId.value).toBeNull();
   });
 
+  // -- Mapeo de tono de badge (presentacional, EduCore) --------------
+
+  it("persistedTone() mapea Confirmed/Cancelled a los tonos active/closed", () => {
+    flushInitialCatalogs();
+    expect(component.persistedTone("Confirmed")).toBe("active");
+    expect(component.persistedTone("Cancelled")).toBe("closed");
+  });
+
+  it("effectiveTone() mapea cada estado efectivo a su tono temporal", () => {
+    flushInitialCatalogs();
+    expect(component.effectiveTone("Upcoming")).toBe("upcoming");
+    expect(component.effectiveTone("Effective")).toBe("current");
+    expect(component.effectiveTone("Expired")).toBe("expired");
+    // Un contrato cancelado no tiene tono temporal propio en la paleta
+    // (current/upcoming/expired/open-ended): "expired" es el más cercano
+    // semánticamente ("ya no vigente"), y el texto ("Cancelado", vía
+    // effectiveLabel()) sigue siendo la señal que lo distingue de un
+    // vencimiento natural — el color nunca es la única señal.
+    expect(component.effectiveTone("Cancelled")).toBe("expired");
+  });
+
   // -- Single-flight: no se duplica ni cancela una escritura en curso --
 
   it("ignora un segundo submit y mantiene el botón disabled single-flight", () => {

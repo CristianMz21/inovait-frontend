@@ -18,6 +18,7 @@ import {
 } from "@angular/forms";
 import { CatalogFacade } from "../../core/catalogs/catalog.facade";
 import { CatalogStatusComponent } from "../../core/catalogs/catalog-status.component";
+import { AppIconComponent } from "../../layout/educore-shell/app-icon.component";
 import type { RemoteState } from "../../core/api/remote-state";
 import { TeacherContractsFacade } from "./teacher-contracts.facade";
 import { teacherContractsFormToRequest } from "./teacher-contracts.mappers";
@@ -69,7 +70,7 @@ type TeacherQueryFormGroup = FormGroup<TeacherQueryFormShape>;
 @Component({
   selector: "app-teacher-contracts",
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, CatalogStatusComponent],
+  imports: [ReactiveFormsModule, CatalogStatusComponent, AppIconComponent],
   providers: [TeacherContractsFacade],
   templateUrl: "./teacher-contracts.component.html",
   styleUrl: "./teacher-contracts.component.scss",
@@ -188,6 +189,47 @@ export class TeacherContractsComponent implements OnInit {
         return "Vigente";
       case "Cancelled":
         return "Cancelado";
+    }
+  }
+
+  /**
+   * Tono visual (`.ec-badge--*`) del estado persistido. Presentacional
+   * puro: no altera el valor del dominio, sólo elige qué modificador de
+   * color/forma aplica sobre el texto existente (`persistedLabel()`).
+   */
+  persistedTone(
+    status: TeacherContractResultVm["persistedStatus"],
+  ): "active" | "closed" {
+    switch (status) {
+      case "Confirmed":
+        return "active";
+      case "Cancelled":
+        return "closed";
+    }
+  }
+
+  /**
+   * Tono visual (`.ec-badge--*`) del estado efectivo. Presentacional puro,
+   * igual que {@link persistedTone}.
+   *
+   * La paleta temporal (`current`/`upcoming`/`expired`/`open-ended`) no
+   * modela un contrato cancelado como un estado propio: "expired" es el
+   * tono más cercano ("ya no vigente"), y el texto (`effectiveLabel()`
+   * sigue devolviendo "Cancelado") es la señal que lo distingue de un
+   * vencimiento natural — el color nunca es la única señal.
+   */
+  effectiveTone(
+    status: TeacherContractResultVm["effectiveStatus"],
+  ): "current" | "upcoming" | "expired" | "open-ended" {
+    switch (status) {
+      case "Upcoming":
+        return "upcoming";
+      case "Effective":
+        return "current";
+      case "Expired":
+        return "expired";
+      case "Cancelled":
+        return "expired";
     }
   }
 
