@@ -1,87 +1,110 @@
-# Inovait Frontend
+# Inovait — Frontend
 
-Angular 21 frontend for municipal school enrollment management. The application
-contains five operative screens: enrollment creation, student search, teacher
-contracts, municipal reports, and student history.
+Frontend Angular 21 para la gestión municipal de matrículas escolares (prueba
+técnica full stack INOVAIT). Cinco pantallas operativas: alta de matrícula
+(`/enrollments`), consulta de estudiantes (`/student-search`), contratos
+docentes (`/teacher-contracts`), reportes municipales (`/reports`) e historial
+del estudiante (`/student-history`). El backend hermano es
+[`inovait-backend`](../inovait-backend) (.NET 10 + SQL Server).
 
-## Requirements
+## Requisitos
 
-- Node.js `24.11.1`
-- npm `11.6.2`
+| Herramienta | Versión   | Descarga                                   |
+| ----------- | --------- | ------------------------------------------ |
+| Node.js     | `24.11.1` | <https://nodejs.org/> (o `nvm install 24`) |
+| npm         | `11.6.2`  | incluido con Node.js                       |
 
-The repository tracks `package-lock.json`. Install dependencies reproducibly:
+El repositorio versiona `package-lock.json`; la instalación reproducible es
+siempre con `npm ci` (no `npm install`).
+
+## Instalación y ejecución
+
+### Opción A — Stack completo con backend real (recomendada para evaluar)
+
+Clonar ambos repos como hermanos y usar el script del backend, que levanta SQL
+Server, la API y este frontend (build de producción, HTTP real) con un solo
+comando:
+
+```bash
+git clone git@github.com:CristianMz21/inovait-backend.git
+git clone git@github.com:CristianMz21/inovait-frontend.git
+cd inovait-backend
+./scripts/deploy-local.sh            # Windows: powershell -ExecutionPolicy Bypass -File scripts\deploy-local.ps1
+```
+
+Al terminar, el frontend queda en <http://localhost:4200> (abrir por
+`localhost`, no `127.0.0.1`: el allowlist de CORS del backend solo incluye ese
+origen) y la API en <http://localhost:5000>. Baja completa con
+`./scripts/deploy-local.sh --down`. Prerrequisitos, parámetros y el paso a paso
+manual están en el [README del backend](../inovait-backend/README.md).
+
+### Opción B — Solo frontend con mocks (sin backend)
 
 ```bash
 npm ci
-```
-
-## Local development
-
-```bash
 npm start
 ```
 
-The development build uses the typed in-browser mock backend by default, so no
-backend service is required. The production build defaults to real HTTP.
+El build de desarrollo usa un backend simulado tipado dentro del navegador (las
+15 rutas del contrato con fixtures), así que no requiere ningún servicio. Queda
+en <http://localhost:4200>.
 
-To run the full stack against the real backend instead of mocks, use
-`../inovait-backend/scripts/deploy-local.sh` (or `deploy-local.ps1` on
-Windows) from the backend repo. It brings up SQL Server, the API, and serves
-this frontend with `ng serve --configuration production` at
-`http://localhost:4200`. See that repo's README for details.
-
-Set `window.__INOVAIT_USE_MOCKS__` before Angular bootstraps to override either
-build default. Only boolean `true` and `false` are accepted; every other value
-fails closed to the build default. This runtime flag has precedence over the build configuration.
-The mock table contains the 15 API routes currently consumed by frontend API
-services; it does not add or redefine backend contracts.
-
-Student history follows the backend contract exactly: its request contains only
-the required document identity path segments. The `asOfDate` filter remains
-available in student search, teacher contracts, and reports where the backend
-contract defines it.
-
-Student search persists only its non-sensitive academic filters in the route
-query. Opening a result's history registers identity in a small volatile
-in-memory handoff and navigates with a random opaque `selection` token. The
-token is not an authorization boundary; it cannot resolve after application
-memory is lost, and document identity is never written to the browser URL,
-history state, or web storage.
-
-## Quality gates
+Para verificar la alcanzabilidad del backend real antes de un walkthrough:
 
 ```bash
-npm run typecheck
-npm run lint:eslint
-npm run lint:style
-npm run lint
-npm test
-npm run test:coverage
-npm run build:development
-npm run build:production
-npm run e2e
-npm audit
+node scripts/dev-check-backend.mjs   # health + preflight CORS contra http://localhost:5000
 ```
 
-`npm run e2e` runs both the development mock suite and a production-build smoke
-suite on desktop and mobile Chromium, including axe accessibility checks. Each
-Playwright web server owns its process exclusively. If port 4200 is occupied,
-the run fails fast and never terminates the existing process. Production
-no-mock requests are intercepted and blocked inside Playwright; tests never
-contact a real backend.
+## Pruebas y quality gates
 
-`contract:verify` remains available for explicit contract work, but is not part
-of the frontend-only CI workflow because it requires the separate backend
-repository.
+```bash
+npm run lint        # typecheck (app/spec/e2e) + eslint --max-warnings=0 + prettier
+npm test            # Vitest con thresholds de cobertura (gate)
+npm run e2e         # Playwright: suite mock + smoke de build de producción
+```
 
-## Architecture
+Comandos individuales: `npm run typecheck`, `npm run lint:eslint`,
+`npm run lint:style`, `npm run test:coverage`, `npm run build:development`,
+`npm run build:production`, `npm run e2e:mock`, `npm run e2e:production`,
+`npm audit`.
 
-- Standalone Angular components and strict TypeScript
-- Reactive Forms for input and cascade state
-- Signals for local view state and RxJS for HTTP cancellation
-- Functional HTTP interceptors with normalized ProblemDetails errors
-- Vitest/TestBed unit and integration tests
-- Playwright and axe for browser-level verification
+`npm run e2e` corre ambas suites en Chromium desktop y mobile, con chequeos de
+accesibilidad axe. Cada web server de Playwright es dueño exclusivo de su
+proceso: si el puerto 4200 está ocupado, el run falla rápido y nunca mata el
+proceso existente. Los requests sin mock del build de producción se interceptan
+y bloquean dentro de Playwright; las pruebas jamás contactan un backend real.
 
-See [`docs/frontend-architecture.md`](docs/frontend-architecture.md) and
-[`docs/testing-strategy.md`](docs/testing-strategy.md) for additional context.
+`npm run contract:verify` valida el contrato OpenAPI contra el repo hermano del
+backend (árbol contractual, commit autorizado, checksum canónico y los 15
+`operationId`); no forma parte del CI frontend-only porque requiere ese repo
+presente.
+
+## Detalles de comportamiento
+
+- **Mocks en runtime**: `window.__INOVAIT_USE_MOCKS__` (solo booleanos `true`/
+  `false`; cualquier otro valor cae al default del build) tiene precedencia
+  sobre la configuración de build. La tabla de mocks contiene exactamente las
+  15 rutas del contrato; no agrega ni redefine contratos del backend.
+- **Historial del estudiante**: sigue el contrato al pie de la letra — el
+  request solo lleva los segmentos de identidad documental en el path. El
+  filtro `asOfDate` sigue disponible en consulta de estudiantes, contratos y
+  reportes, donde el contrato sí lo define.
+- **Privacidad en la navegación**: la consulta de estudiantes persiste en la
+  URL solo sus filtros académicos no sensibles. Abrir el historial de un
+  resultado registra la identidad en un handoff volátil en memoria y navega con
+  un token `selection` opaco y aleatorio: la identidad documental nunca se
+  escribe en la URL, el history state ni el web storage. El token no es una
+  frontera de autorización y no puede resolverse si se pierde la memoria de la
+  aplicación.
+
+## Arquitectura
+
+- Componentes standalone de Angular y TypeScript estricto.
+- Reactive Forms para entrada y estado en cascada.
+- Signals para estado local de vista y RxJS para cancelación HTTP.
+- Interceptores HTTP funcionales con errores ProblemDetails normalizados.
+- Tests unitarios y de integración con Vitest/TestBed.
+- Verificación a nivel navegador con Playwright y axe.
+
+Más contexto en [`docs/frontend-architecture.md`](docs/frontend-architecture.md)
+y [`docs/testing-strategy.md`](docs/testing-strategy.md).
