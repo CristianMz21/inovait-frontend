@@ -66,14 +66,14 @@
       </div>
     } @else {
       <form
-        class="contracts-create-form ec-card"
+        class="contracts-create-form"
         [formGroup]="createForm"
         (ngSubmit)="onSubmitCreate()"
         novalidate
         aria-label="Creación de contratos docentes"
         aria-describedby="contracts-lede"
       >
-        <fieldset class="contracts-fields" [disabled]="isCreating()">
+        <fieldset class="contracts-fields ec-card" [disabled]="isCreating()">
           <legend>Identidad y período</legend>
 
           <label class="contracts-field ec-field">
@@ -116,7 +116,7 @@
           </label>
         </fieldset>
 
-        <fieldset class="contracts-schools" [disabled]="isCreating()">
+        <fieldset class="contracts-schools ec-card" [disabled]="isCreating()">
           <legend>
             Escuelas
             <small class="contracts-help">
@@ -222,13 +222,13 @@
     <h2 id="query-title">Historial de contratos por docente</h2>
 
     <form
-      class="contracts-query-form ec-card"
+      class="contracts-query-form"
       [formGroup]="queryForm"
       (ngSubmit)="onSubmitQuery()"
       novalidate
       aria-label="Consulta de contratos docentes"
     >
-      <fieldset class="contracts-fields" [disabled]="isQuerying()">
+      <fieldset class="contracts-fields ec-card" [disabled]="isQuerying()">
         <legend>Filtros</legend>
 
         <label class="contracts-field ec-field">

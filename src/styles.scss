@@ -154,6 +154,18 @@ h4 {
   padding: var(--app-space-5);
 }
 
+/* When a `<fieldset>` itself carries `.ec-card`, its native legend notch sits
+ * on the card border, so the legend acts as the section title. Style it here
+ * once (Manrope 16px/600, navy) instead of every consumer re-declaring the
+ * same rule — keeps the legend text flush with the field labels below it. */
+fieldset.ec-card > legend {
+  padding: 0 var(--app-space-2);
+  font-family: var(--app-font-heading);
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--app-primary);
+}
+
 .ec-btn {
   display: inline-flex;
   align-items: center;

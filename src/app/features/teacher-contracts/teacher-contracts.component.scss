@@ -34,32 +34,18 @@
 .contracts-query-form {
   display: flex;
   flex-direction: column;
-  gap: var(--app-space-4);
-}
-
-.contracts-create-form fieldset,
-.contracts-query-form fieldset {
-  margin: 0;
-  border: 0;
-  padding: 0;
-}
-
-.contracts-create-form legend,
-.contracts-query-form legend {
-  padding: 0 var(--app-space-2);
-  font-family: var(--app-font-heading);
-  font-weight: 600;
-  font-size: 16px;
-  color: var(--app-primary);
+  gap: var(--app-space-5);
 }
 
 .contracts-fields {
+  margin: 0;
   display: grid;
   gap: var(--app-space-4);
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
 .contracts-schools {
+  margin: 0;
   display: flex;
   flex-direction: column;
   gap: var(--app-space-3);

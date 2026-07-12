@@ -7,14 +7,14 @@
   </p>
 
   <form
-    class="history-form ec-card"
+    class="history-form"
     [formGroup]="form"
     (ngSubmit)="onSubmit()"
     novalidate
     aria-label="Consulta de historial académico-docente"
     aria-describedby="history-lede"
   >
-    <fieldset [disabled]="isLoading()">
+    <fieldset class="ec-card" [disabled]="isLoading()">
       <legend>Identidad del estudiante</legend>
 
       <label class="history-field ec-field">
