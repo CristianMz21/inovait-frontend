@@ -199,6 +199,7 @@ for (const [path, width] of [
   ["/enrollments", 800],
   ["/enrollments", 320],
   ["/student-search", 1024],
+  ["/student-search", 800],
   ["/student-search", 320],
 ] as const) {
   test(`responsive form containment: ${path} at ${width}px`, async ({

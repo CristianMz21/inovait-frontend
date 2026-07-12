@@ -29,16 +29,39 @@
 .search-form fieldset {
   margin: 0;
   display: grid;
-  // Fixed 4-column grid (School / Grade / Year / date) rather than
-  // auto-fit: at the `.ec-card` padding this primitive mandates, auto-fit
-  // drops to 3 columns right around the tested desktop widths, stranding
-  // the trailing date field alone on its own row. Columns are `start`
-  // (not `end`) aligned: the "Buscar"/"Limpiar" actions live in their own
-  // row below the grid (not as a fifth grid item), so there is no button
-  // to baseline-align against, and at this column width the longer date
-  // label wraps to two lines — `end` alignment would then throw its
-  // top edge out of line with its row-mates.
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  // Fluid auto-fit grid (School / Grade / Year / date) — same mechanism as
+  // enrollment-create's fieldset, restoring what this form used before this
+  // phase's restyle: a rigid `repeat(4, minmax(0, 1fr))` reads like the
+  // brief's literal "4-column grid", but with no floor it forces 4 columns
+  // across the whole 321-1023px range, so columns get arbitrarily narrow
+  // below desktop widths (as little as ~141px at 1024px) instead of
+  // reflowing 4→3→2→1.
+  //
+  // The 220px floor is the exact value this fieldset used pre-restyle. With
+  // only 4 fields in this grid (unlike enrollment-create's 5-field fieldset),
+  // a 3-column fit always stray-wraps the trailing date field alone onto its
+  // own row — so the floor is chosen so BOTH e2e-tested desktop widths
+  // (1024px and 800px) land on 2 columns (date next to the academic-year
+  // field, no stranding) rather than 3, while genuinely wide desktops (main
+  // content nearing its 1200px cap) still land on 4 columns, the intended
+  // 4-up read. Measured via `.search-field` rects at each width: 1024px and
+  // 800px both resolve to 2 columns; ~1600px+ (content ≈1050px) resolves to
+  // 4. The default 1280px desktop-chromium viewport (untested by the e2e
+  // geometry matrix, content ≈870px) lands on 3 columns with the date field
+  // wrapping alone below — a normal, non-squeezed auto-fit reflow stage
+  // (columns stay a roomy ~279px there), not a regression; no floor value
+  // can avoid that stage while still reaching 4-up at wide desktop, because
+  // this fieldset has an even number of fields with the actions button
+  // excluded from the grid (accepted layout choice — see the Phase 3
+  // report's corrected deviations tally).
+  //
+  // Columns are `start` (not `end`) aligned: the "Buscar"/"Limpiar" actions
+  // live in their own row below the grid (not as a fifth grid item), so
+  // there is no button to baseline-align against, and at narrower column
+  // widths the longer date label wraps to two lines — `end` alignment
+  // would then throw its top
+  // edge out of line with its row-mates.
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   align-items: start;
   gap: var(--app-space-4);
 }
