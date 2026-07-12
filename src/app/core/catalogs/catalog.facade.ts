@@ -1,7 +1,8 @@
-import { Injectable, inject, signal } from "@angular/core";
+import { DestroyRef, Injectable, inject, signal } from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import type { Observable } from "rxjs";
 import { Subscription } from "rxjs";
-import { ApiProblemError } from "../api/api-problem-error";
+import { toSafeApiProblem } from "../api/to-safe-api-problem";
 import type { AcademicYearSummary } from "../api/dtos/academic-year-summary.dto";
 import type { ClassGroupSummary } from "../api/dtos/class-group-summary.dto";
 import type { GradeSummary } from "../api/dtos/grade-summary.dto";
@@ -48,6 +49,7 @@ function nextRequestKey(slot: Slot, sequence: number): string {
 @Injectable({ providedIn: "root" })
 export class CatalogFacade {
   private readonly api = inject(CatalogApiService);
+  private readonly destroyRef = inject(DestroyRef);
 
   private readonly schools: SlotBinding<readonly SchoolSummary[]> = {
     state: signal(idle()),
@@ -162,31 +164,38 @@ export class CatalogFacade {
     const requestKey = nextRequestKey(slot, binding.sequence);
     binding.state.set(loading<T>(requestKey));
 
-    binding.subscription = source$.subscribe({
-      next: (data) => {
-        // Descarte de respuesta obsoleta: si la secuencia cambió,
-        // esta respuesta ya no corresponde al estado actual.
-        const current = binding.state();
-        if (current.status !== "loading" || current.requestKey !== requestKey) {
-          return;
-        }
-        if (Array.isArray(data) && data.length === 0) {
-          binding.state.set(empty<T>("noResults"));
-        } else {
-          binding.state.set(success(data));
-        }
-      },
-      error: (err: unknown) => {
-        const current = binding.state();
-        if (current.status !== "loading" || current.requestKey !== requestKey) {
-          return;
-        }
-        const problem = err instanceof ApiProblemError ? err.problem : null;
-        if (problem) {
-          binding.state.set(errorState<T>(problem));
-        }
-      },
-    });
+    // CatalogFacade is root-scoped: this cleanup runs only when its owning
+    // injector/application is destroyed, not on ordinary route navigation.
+    binding.subscription = source$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (data) => {
+          // Descarte de respuesta obsoleta: si la secuencia cambió,
+          // esta respuesta ya no corresponde al estado actual.
+          const current = binding.state();
+          if (
+            current.status !== "loading" ||
+            current.requestKey !== requestKey
+          ) {
+            return;
+          }
+          if (Array.isArray(data) && data.length === 0) {
+            binding.state.set(empty<T>("noResults"));
+          } else {
+            binding.state.set(success(data));
+          }
+        },
+        error: (err: unknown) => {
+          const current = binding.state();
+          if (
+            current.status !== "loading" ||
+            current.requestKey !== requestKey
+          ) {
+            return;
+          }
+          binding.state.set(errorState<T>(toSafeApiProblem(err)));
+        },
+      });
   }
 
   private resolveSlot(

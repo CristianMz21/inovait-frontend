@@ -5,7 +5,8 @@ import {
 } from "@angular/common/http/testing";
 import { TestBed } from "@angular/core/testing";
 import { provideHttpClient, withInterceptors } from "@angular/common/http";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { throwError } from "rxjs";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   API_CONFIG,
   DEFAULT_API_CONFIG,
@@ -138,5 +139,33 @@ describe("CatalogFacade", () => {
     expect(err.status).toBe(404);
     expect(err.problem.code).toBe("resource_not_found");
     expect(err.message).toBe(problem.title);
+  });
+
+  it("termina en error seguro ante un fallo inesperado no normalizado", () => {
+    vi.spyOn(TestBed.inject(CatalogApiService), "listSchools").mockReturnValue(
+      throwError(() => new Error("unexpected")),
+    );
+
+    facade.loadSchools();
+
+    expect(facade.schoolsState()).toMatchObject({
+      status: "error",
+      problem: { code: "unknown_error" },
+    });
+  });
+
+  it("cancela los seis slots pendientes al destruir el injector", () => {
+    facade.loadSchools();
+    facade.loadGrades();
+    facade.loadAcademicYears();
+    facade.loadClassGroups({ schoolId: 1 });
+    facade.loadTeachers();
+    facade.loadSubjects();
+    const requests = http.match(() => true);
+    expect(requests).toHaveLength(6);
+
+    TestBed.resetTestingModule();
+
+    expect(requests.every((request) => request.cancelled)).toBe(true);
   });
 });

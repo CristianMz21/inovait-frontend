@@ -1,0 +1,30 @@
+@if (state().status === "loading") {
+  <p
+    class="catalog-status catalog-status--loading"
+    role="status"
+    aria-live="polite"
+    [attr.data-testid]="'catalog-' + testId() + '-loading'"
+  >
+    Cargando {{ label() }}…
+  </p>
+} @else if (errorProblem(); as problem) {
+  <div
+    class="catalog-status catalog-status--error"
+    role="alert"
+    [attr.data-testid]="'catalog-' + testId() + '-error'"
+  >
+    <strong>No se pudieron cargar {{ label() }}.</strong>
+    <span>{{ problem.title }}</span>
+    <button type="button" (click)="retry.emit()">
+      Reintentar {{ label() }}
+    </button>
+  </div>
+} @else if (state().status === "empty") {
+  <p
+    class="catalog-status catalog-status--empty"
+    role="status"
+    [attr.data-testid]="'catalog-' + testId() + '-empty'"
+  >
+    No hay {{ label() }} disponibles.
+  </p>
+}

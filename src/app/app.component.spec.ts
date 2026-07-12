@@ -1,13 +1,25 @@
-import { provideRouter } from "@angular/router";
+import { Component } from "@angular/core";
+import { provideRouter, Router } from "@angular/router";
 import { TestBed } from "@angular/core/testing";
 import { describe, expect, it, beforeEach } from "vitest";
 import { App } from "./app.component";
+
+@Component({ template: '<h1 id="first-title" tabindex="-1">First page</h1>' })
+class FirstPage {}
+
+@Component({ template: '<h1 id="second-title" tabindex="-1">Second page</h1>' })
+class SecondPage {}
 
 describe("App", () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App],
-      providers: [provideRouter([])],
+      providers: [
+        provideRouter([
+          { path: "first", component: FirstPage },
+          { path: "second", component: SecondPage },
+        ]),
+      ],
     }).compileComponents();
   });
 
@@ -59,5 +71,26 @@ describe("App", () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const skip = compiled.querySelector("a.skip-link");
     expect(skip?.getAttribute("href")).toBe("#main");
+  });
+
+  it("moves focus to the destination h1 and announces it after navigation", async () => {
+    const fixture = TestBed.createComponent(App);
+    const router = TestBed.inject(Router);
+    fixture.detectChanges();
+
+    await router.navigateByUrl("/first");
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(document.activeElement?.id).toBe("first-title");
+
+    await router.navigateByUrl("/second");
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(document.activeElement?.id).toBe("second-title");
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector(
+        '[data-testid="route-announcement"]',
+      )?.textContent,
+    ).toContain("Second page");
   });
 });

@@ -41,7 +41,15 @@
 </header>
 
 <main id="main" tabindex="-1" role="main" class="app-main">
-  <router-outlet />
+  <p
+    class="visually-hidden"
+    aria-live="polite"
+    aria-atomic="true"
+    data-testid="route-announcement"
+  >
+    {{ routeAnnouncement() }}
+  </p>
+  <router-outlet (activate)="onRouteActivate()" />
 </main>
 
 <footer role="contentinfo" class="app-footer">

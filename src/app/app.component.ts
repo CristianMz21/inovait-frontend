@@ -1,4 +1,10 @@
-import { ChangeDetectionStrategy, Component } from "@angular/core";
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  inject,
+  signal,
+} from "@angular/core";
 import { RouterLink, RouterLinkActive, RouterOutlet } from "@angular/router";
 
 /**
@@ -14,4 +20,19 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from "@angular/router";
   templateUrl: "./app.component.html",
   styleUrl: "./app.component.scss",
 })
-export class App {}
+export class App {
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  readonly routeAnnouncement = signal("");
+
+  onRouteActivate(): void {
+    queueMicrotask(() => {
+      const heading =
+        this.host.nativeElement.querySelector<HTMLElement>("#main h1");
+      if (!heading) {
+        return;
+      }
+      heading.focus();
+      this.routeAnnouncement.set(heading.textContent?.trim() ?? "");
+    });
+  }
+}
