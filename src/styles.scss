@@ -266,6 +266,15 @@ fieldset.ec-card > legend {
   background-color: var(--app-header-bg);
 }
 
+/* Help/hint text inside a field wrapper: <small> is inline by default, so
+ * without this the hint flows beside the control (wrapping mid-sentence at
+ * wide viewports) instead of sitting on its own line below it. Layout only —
+ * each feature keeps its own hint typography rule. */
+.ec-field > small {
+  display: block;
+  margin-top: var(--app-space-1);
+}
+
 .ec-alert {
   display: flex;
   align-items: flex-start;
