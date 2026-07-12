@@ -2,9 +2,50 @@
 
 ## Dirección y lenguaje
 
-Interfaz institucional sobria, de alta legibilidad y densidad controlada: fondo claro, superficies delimitadas, tipografía de lectura y un color de acento reservado para acciones/foco. No usa gradientes decorativos, animaciones intensas ni gráficos complejos. Angular Material aporta controles; la jerarquía, semántica y mensajes son propios.
+Interfaz institucional sobria, de alta legibilidad y densidad controlada: fondo claro, superficies delimitadas, tipografía de lectura y un color de acento reservado para acciones/foco. No usa gradientes decorativos, animaciones intensas ni gráficos complejos.
+
+La identidad visual toma como referencia el template **EduCore**: paleta, tipografía y forma se retargetearon a sus valores sobre la UX ya especificada en este documento, sin reescribir pantallas ni flujos. `@angular/material` y `@angular/cdk` están instalados pero no se usan — los controles, la jerarquía y los mensajes son propios (HTML nativo + los primitivos `.ec-*` de abajo).
 
 El copy visible se planifica en español neutro porque la evaluación y las personas operadoras objetivo son hispanohablantes. Esta es una elección contextual de producto; routes, componentes, servicios, métodos, DTO, enums y JSON permanecen en inglés.
+
+### Tokens (`src/styles.scss`)
+
+Custom properties (`--app-*`) en `:root`; única fuente de verdad, consumida por el shell y las cinco pantallas.
+
+| Rol | Tokens | Valor |
+| --- | --- | --- |
+| Superficie | `--app-bg` / `--app-header-bg` | `#f7f8f4` / `#ffffff` |
+| Texto | `--app-text` / `--app-muted` / `--app-text-alt` / `--app-text-tertiary` | `#172033` / `#475467` / `#344054` / `#98a2b3` |
+| Borde | `--app-border` / `--app-border-soft` / `--app-border-subtle` | `#d7dce5` / `#e4e7ec` / `#eef0f4` |
+| Acento | `--app-accent` / `--app-accent-soft` | `#3949ab` / `#eaf2ff` |
+| Semánticos | `--app-success` / `--app-error` / `--app-warning` / `--app-info` (+ variantes `-soft`) | `#18794e` / `#b42318` / `#a15c00` / `#175cd3` |
+| Marca EduCore | `--app-primary` / `--app-sidebar-bg` / `--app-sidebar-active` | `#14213d` / `#14213d` / `#22325a` |
+| Acento secundario | `--app-accent-teal` / `--app-teal-bright` | `#147d78` / `#4fd1c7` |
+
+`--app-muted` (`#475467`) es el gris de texto secundario más usado en toda la app — encabezados de tabla, ayudas, leyendas — y es uno de los tres literales que el contrato de a11y (`src/app/a11y/`) verifica que existan en la hoja global.
+
+**Forma**: `--app-radius-card: 16px` (tarjetas/KPIs), `--app-radius-alert: 14px` (alertas), `--app-radius-control: 10px` (botones/campos), `--app-radius-pill: 999px` (chips, segmented, year-chip).
+
+**Tipografía**: Manrope (`--app-font-heading`, encabezados) e Inter (`--app-font-body`, cuerpo), autohospedadas vía `@fontsource/manrope` y `@fontsource/inter` — sin CDN externo.
+
+**Iconografía**: `app-icon` (`src/app/layout/educore-shell/app-icon.component.ts`) renderiza SVG inline por nombre; siempre `aria-hidden="true"` + `focusable="false"` porque cada uso va acompañado de texto visible que sigue siendo el nombre accesible del control.
+
+### Primitivos compartidos (`.ec-*`)
+
+Clases globales en `styles.scss`, reutilizadas por el shell y las cinco pantallas — no se redefinen por feature:
+
+| Primitivo | Uso |
+| --- | --- |
+| `.ec-card` | Contenedor de superficie base (formularios, paneles de éxito, KPIs). |
+| `.ec-btn` (`--primary` / `--secondary` / `--outline`) | Botones de acción; `[aria-busy="true"]` gana sobre `:disabled` por orden de declaración. |
+| `.ec-field` | Envoltorio label + control de formulario. |
+| `.ec-alert` (`--success` / `--error` / `--warning` / `--info`) | Estados de feedback (loading/error/empty/éxito/stale) con icono `app-icon` + texto. |
+| `.ec-table` | Tablas de resultados con encabezado sticky. |
+| `.ec-badge` (`--status` / `--temporal`) | Par de familias de badge visualmente distintas (rectángulo vs. píldora) para no confundir un estado persistido con uno temporal, incluso sin color. |
+| `.ec-legend` | Leyenda que explica los tonos de `.ec-badge` junto a la tabla que los usa. |
+| `.ec-chip-toggle` | Checkbox nativo estilizado como píldora seleccionable (multiselección de escuelas). |
+| `.ec-segmented` | Riel de navegación interna / toggle de dos vías (pestañas de reportes). |
+| `.ec-kpi` (`--featured`) | Tarjeta de métrica destacada; `--featured` invierte a la superficie primaria para el valor más relevante del grupo. |
 
 ## Navegación y shell
 
@@ -14,16 +55,19 @@ Orden constante:
 2. **Consulta de estudiantes** (`/student-search`)
 3. **Contratos docentes** (`/teacher-contracts`)
 4. **Reportes** (`/reports`, P1 habilitado solo tras P0)
+5. **Historial del estudiante** (`/student-history`, P1 habilitado solo tras P0; se llega también desde consulta de estudiantes)
 
-El shell incluye “Saltar al contenido”, `nav` con `aria-label="Navegación principal"`, `aria-current="page"`, un único `h1` y una región polite estable para navegación SPA. Escritorio usa barra lateral compacta; móvil usa encabezado y menú, sin cambiar orden ni nombres.
+El shell (`app.component.html`) es un riel de navegación fijo (`.ec-rail`, 264px, superficie `--app-sidebar-bg`) con marca, `nav[aria-label="Navegación principal"]` (ítem activo vía `aria-current="page"`, marcado también con un acento visual además del color) y una nota de pie. La columna principal tiene una barra superior (`.ec-topbar`, sticky) con el título de sección y un chip informativo del año académico vigente, y un `footer` con el resumen de disponibilidad de rutas P1.
+
+Bajo 1024px el riel se convierte en un drawer off-canvas: se oculta con `transform`, un botón `.ec-hamburger` (`aria-expanded`, `aria-label="Abrir menú de navegación"`) lo revela, y un scrim (`aria-hidden`) permite cerrarlo tocando fuera. El resto del documento (`main`, `footer`, la propia barra) queda `inert` mientras el drawer está abierto. El shell incluye además "Saltar al contenido", un único `h1` y una región polite estable para navegación SPA.
 
 | Ruta | `document.title` |
 | --- | --- |
-| `/enrollments` | `Nueva matrícula — Inovait` |
-| `/student-search` | `Consulta de estudiantes — Inovait` |
-| `/teacher-contracts` | `Contratos docentes — Inovait` |
-| `/reports` | `Reportes municipales — Inovait` |
-| `/student-history` | `Historial del estudiante — Inovait` |
+| `/enrollments` | `Matrículas · EduCore` |
+| `/student-search` | `Consulta de estudiantes · EduCore` |
+| `/teacher-contracts` | `Contratos docentes · EduCore` |
+| `/reports` | `Reportes · EduCore` |
+| `/student-history` | `Historial del estudiante · EduCore` |
 
 Al completar cualquier navegación SPA, el shell actualiza el título, enfoca una
 sola vez el `h1` con `tabindex="-1"` y anuncia el mismo nombre en la región
@@ -86,6 +130,8 @@ estado y no vuelven a aplicar esta política ni mueven foco por sí solos.
 
 Tras 201, el banner permanece visible, se limpia toda información personal/académica, submit vuelve a quedar deshabilitado y el foco retorna a “Tipo de documento”. Esto evita reenvío accidental.
 
+El panel de éxito usa `.ec-card` con un encabezado `.ec-alert--success` (icono `check_circle`) seguido de una lista de definición (`dl`) con los identificadores de matrícula/estudiante — no un banner de una sola línea.
+
 ### Móvil
 
 Una columna; fieldsets apilados; submit ancho completo al final, no sticky. Los select se abren sin ocultar label. Mensaje de dependencia aparece antes del control inactivo.
@@ -105,7 +151,7 @@ Una columna; fieldsets apilados; submit ancho completo al final, no sticky. Los 
 └────────────────────────────────────────────────────────────────┘
 ```
 
-Filtros obligatorios: Escuela, Grado y Año académico. `asOfDate` es opcional. Al cambiar un filtro, los resultados dejan de presentarse como vigentes hasta una nueva búsqueda.
+Filtros obligatorios: Escuela, Grado y Año académico. `asOfDate` es opcional. Al cambiar un filtro, los resultados dejan de presentarse como vigentes hasta una nueva búsqueda: se anuncia con un banner `.ec-alert--warning` (icono `update`, `data-testid="search-stale"`) sobre la tabla existente, que sigue visible pero marcada como desactualizada hasta la próxima búsqueda.
 
 Estados exclusivos:
 
@@ -163,6 +209,8 @@ La tabla muestra por separado:
 
 No se infiere uno del otro. Sector se presenta como Pública/Privada. Fin nulo se muestra “Sin fecha de fin”. En móvil, cada contrato es tarjeta con ambos estados etiquetados, nunca badges solo por color.
 
+Cada estado se presenta con `.ec-badge` de una de dos familias visualmente distintas — `--status` (rectángulo, registrado) y `--temporal` (píldora, vigencia) — para que la forma, no solo el color, distinga qué se está mostrando. Una `.ec-legend` junto a la tabla explica el significado de cada tono.
+
 ## Pantalla 4 — Reportes
 
 Reportes es P1 y no se considera disponible hasta validar P0. Usa secciones con filtros propios y valores exactos; no hay charts.
@@ -190,6 +238,8 @@ Cada bloque tiene su propio `form`, encabezado, status y error. Consultar un blo
 - Líderes: tabla simple; todos los empates y un año existente sin inscripciones produce `200 []` con estado vacío informativo.
 - Historia: permite consulta documental directa y enlaza a la pantalla dedicada.
 
+Los valores de cada bloque se presentan como tarjetas `.ec-kpi`; el bucket o valor más relevante de cada resultado (por ejemplo 3–7 años en BQ-001) usa `.ec-kpi--featured`, que invierte a la superficie primaria en vez de depender solo de su tamaño para destacar. La navegación entre los tres reportes internos usa un riel `.ec-segmented` con `aria-current="location"` sobre el ítem activo.
+
 En móvil, report cards se apilan. Las cifras usan texto y label; no dependen de posición/color. Filtros de cada bloque permanecen antes de su resultado.
 
 ## Pantalla 5 — Historial del estudiante
@@ -209,6 +259,8 @@ En móvil, report cards se apilan. Las cifras usan texto y label; no dependen de
 ```
 
 Loading usa skeleton/texto sin perder `h1`. 404 presenta “No se encontró el estudiante” y enlace para corregir documento. Cada año permanece visible aunque `teachingAssignments` sea vacío. Múltiples docentes, materias y días se muestran sin colapsar relaciones. Los días 1–7 se localizan para display sin cambiar valores del DTO.
+
+Los años se listan como una línea de tiempo semántica: una `ol` (`.history-list`) con un `li.history-entry` por año, cada uno con un `<time datetime="…">` legible y un `.ec-badge--current`/`.ec-badge--closed` que distingue el año en curso de años anteriores.
 
 En móvil, cada año es sección y cada asignación tarjeta. “Volver” usa historial del Router cuando es seguro y conserva nombre accesible.
 
@@ -231,7 +283,7 @@ En móvil, cada año es sección y cada asignación tarjeta. “Volver” usa hi
 - Percepción: contraste 4.5:1 texto, 3:1 componentes/foco; iconos decorativos ocultos; estado no solo color.
 - Operación: teclado completo, sin traps, foco no oculto, targets ≥ 24×24.
 - Comprensión: labels/instrucciones, errores específicos, navegación/copy consistente y no reingreso tras éxito accidental.
-- Robustez: controles nativos/Material con nombres accesibles, live regions estables y DOM ordenado.
+- Robustez: controles nativos con nombres accesibles, live regions estables y DOM ordenado.
 - Responsive: 320 CSS px y 200 % zoom sin pérdida de información; cards sustituyen tablas cuando es necesario.
 - Representación: solo tabla o tarjetas está expuesta/enfocable en cada breakpoint.
 - Movimiento: transiciones mínimas y respeto de `prefers-reduced-motion`.

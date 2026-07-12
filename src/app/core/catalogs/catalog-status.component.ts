@@ -5,11 +5,13 @@ import {
   input,
   output,
 } from "@angular/core";
+import { AppIconComponent } from "../../layout/educore-shell/app-icon.component";
 import type { RemoteState } from "../api/remote-state";
 
 @Component({
   selector: "app-catalog-status",
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [AppIconComponent],
   templateUrl: "./catalog-status.component.html",
 })
 export class CatalogStatusComponent {

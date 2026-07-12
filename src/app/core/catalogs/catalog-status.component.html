@@ -1,30 +1,39 @@
 @if (state().status === "loading") {
   <p
-    class="catalog-status catalog-status--loading"
+    class="catalog-status catalog-status--loading ec-alert ec-alert--info"
     role="status"
     aria-live="polite"
     [attr.data-testid]="'catalog-' + testId() + '-loading'"
   >
-    Cargando {{ label() }}…
+    <app-icon name="update" />
+    <span>Cargando {{ label() }}…</span>
   </p>
 } @else if (errorProblem(); as problem) {
   <div
-    class="catalog-status catalog-status--error"
+    class="catalog-status catalog-status--error ec-alert ec-alert--error"
     role="alert"
     [attr.data-testid]="'catalog-' + testId() + '-error'"
   >
-    <strong>No se pudieron cargar {{ label() }}.</strong>
-    <span>{{ problem.title }}</span>
-    <button type="button" (click)="retry.emit()">
-      Reintentar {{ label() }}
-    </button>
+    <app-icon name="error" />
+    <div class="catalog-status__body">
+      <strong>No se pudieron cargar {{ label() }}.</strong>
+      <span>{{ problem.title }}</span>
+      <button
+        type="button"
+        class="ec-btn ec-btn--outline"
+        (click)="retry.emit()"
+      >
+        Reintentar {{ label() }}
+      </button>
+    </div>
   </div>
 } @else if (state().status === "empty") {
   <p
-    class="catalog-status catalog-status--empty"
+    class="catalog-status catalog-status--empty ec-alert ec-alert--info"
     role="status"
     [attr.data-testid]="'catalog-' + testId() + '-empty'"
   >
-    No hay {{ label() }} disponibles.
+    <app-icon name="inbox" />
+    <span>No hay {{ label() }} disponibles.</span>
   </p>
 }

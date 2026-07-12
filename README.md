@@ -1,10 +1,11 @@
-# Inovait — Frontend
+# EduCore — Gestión escolar municipal
 
-Frontend Angular 21 para la gestión municipal de matrículas escolares (prueba
-técnica full stack INOVAIT). Cinco pantallas operativas: alta de matrícula
-(`/enrollments`), consulta de estudiantes (`/student-search`), contratos
-docentes (`/teacher-contracts`), reportes municipales (`/reports`) e historial
-del estudiante (`/student-history`). El backend hermano es
+Frontend Angular 21 de EduCore, la aplicación de gestión municipal de
+matrículas escolares construida como prueba técnica full stack para INOVAIT.
+Cinco pantallas operativas: alta de matrícula (`/enrollments`), consulta de
+estudiantes (`/student-search`), contratos docentes (`/teacher-contracts`),
+reportes municipales (`/reports`) e historial del estudiante
+(`/student-history`). El backend hermano es
 [`inovait-backend`](../inovait-backend) (.NET 10 + SQL Server).
 
 ## Requisitos
@@ -96,6 +97,30 @@ presente.
   escribe en la URL, el history state ni el web storage. El token no es una
   frontera de autorización y no puede resolverse si se pierde la memoria de la
   aplicación.
+
+## Sistema de diseño
+
+La identidad visual toma como referencia el template EduCore (paleta,
+tipografía y forma), adoptada de forma incremental sobre la UX ya
+especificada — sin reescritura estructural de pantallas ni flujos.
+
+- **Tokens**: paleta, radios, espaciado y tipografía viven como custom
+  properties (`--app-*`) en [`src/styles.scss`](src/styles.scss), la única
+  fuente de verdad consumida por toda la app.
+- **Tipografía**: Manrope (encabezados) e Inter (cuerpo), autohospedadas vía
+  `@fontsource/manrope` y `@fontsource/inter` — sin CDN externo.
+- **Iconografía**: `app-icon` (inline SVG por nombre, siempre
+  `aria-hidden`) en
+  [`src/app/layout/educore-shell/app-icon.component.ts`](src/app/layout/educore-shell/app-icon.component.ts);
+  no depende de una fuente de iconos externa.
+- **Primitivos `.ec-*`**: tarjetas, botones, alertas, tablas, badges, chips,
+  KPIs y el control segmentado son clases compartidas en `styles.scss`,
+  reutilizadas por las cinco pantallas y el shell.
+- `@angular/material` y `@angular/cdk` están instalados (`package.json`) pero
+  **no se usan**: los controles y la jerarquía visual son propios.
+
+Detalle pantalla por pantalla, wireframes y contrato de accesibilidad en
+[`docs/ux-design.md`](docs/ux-design.md).
 
 ## Arquitectura
 

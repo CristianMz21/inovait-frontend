@@ -13,7 +13,6 @@ import {
   schoolsFixture,
 } from "../../../testing/fixtures";
 import { routes } from "../../app.routes";
-import { P1LockedComponent } from "../../layout/placeholders/p1-locked.component";
 import { ReportsShellComponent } from "./reports-shell.component";
 
 function createCatalogFacadeStub(): CatalogFacade {
@@ -143,15 +142,14 @@ describe("ReportsShellComponent (WU10-RPT)", () => {
     const reportsComponent = await reportsRoute?.loadComponent?.();
     expect(reportsComponent).toBe(ReportsShellComponent);
 
-    // Tras 003-student-history (WU11-STU) la ruta deja de usar
-    // P1LockedComponent: ya no expone `data.lockedFeature` y monta
+    // Tras 003-student-history (WU11-STU) la ruta deja de usar el antiguo
+    // placeholder de bloqueo P1: ya no expone `data.lockedFeature` y monta
     // StudentHistoryComponent directamente.
     expect(studentHistoryRoute?.data).toBeUndefined();
     const { StudentHistoryComponent } = await import("../student-history");
     const studentHistoryComponent =
       await studentHistoryRoute?.loadComponent?.();
     expect(studentHistoryComponent).toBe(StudentHistoryComponent);
-    expect(studentHistoryComponent).not.toBe(P1LockedComponent);
   });
 
   it("incluye media query 320 px y tokens de contraste del sistema", () => {
