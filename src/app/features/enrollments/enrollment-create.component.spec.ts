@@ -1,5 +1,5 @@
 import { HttpHeaders } from "@angular/common/http";
-import { TestBed } from "@angular/core/testing";
+import { TestBed, type ComponentFixture } from "@angular/core/testing";
 import { provideHttpClient } from "@angular/common/http";
 import {
   HttpTestingController,
@@ -16,6 +16,7 @@ import {
 import {
   academicYearsFixture,
   apiProblemEnrollmentConflictFixture,
+  apiProblemNotFoundFixture,
   classGroupsFixture,
   createEnrollmentResponseFixture,
   gradesFixture,
@@ -25,6 +26,7 @@ import { EnrollmentCreateComponent } from "./enrollment-create.component";
 
 describe("EnrollmentCreateComponent", () => {
   let http: HttpTestingController;
+  let fixture: ComponentFixture<EnrollmentCreateComponent>;
   let component: EnrollmentCreateComponent;
 
   beforeEach(() => {
@@ -38,7 +40,7 @@ describe("EnrollmentCreateComponent", () => {
       ],
     });
     http = TestBed.inject(HttpTestingController);
-    const fixture = TestBed.createComponent(EnrollmentCreateComponent);
+    fixture = TestBed.createComponent(EnrollmentCreateComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
@@ -78,6 +80,91 @@ describe("EnrollmentCreateComponent", () => {
     expect(component.gradeOptions().length).toBe(gradesFixture.length);
   });
 
+  it("muestra error de catálogo y permite reintentar escuelas", () => {
+    http
+      .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/schools`)
+      .flush(apiProblemNotFoundFixture, {
+        status: 404,
+        statusText: "Not Found",
+        headers: new HttpHeaders({
+          "Content-Type": "application/problem+json",
+        }),
+      });
+    http
+      .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/academic-years`)
+      .flush(academicYearsFixture);
+    http
+      .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/grades`)
+      .flush(gradesFixture);
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.textContent).toContain("No se pudieron cargar escuelas");
+    const retry = Array.from(host.querySelectorAll("button")).find((button) =>
+      button.textContent?.includes("Reintentar escuelas"),
+    );
+
+    retry?.click();
+
+    http
+      .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/schools`)
+      .flush(schoolsFixture);
+    expect(retry).toBeDefined();
+  });
+
+  it("permite reintentar años, grados y grupos desde sus alertas", () => {
+    flushInitialCatalogs();
+    component.retryAcademicYears();
+    http
+      .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/academic-years`)
+      .flush(apiProblemNotFoundFixture, {
+        status: 404,
+        statusText: "Not Found",
+      });
+    component.retryGrades();
+    http
+      .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/grades`)
+      .flush(apiProblemNotFoundFixture, {
+        status: 404,
+        statusText: "Not Found",
+      });
+    component.form.controls.schoolId.setValue(1);
+    component.form.controls.academicYearId.setValue(2);
+    component.form.controls.gradeId.setValue(1);
+    http
+      .expectOne(
+        (candidate) =>
+          candidate.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/class-groups`,
+      )
+      .flush(apiProblemNotFoundFixture, {
+        status: 404,
+        statusText: "Not Found",
+      });
+    fixture.detectChanges();
+    const buttons = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll("button"),
+    );
+    for (const [label, url, response] of [
+      [
+        "Reintentar años académicos",
+        `${DEFAULT_API_CONFIG.apiBaseUrl}/api/academic-years`,
+        academicYearsFixture,
+      ],
+      [
+        "Reintentar grados",
+        `${DEFAULT_API_CONFIG.apiBaseUrl}/api/grades`,
+        gradesFixture,
+      ],
+      [
+        "Reintentar grupos",
+        `${DEFAULT_API_CONFIG.apiBaseUrl}/api/class-groups`,
+        classGroupsFixture,
+      ],
+    ] as const) {
+      buttons.find((button) => button.textContent?.includes(label))?.click();
+      http.expectOne((candidate) => candidate.url === url).flush(response);
+    }
+  });
+
   it("bloquea niveles inferiores hasta seleccionar el padre (School → Year → Grade → Group)", () => {
     flushInitialCatalogs();
     expect(component.isAcademicYearDisabled()).toBe(true);
@@ -85,16 +172,27 @@ describe("EnrollmentCreateComponent", () => {
     expect(component.isClassGroupDisabled()).toBe(true);
 
     component.form.controls.schoolId.setValue(1);
+    fixture.detectChanges();
     expect(component.isAcademicYearDisabled()).toBe(false);
+    expect(component.form.controls.academicYearId.enabled).toBe(true);
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector<HTMLSelectElement>(
+        "#enrollment-academic-year-id",
+      )?.disabled,
+    ).toBe(false);
     expect(component.isGradeDisabled()).toBe(true);
     expect(component.isClassGroupDisabled()).toBe(true);
 
     component.form.controls.academicYearId.setValue(2);
+    fixture.detectChanges();
     expect(component.isGradeDisabled()).toBe(false);
+    expect(component.form.controls.gradeId.enabled).toBe(true);
     expect(component.isClassGroupDisabled()).toBe(true);
 
     component.form.controls.gradeId.setValue(1);
+    fixture.detectChanges();
     expect(component.isClassGroupDisabled()).toBe(false);
+    expect(component.form.controls.classGroupId.enabled).toBe(true);
 
     // El cambio de grado dispara `loadClassGroups`; el test verifica sólo
     // estados de habilitación, así que cerramos la solicitud pendiente para
@@ -153,6 +251,21 @@ describe("EnrollmentCreateComponent", () => {
     expect(first.cancelled).toBe(true);
   });
 
+  it("cancela classGroups pendiente al destruir la ruta", () => {
+    flushInitialCatalogs();
+    component.form.controls.schoolId.setValue(1);
+    component.form.controls.academicYearId.setValue(2);
+    component.form.controls.gradeId.setValue(1);
+    const request = http.expectOne(
+      (candidate) =>
+        candidate.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/class-groups`,
+    );
+
+    fixture.destroy();
+
+    expect(request.cancelled).toBe(true);
+  });
+
   it("submit válido ejecuta POST /api/enrollments y refleja success", () => {
     flushInitialCatalogs();
     component.form.patchValue({
@@ -191,6 +304,27 @@ describe("EnrollmentCreateComponent", () => {
     flushInitialCatalogs();
     component.onSubmit();
     expect(component.form.touched).toBe(true);
+    http.expectNone(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`);
+  });
+
+  it("rechaza una fecha de nacimiento futura sin enviar el POST", () => {
+    flushInitialCatalogs();
+    component.form.patchValue({
+      documentType: "DNI",
+      documentNumber: "99.001.101",
+      firstNames: "Ana María",
+      lastNames: "Solís",
+      birthDate: "2999-01-01",
+      schoolId: 1,
+      academicYearId: 2,
+      gradeId: 1,
+    });
+    flushClassGroupsRequest();
+    component.form.controls.classGroupId.setValue(10);
+
+    component.onSubmit();
+
+    expect(component.form.controls.birthDate.hasError("futureDate")).toBe(true);
     http.expectNone(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`);
   });
 

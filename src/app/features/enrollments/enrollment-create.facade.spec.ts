@@ -5,7 +5,8 @@ import {
 } from "@angular/common/http/testing";
 import { TestBed } from "@angular/core/testing";
 import { provideHttpClient } from "@angular/common/http";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { throwError } from "rxjs";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   API_CONFIG,
   DEFAULT_API_CONFIG,
@@ -106,7 +107,7 @@ describe("EnrollmentCreateFacade", () => {
     }
   });
 
-  it("submit() cancela el envío previo cuando se reenvía (rollback de mutación)", () => {
+  it("submit() mantiene single-flight y no cancela ni duplica un POST en curso", () => {
     facade.submit(validForm);
     const first = http.expectOne(
       `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
@@ -114,16 +115,10 @@ describe("EnrollmentCreateFacade", () => {
     expect(facade.result().status).toBe("loading");
 
     facade.submit(validForm);
-    const second = http.expectOne(
-      `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
-    );
-    // El primer POST fue cancelado por `unsubscribe()`; HttpTestingController
-    // lo refleja marcándolo como cancelado.
-    expect(first.cancelled).toBe(true);
+    http.expectNone((request) => request !== first.request);
+    expect(first.cancelled).toBe(false);
 
-    // La segunda respuesta sí muta el estado; la respuesta tardía del
-    // primer POST se descarta porque su `requestKey` ya no es la vigente.
-    second.flush({
+    first.flush({
       ...createEnrollmentResponseFixture,
       enrollmentId: 200,
     });
@@ -183,5 +178,29 @@ describe("EnrollmentCreateFacade", () => {
     facade.retry(validForm);
     // No se emitió un segundo POST: la fachada sigue en `loading`.
     expect(facade.result().status).toBe("loading");
+  });
+
+  it("termina en error seguro ante un fallo inesperado no normalizado", () => {
+    vi.spyOn(TestBed.inject(EnrollmentApiService), "create").mockReturnValue(
+      throwError(() => new Error("unexpected")),
+    );
+
+    facade.submit(validForm);
+
+    expect(facade.result()).toMatchObject({
+      status: "error",
+      problem: { code: "unknown_error" },
+    });
+  });
+
+  it("cancela el POST pendiente al destruir la fachada", () => {
+    facade.submit(validForm);
+    const request = http.expectOne(
+      `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
+    );
+
+    TestBed.resetTestingModule();
+
+    expect(request.cancelled).toBe(true);
   });
 });

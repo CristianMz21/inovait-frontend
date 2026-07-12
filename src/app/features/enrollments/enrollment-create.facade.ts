@@ -1,6 +1,7 @@
-import { Injectable, inject, signal } from "@angular/core";
+import { DestroyRef, Injectable, inject, signal } from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import type { Subscription } from "rxjs";
-import { ApiProblemError } from "../../core/api/api-problem-error";
+import { toSafeApiProblem } from "../../core/api/to-safe-api-problem";
 import type { CreateEnrollmentRequest } from "../../core/api/dtos/create-enrollment-request.dto";
 import {
   type RemoteState,
@@ -25,10 +26,8 @@ import { EnrollmentApiService } from "./enrollment.api.service";
  * Responsabilidades:
  * - Mantener `RemoteState<EnrollmentResultVm>` exclusivo del recorrido
  *   (`idle` / `loading` / `success` / `empty` / `error`).
- * - Cancelar el `POST` en curso cuando se reinicia el formulario o se
- *   dispara otro submit. Esto evita mutaciones parciales visibles cuando
- *   la operadora abandona la pantalla y, de paso, descarta la respuesta
- *   tardía si llegara después de la cancelación.
+ * - Mantener un único `POST` en curso. Un segundo submit se ignora porque
+ *   cancelar una petición cliente no implica rollback en el backend.
  * - Descartar respuestas obsoletas comparando la `requestKey` actual con
  *   la emitida al iniciar la solicitud. Si el usuario envía dos veces
  *   seguidas, sólo la última respuesta muta el estado.
@@ -42,6 +41,7 @@ import { EnrollmentApiService } from "./enrollment.api.service";
 @Injectable()
 export class EnrollmentCreateFacade {
   private readonly api = inject(EnrollmentApiService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly state = signal<RemoteState<EnrollmentResultVm>>(idle());
   private subscription: Subscription | null = null;
   private sequence = 0;
@@ -64,6 +64,9 @@ export class EnrollmentCreateFacade {
    * (formulario incompleto).
    */
   submit(form: EnrollmentFormVm): void {
+    if (this.state().status === "loading") {
+      return;
+    }
     const request = enrollmentFormToRequest(form);
     if (request === null) {
       return;
@@ -100,28 +103,27 @@ export class EnrollmentCreateFacade {
     const requestKey = `enrollment#${this.sequence}`;
     this.state.set(loading<EnrollmentResultVm>(requestKey));
 
-    this.subscription = this.api.create(request).subscribe({
-      next: (response) => {
-        if (this.isStale(requestKey)) {
-          return;
-        }
-        this.state.set(success(enrollmentResponseToResult(response)));
-      },
-      error: (err: unknown) => {
-        if (this.isStale(requestKey)) {
-          return;
-        }
-        const problem = err instanceof ApiProblemError ? err.problem : null;
-        if (!problem) {
-          return;
-        }
-        this.state.set(errorState<EnrollmentResultVm>(problem));
-      },
-      complete: () => {
-        // El backend cierra el observable tras la respuesta única; no
-        // se requiere lógica adicional aquí.
-      },
-    });
+    this.subscription = this.api
+      .create(request)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          if (this.isStale(requestKey)) {
+            return;
+          }
+          this.state.set(success(enrollmentResponseToResult(response)));
+        },
+        error: (err: unknown) => {
+          if (this.isStale(requestKey)) {
+            return;
+          }
+          this.state.set(errorState<EnrollmentResultVm>(toSafeApiProblem(err)));
+        },
+        complete: () => {
+          // El backend cierra el observable tras la respuesta única; no
+          // se requiere lógica adicional aquí.
+        },
+      });
   }
 
   /**

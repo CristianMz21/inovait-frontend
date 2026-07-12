@@ -3,11 +3,11 @@ import {
   Component,
   DestroyRef,
   computed,
-  effect,
   inject,
   type OnInit,
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { distinctUntilChanged } from "rxjs";
 import {
   type AbstractControl,
   type FormControl,
@@ -18,6 +18,7 @@ import {
   Validators,
 } from "@angular/forms";
 import { CatalogFacade } from "../../core/catalogs/catalog.facade";
+import { CatalogStatusComponent } from "../../core/catalogs/catalog-status.component";
 import type { RemoteState } from "../../core/api/remote-state";
 import { EnrollmentCreateFacade } from "./enrollment-create.facade";
 import { enrollmentFormToRequest } from "./enrollment.mappers";
@@ -28,6 +29,24 @@ import type {
 
 const requiredValidator: ValidatorFn = (control: AbstractControl<unknown>) =>
   Validators.required(control);
+
+const notFutureDateValidator: ValidatorFn = (
+  control: AbstractControl<unknown>,
+) => {
+  if (
+    typeof control.value !== "string" ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(control.value)
+  ) {
+    return null;
+  }
+  const now = new Date();
+  const today = [
+    String(now.getFullYear()).padStart(4, "0"),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0"),
+  ].join("-");
+  return control.value > today ? { futureDate: true } : null;
+};
 
 interface EnrollmentFormShape {
   documentType: FormControl<string>;
@@ -66,7 +85,7 @@ type EnrollmentFormGroup = FormGroup<EnrollmentFormShape>;
 @Component({
   selector: "app-enrollment-create",
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, CatalogStatusComponent],
   providers: [EnrollmentCreateFacade],
   templateUrl: "./enrollment-create.component.html",
   styleUrl: "./enrollment-create.component.scss",
@@ -78,6 +97,10 @@ export class EnrollmentCreateComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly result = this.enrollment.result;
+  readonly schoolsState = this.catalog.schoolsState;
+  readonly academicYearsState = this.catalog.academicYearsState;
+  readonly gradesState = this.catalog.gradesState;
+  readonly classGroupsState = this.catalog.classGroupsState;
 
   readonly documentTypes: readonly EnrollmentFieldVm<string>[] = [
     { value: "DNI", label: "DNI" },
@@ -105,11 +128,20 @@ export class EnrollmentCreateComponent implements OnInit {
     birthDate: this.fb.control("", [
       requiredValidator,
       Validators.pattern(/^\d{4}-\d{2}-\d{2}$/),
+      notFutureDateValidator,
     ]),
     schoolId: this.fb.control<number | null>(null, [requiredValidator]),
-    academicYearId: this.fb.control<number | null>(null, [requiredValidator]),
-    gradeId: this.fb.control<number | null>(null, [requiredValidator]),
-    classGroupId: this.fb.control<number | null>(null, [requiredValidator]),
+    academicYearId: this.fb.control<number | null>(
+      { value: null, disabled: true },
+      [requiredValidator],
+    ),
+    gradeId: this.fb.control<number | null>({ value: null, disabled: true }, [
+      requiredValidator,
+    ]),
+    classGroupId: this.fb.control<number | null>(
+      { value: null, disabled: true },
+      [requiredValidator],
+    ),
   });
 
   readonly schoolOptions = this.schoolOptionsSignal();
@@ -139,42 +171,10 @@ export class EnrollmentCreateComponent implements OnInit {
     }));
   });
 
-  // Sincronizar el estado disabled del FormControl con la cascada
-  // jerárquica. Esto evita el warning de Angular sobre `[disabled]`
-  // aplicado directamente a directivas de Reactive Forms en el
-  // template: la convención es manejar disabled vía la API del
-  // FormControl (formControl.disable()/enable()), y dejar que el
-  // CVA refleje el estado en el DOM sin warnings de
-  // "changed after checked".
-  private readonly _academicYearDisabledEffect = effect(() => {
-    const disabled = this.isAcademicYearDisabled();
-    const ctrl = this.form.controls.academicYearId;
-    if (disabled && ctrl.enabled) {
-      ctrl.disable({ emitEvent: false });
-    } else if (!disabled && ctrl.disabled) {
-      ctrl.enable({ emitEvent: false });
-    }
-  });
-  private readonly _gradeDisabledEffect = effect(() => {
-    const disabled = this.isGradeDisabled();
-    const ctrl = this.form.controls.gradeId;
-    if (disabled && ctrl.enabled) {
-      ctrl.disable({ emitEvent: false });
-    } else if (!disabled && ctrl.disabled) {
-      ctrl.enable({ emitEvent: false });
-    }
-  });
-  private readonly _classGroupDisabledEffect = effect(() => {
-    const disabled = this.isClassGroupDisabled();
-    const ctrl = this.form.controls.classGroupId;
-    if (disabled && ctrl.enabled) {
-      ctrl.disable({ emitEvent: false });
-    } else if (!disabled && ctrl.disabled) {
-      ctrl.enable({ emitEvent: false });
-    }
-  });
-
   ngOnInit(): void {
+    // classGroups belongs to this dependent route flow; unlike global cached
+    // catalogs, its pending request must not survive route destruction.
+    this.destroyRef.onDestroy(() => this.catalog.cancel("classGroups"));
     // Cargar catálogos globales al entrar a la ruta. La fachada de
     // catálogos se encarga de cancelar cualquier solicitud previa.
     this.catalog.loadSchools();
@@ -186,14 +186,15 @@ export class EnrollmentCreateComponent implements OnInit {
     // (School → AcademicYear → Grade → ClassGroup) y recarga
     // `classGroups` cuando hay contexto suficiente.
     this.form.controls.schoolId.valueChanges
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.onSchoolChange());
     this.form.controls.academicYearId.valueChanges
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.onAcademicYearChange());
     this.form.controls.gradeId.valueChanges
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.onGradeChange());
+    this.syncCascadeControls();
   }
 
   // -- Acciones de UI -----------------------------------------------------
@@ -219,6 +220,25 @@ export class EnrollmentCreateComponent implements OnInit {
     this.enrollment.retry(this.toVm());
   }
 
+  retrySchools(): void {
+    this.catalog.loadSchools();
+  }
+
+  retryAcademicYears(): void {
+    this.catalog.loadAcademicYears();
+  }
+
+  retryGrades(): void {
+    this.catalog.loadGrades();
+  }
+
+  retryClassGroups(): void {
+    const { schoolId, academicYearId, gradeId } = this.form.getRawValue();
+    if (schoolId !== null && academicYearId !== null && gradeId !== null) {
+      this.catalog.loadClassGroups({ schoolId, academicYearId, gradeId });
+    }
+  }
+
   onReset(): void {
     this.enrollment.reset();
     this.form.reset({
@@ -232,6 +252,7 @@ export class EnrollmentCreateComponent implements OnInit {
       gradeId: null,
       classGroupId: null,
     });
+    this.syncCascadeControls();
   }
 
   // -- Helpers ------------------------------------------------------------
@@ -288,6 +309,7 @@ export class EnrollmentCreateComponent implements OnInit {
     this.form.controls.gradeId.setValue(null, { emitEvent: false });
     this.form.controls.classGroupId.setValue(null, { emitEvent: false });
     this.catalog.cancel("classGroups");
+    this.syncCascadeControls();
   }
 
   /**
@@ -300,6 +322,7 @@ export class EnrollmentCreateComponent implements OnInit {
     this.form.controls.gradeId.setValue(null, { emitEvent: false });
     this.form.controls.classGroupId.setValue(null, { emitEvent: false });
     this.catalog.cancel("classGroups");
+    this.syncCascadeControls();
   }
 
   /**
@@ -310,6 +333,7 @@ export class EnrollmentCreateComponent implements OnInit {
   private onGradeChange(): void {
     this.form.controls.classGroupId.setValue(null, { emitEvent: false });
     this.catalog.cancel("classGroups");
+    this.syncCascadeControls();
     const { schoolId, academicYearId, gradeId } = this.form.controls;
     if (
       schoolId.value !== null &&
@@ -321,6 +345,29 @@ export class EnrollmentCreateComponent implements OnInit {
         gradeId: gradeId.value,
         academicYearId: academicYearId.value,
       });
+    }
+  }
+
+  private syncCascadeControls(): void {
+    this.setDisabled(
+      this.form.controls.academicYearId,
+      this.isAcademicYearDisabled(),
+    );
+    this.setDisabled(this.form.controls.gradeId, this.isGradeDisabled());
+    this.setDisabled(
+      this.form.controls.classGroupId,
+      this.isClassGroupDisabled(),
+    );
+  }
+
+  private setDisabled(
+    control: FormControl<number | null>,
+    disabled: boolean,
+  ): void {
+    if (disabled && control.enabled) {
+      control.disable({ emitEvent: false });
+    } else if (!disabled && control.disabled) {
+      control.enable({ emitEvent: false });
     }
   }
 

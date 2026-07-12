@@ -1,11 +1,36 @@
 <section class="enrollment" aria-labelledby="enrollment-title">
   <h1 id="enrollment-title" tabindex="-1">Nueva matrícula</h1>
-  <p class="enrollment-lede">
+  <p id="enrollment-lede" class="enrollment-lede">
     Complete los datos del estudiante y la cadena académica. Los selectores se
     desbloquean en orden: primero <strong>Escuela</strong>, luego
     <strong>Año</strong>, <strong>Grado</strong> y por último
     <strong>Grupo</strong>. Cambiar un nivel superior limpia los inferiores.
   </p>
+
+  <app-catalog-status
+    [state]="schoolsState()"
+    label="escuelas"
+    testId="enrollment-schools"
+    (retry)="retrySchools()"
+  />
+  <app-catalog-status
+    [state]="academicYearsState()"
+    label="años académicos"
+    testId="enrollment-years"
+    (retry)="retryAcademicYears()"
+  />
+  <app-catalog-status
+    [state]="gradesState()"
+    label="grados"
+    testId="enrollment-grades"
+    (retry)="retryGrades()"
+  />
+  <app-catalog-status
+    [state]="classGroupsState()"
+    label="grupos"
+    testId="enrollment-groups"
+    (retry)="retryClassGroups()"
+  />
 
   @if (successData(); as success) {
     <div
@@ -59,6 +84,7 @@
       [formGroup]="form"
       (ngSubmit)="onSubmit()"
       novalidate
+      aria-label="Formulario de nueva matrícula"
       aria-describedby="enrollment-lede"
     >
       <fieldset [disabled]="isSubmitting()">
