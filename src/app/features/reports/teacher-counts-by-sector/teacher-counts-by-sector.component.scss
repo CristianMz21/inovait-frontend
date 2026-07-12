@@ -94,7 +94,7 @@
   font-size: 0.9rem;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .sector-grid {
     grid-template-columns: 1fr;
     gap: var(--app-space-1);

@@ -93,13 +93,16 @@
   font-size: 0.9rem;
 }
 
-@media (max-width: 1024px) {
+/* 2 columns from tablet up to narrow desktop: with the 264px nav rail the
+ * content box at a 1024px viewport is only ~692px — four columns would be
+ * ~164px each. Four-up needs a ≥1200px viewport. */
+@media (max-width: 1199px) {
   .age-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .age-grid {
     grid-template-columns: 1fr;
     gap: var(--app-space-1);
