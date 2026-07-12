@@ -129,6 +129,29 @@ describe("TeacherCountsBySectorComponent (CT-SECTOR-RPT)", () => {
     expect(submit?.disabled).toBe(true);
   });
 
+  it("el extremo opuesto completado marca aria-required en el inicio, muestra el error inline y desactiva el botón", () => {
+    component.form.patchValue({ periodStart: "", periodEnd: "2026-07-10" });
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelectorAll('[aria-required="true"]').length).toBe(1);
+
+    const startInput = compiled.querySelector<HTMLInputElement>(
+      "#sector-period-start",
+    );
+    expect(startInput?.getAttribute("aria-required")).toBe("true");
+
+    const error = compiled.querySelector("#sector-period-start-error");
+    expect(error?.textContent?.trim()).toBe(
+      "Requerido: completa ambos extremos del período (o vacía los dos).",
+    );
+
+    const submit = compiled.querySelector<HTMLButtonElement>(
+      'button[type="submit"]',
+    );
+    expect(submit?.disabled).toBe(true);
+  });
+
   it("ambos extremos vacíos mantiene el conteo de aria-required en 0", () => {
     component.form.patchValue({ periodStart: "2026-07-01", periodEnd: "" });
     fixture.detectChanges();

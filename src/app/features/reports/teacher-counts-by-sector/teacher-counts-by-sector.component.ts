@@ -103,6 +103,15 @@ export class TeacherCountsBySectorComponent implements OnInit {
    * imperativamente — no como `computed()` — porque el formulario
    * reactivo no expone `Signal`s; un `computed` quedaría congelado en
    * el estado inicial del componente.
+   *
+   * Nota: lee `form.getRawValue()` directamente en vez de `rawPeriod()`.
+   * Esto sólo re-evalúa en modo zoneless porque comparte el binding
+   * `[disabled]` con `hasDateRangeError()` (que sí es signal-backed vía
+   * `rawPeriod`) — ambas se leen en la misma expresión de plantilla, así
+   * que el cambio de `rawPeriod` fuerza el re-chequeo de todo el binding
+   * OnPush, incluyendo esta llamada. Si el binding `[disabled]` alguna
+   * vez se separa, `canSubmit()` deberá leer `rawPeriod()` en su lugar
+   * para no quedar desactualizado.
    */
   canSubmit(): boolean {
     return teacherCountsBySectorFiltersToParams(this.toFiltersVm()) !== null;
