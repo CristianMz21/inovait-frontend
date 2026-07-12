@@ -170,6 +170,7 @@ fieldset.ec-card > legend {
   display: inline-flex;
   align-items: center;
   gap: var(--app-space-2);
+  min-height: 44px;
   border: 1px solid transparent;
   border-radius: var(--app-radius-control);
   padding: 10px 18px;
@@ -574,6 +575,63 @@ fieldset.ec-card > legend {
 
 .ec-kpi--featured app-icon {
   color: var(--app-teal-bright);
+}
+
+/* ==========================================================================
+ * EduCore shared primitives · Phase 6 (Reports tabs redesign)
+ * `.ec-btn[aria-busy="true"]::before`: CSS-only loading ring rendered before
+ * the button label while a request is in flight (`@keyframes ec-spin`
+ * drives the rotation). The existing `prefers-reduced-motion: reduce`
+ * kill-switch below already zeroes every `animation-duration` via the
+ * universal `*, *::before, *::after` selector, so under that preference the
+ * ring renders as a static ring instead of spinning — no extra media query
+ * needed here.
+ * `.ec-required-mark`: accent asterisk marking a required field label. Used
+ * as `<span class="ec-required-mark" aria-hidden="true">*</span>` — hidden
+ * from assistive tech because the requirement is already conveyed by
+ * `aria-required`/`required` on the control itself.
+ * `.ec-empty-hint`: muted icon+text row for an idle/empty prompt area shown
+ * before the first query. No live role: it is static guidance, not a state
+ * announcement that needs to interrupt the user.
+ * `.ec-field-error`: inline validation message rendered in `--app-error`.
+ * ========================================================================== */
+
+@keyframes ec-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ec-btn[aria-busy="true"]::before {
+  content: "";
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: ec-spin 0.6s linear infinite;
+}
+
+.ec-required-mark {
+  color: var(--app-accent);
+  margin-inline-start: 2px;
+}
+
+.ec-empty-hint {
+  display: flex;
+  align-items: center;
+  gap: var(--app-space-2);
+  color: var(--app-muted);
+  font-size: 14px;
+}
+
+.ec-field-error {
+  display: block;
+  margin-top: var(--app-space-1);
+  color: var(--app-error);
+  font-size: 13px;
+  font-weight: 500;
 }
 
 /* `.catalog-status` no longer carries its own box styling — the box (border,
