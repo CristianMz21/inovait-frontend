@@ -1,69 +1,103 @@
 <a class="skip-link" href="#main">Saltar al contenido principal</a>
 
-<header role="banner" class="app-header">
-  <h1 class="app-title">Inovait · Gestión escolar municipal</h1>
-  <p class="app-subtitle">
-    Matrículas, consulta de estudiantes, contratos docentes, reportes operativos
-    e historia académica-docente.
-  </p>
-  <nav aria-label="Navegación principal" class="app-nav">
-    <ul>
-      <li>
-        <a
-          routerLink="/enrollments"
-          routerLinkActive="is-active"
-          ariaCurrentWhenActive="page"
-          >Matrículas</a
-        >
-      </li>
-      <li>
-        <a
-          routerLink="/student-search"
-          routerLinkActive="is-active"
-          ariaCurrentWhenActive="page"
-          >Consulta de estudiantes</a
-        >
-      </li>
-      <li>
-        <a
-          routerLink="/teacher-contracts"
-          routerLinkActive="is-active"
-          ariaCurrentWhenActive="page"
-          >Contratos docentes</a
-        >
-      </li>
-      <li>
-        <a
-          routerLink="/reports"
-          routerLinkActive="is-active"
-          ariaCurrentWhenActive="page"
-          >Reportes</a
-        >
-      </li>
-      <li>
-        <a
-          routerLink="/student-history"
-          routerLinkActive="is-active"
-          ariaCurrentWhenActive="page"
-          >Historia</a
-        >
-      </li>
-    </ul>
-  </nav>
-</header>
+@if (drawerOpen()) {
+  <div class="ec-scrim" (click)="closeDrawer()" aria-hidden="true"></div>
+}
 
-<main id="main" tabindex="-1" role="main" class="app-main">
-  <p
-    class="visually-hidden"
-    aria-live="polite"
-    aria-atomic="true"
-    data-testid="route-announcement"
-  >
-    {{ routeAnnouncement() }}
-  </p>
-  <router-outlet (activate)="onRouteActivate()" />
-</main>
+<div class="ec-shell">
+  <aside class="ec-rail" [class.ec-rail--open]="drawerOpen()">
+    <div class="ec-brand">
+      <svg
+        class="ec-brand-mark"
+        width="34"
+        height="34"
+        viewBox="0 0 30 30"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <rect
+          x="3"
+          y="18"
+          width="6"
+          height="9"
+          rx="2"
+          fill="var(--app-teal-bright)"
+        />
+        <rect
+          x="12"
+          y="11"
+          width="6"
+          height="16"
+          rx="2"
+          fill="var(--app-accent)"
+        />
+        <rect x="21" y="4" width="6" height="23" rx="2" fill="#f7f8f4" />
+      </svg>
+      <div>
+        <div class="ec-brand-name">EduCore</div>
+        <p class="ec-brand-subtitle">Gestión escolar municipal</p>
+      </div>
+    </div>
 
-<footer role="contentinfo" class="app-footer">
-  <small>Reportes operativos · Historia operativa</small>
-</footer>
+    <nav aria-label="Navegación principal" class="ec-nav">
+      @for (item of navItems; track item.path) {
+        <a
+          [routerLink]="item.path"
+          routerLinkActive="ec-nav-link--active"
+          ariaCurrentWhenActive="page"
+          class="ec-nav-link"
+        >
+          <app-icon [name]="item.icon" />
+          <span>{{ item.label }}</span>
+        </a>
+      }
+    </nav>
+
+    <p class="ec-rail-footnote">Sector público · privado</p>
+  </aside>
+
+  <div class="ec-main-column">
+    <header class="ec-topbar" [inert]="drawerOpen()">
+      <button
+        #hamburgerButton
+        type="button"
+        class="ec-hamburger"
+        (click)="openDrawer()"
+        aria-label="Abrir menú de navegación"
+        [attr.aria-expanded]="drawerOpen()"
+      >
+        <app-icon name="menu" />
+      </button>
+      <div class="ec-section">
+        <span class="ec-eyebrow">EduCore</span>
+        <span class="ec-section-title">{{ sectionTitle() }}</span>
+      </div>
+      <span class="ec-year-chip">
+        <app-icon name="event_available" />
+        <span class="ec-year-chip-text">Año académico vigente: 2026</span>
+      </span>
+    </header>
+
+    <main
+      id="main"
+      tabindex="-1"
+      role="main"
+      class="ec-main"
+      [inert]="drawerOpen()"
+    >
+      <p
+        class="visually-hidden"
+        aria-live="polite"
+        aria-atomic="true"
+        data-testid="route-announcement"
+      >
+        {{ routeAnnouncement() }}
+      </p>
+      <router-outlet (activate)="onRouteActivate()" />
+    </main>
+
+    <footer role="contentinfo" class="ec-footer" [inert]="drawerOpen()">
+      <small>Reportes operativos · Historia operativa</small>
+    </footer>
+  </div>
+</div>

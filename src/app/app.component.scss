@@ -1,68 +1,5 @@
 :host {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
-.app-header {
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--app-border, #d0d4d9);
-  background: var(--app-header-bg, #ffffff);
-}
-
-.app-title {
-  margin: 0;
-  font-size: 1.25rem;
-}
-
-.app-subtitle {
-  margin: 0.25rem 0 0;
-  color: var(--app-muted, #4a4f55);
-  font-size: 0.9rem;
-}
-
-.app-nav ul {
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  padding: 0;
-  margin: 0.75rem 0 0;
-}
-
-.app-nav a {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.4rem 0.7rem;
-  border-radius: 4px;
-  text-decoration: none;
-  color: inherit;
-  border: 1px solid transparent;
-}
-
-.app-nav a.is-active {
-  border-color: var(--app-accent, #1d4ed8);
-  background: var(--app-accent-soft, #eff6ff);
-}
-
-.app-nav a:focus-visible {
-  outline: 2px solid var(--app-accent, #1d4ed8);
-  outline-offset: 2px;
-}
-
-.app-main {
-  flex: 1 1 auto;
-  padding: 1.25rem;
-  max-width: 1200px;
-  width: 100%;
-  margin: 0 auto;
-}
-
-.app-footer {
-  padding: 0.75rem 1.25rem;
-  border-top: 1px solid var(--app-border, #d0d4d9);
-  color: var(--app-muted, #4a4f55);
-  font-size: 0.8rem;
+  display: block;
 }
 
 .skip-link {
@@ -70,9 +7,9 @@
   left: -1000px;
   top: 0;
   padding: 0.5rem 0.75rem;
-  background: var(--app-accent, #1d4ed8);
+  background: var(--app-accent);
   color: #fff;
-  z-index: 100;
+  z-index: 200;
 }
 
 .skip-link:focus {
@@ -80,19 +17,236 @@
   top: 0.5rem;
 }
 
-.route-placeholder {
+.ec-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 22, 40, 0.5);
+  z-index: 110;
+}
+
+.ec-shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--app-bg);
+}
+
+// ---- nav rail ----
+
+.ec-rail {
+  width: 264px;
+  flex: 0 0 264px;
+  background: var(--app-sidebar-bg);
+  color: var(--app-sidebar-fg);
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  z-index: 120;
 }
 
-.route-placeholder h1 {
-  margin: 0;
-  font-size: 1.5rem;
+.ec-rail :focus-visible {
+  outline-color: var(--app-teal-bright);
 }
 
-.route-placeholder p {
-  margin: 0;
-  max-width: 65ch;
-  color: var(--app-muted, #4a4f55);
+.ec-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--app-space-3);
+  padding: var(--app-space-5) var(--app-space-5) var(--app-space-4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.ec-brand-mark {
+  flex: 0 0 auto;
+}
+
+.ec-brand-name {
+  font-family: var(--app-font-heading);
+  font-weight: 800;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+}
+
+.ec-brand-subtitle {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--app-sidebar-fg-muted);
+}
+
+.ec-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-space-1);
+  padding: var(--app-space-4) var(--app-space-3);
+}
+
+.ec-nav-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--app-space-3);
+  padding: 10px 14px;
+  border-radius: var(--app-radius-control);
+  color: var(--app-sidebar-fg-muted);
+  text-decoration: none;
+}
+
+.ec-nav-link:hover {
+  color: var(--app-sidebar-fg);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.ec-nav-link--active {
+  color: var(--app-sidebar-fg);
+  background: var(--app-sidebar-active);
+}
+
+.ec-nav-link--active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  border-radius: 3px;
+  background: var(--app-teal-bright);
+}
+
+.ec-rail-footnote {
+  margin: auto 0 0;
+  padding: var(--app-space-4) var(--app-space-5);
+  font-size: 12px;
+  color: var(--app-sidebar-fg-muted);
+}
+
+// ---- main column: top bar + main + footer ----
+
+.ec-main-column {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.ec-topbar {
+  height: 68px;
+  flex: 0 0 68px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-space-4);
+  padding: 0 var(--app-space-6);
+  background: var(--app-header-bg);
+  border-bottom: 1px solid var(--app-border-soft);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.ec-hamburger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  border-radius: var(--app-radius-control);
+  border: 1px solid var(--app-border);
+  background: var(--app-header-bg);
+  color: var(--app-primary);
+  cursor: pointer;
+}
+
+.ec-section {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.ec-eyebrow {
+  display: block;
+  font-size: 11px;
+  color: var(--app-muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.ec-section-title {
+  display: block;
+  font-family: var(--app-font-heading);
+  font-weight: 600;
+  font-size: 18px;
+  color: var(--app-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// Shrinks (rather than forcing horizontal scroll) when the hamburger +
+// section title leave little room at narrow viewports; the icon stays
+// fixed-size and the text ellipsizes.
+.ec-year-chip {
+  flex: 0 1 auto;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-space-2);
+  padding: 8px 14px;
+  border-radius: var(--app-radius-pill);
+  background: var(--app-teal-surface);
+  border: 1px solid var(--app-teal-surface-strong);
+  color: var(--app-accent-teal-hover);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ec-year-chip app-icon {
+  flex: 0 0 auto;
+}
+
+.ec-year-chip-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ec-main {
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: 1200px;
+  margin-inline: auto;
+  padding: 34px;
+}
+
+.ec-footer {
+  padding: var(--app-space-3) var(--app-space-6);
+  color: var(--app-muted);
+  font-size: 0.8rem;
+  border-top: 1px solid var(--app-border-soft);
+}
+
+// ---- responsive drawer (<1024px) ----
+
+@media (max-width: 1023px) {
+  .ec-rail {
+    position: fixed;
+    inset: 0 auto 0 0;
+    height: 100vh;
+    z-index: 120;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+  }
+
+  .ec-rail--open {
+    transform: translateX(0);
+    box-shadow: 0 20px 60px rgba(20, 33, 61, 0.35);
+  }
+
+  .ec-hamburger {
+    display: inline-flex;
+  }
 }
