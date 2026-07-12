@@ -110,6 +110,7 @@ export class AgeDistributionComponent implements OnInit {
     })),
   );
 
+  readonly isIdle = computed(() => this.result().status === "idle");
   readonly isLoading = computed(() => this.result().status === "loading");
   readonly isSuccess = computed(() => this.result().status === "success");
   readonly hasError = computed(() => this.result().status === "error");

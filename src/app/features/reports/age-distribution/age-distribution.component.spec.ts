@@ -194,6 +194,23 @@ describe("AgeDistributionComponent (CT-AGE-RPT)", () => {
     expect(submit?.getAttribute("aria-busy")).toBe("false");
   });
 
+  // -- Idle ---------------------------------------------------------------
+
+  it('expone el prompt idle "age-idle" antes de enviar y lo retira tras el submit', () => {
+    flushCatalogs(http);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('[data-testid="age-idle"]')).toBeTruthy();
+
+    component.form.patchValue({ academicYearId: 2 });
+    component.onSubmit();
+    fixture.detectChanges();
+
+    expect(compiled.querySelector('[data-testid="age-idle"]')).toBeNull();
+
+    http.expectOne((r) => r.url === ageUrl).flush(ageDistributionFixture);
+  });
+
   // -- Estado del formulario --------------------------------------------
 
   it("bloquea el botón Consultar sin año académico", () => {
