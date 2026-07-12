@@ -26,7 +26,7 @@
   />
 
   <form
-    class="search-form"
+    class="search-form ec-card"
     [formGroup]="form"
     (ngSubmit)="onSubmit()"
     novalidate
@@ -36,7 +36,7 @@
     <fieldset [disabled]="isLoading()">
       <legend>Filtros académicos</legend>
 
-      <label class="search-field">
+      <label class="search-field ec-field">
         <span>Escuela</span>
         <select
           id="search-school-id"
@@ -51,7 +51,7 @@
         </select>
       </label>
 
-      <label class="search-field">
+      <label class="search-field ec-field">
         <span>Grado</span>
         <select
           id="search-grade-id"
@@ -66,7 +66,7 @@
         </select>
       </label>
 
-      <label class="search-field">
+      <label class="search-field ec-field">
         <span>Año académico</span>
         <select
           id="search-academic-year-id"
@@ -81,7 +81,7 @@
         </select>
       </label>
 
-      <label class="search-field">
+      <label class="search-field ec-field">
         <span>Fecha de referencia (opcional)</span>
         <input id="search-as-of-date" type="date" formControlName="asOfDate" />
       </label>
@@ -90,7 +90,7 @@
     <div class="search-actions">
       <button
         type="submit"
-        class="search-submit"
+        class="search-submit ec-btn ec-btn--secondary"
         [disabled]="form.invalid || isLoading()"
         [attr.aria-busy]="isLoading() ? 'true' : 'false'"
       >
@@ -102,7 +102,7 @@
       </button>
       <button
         type="button"
-        class="search-cancel"
+        class="search-cancel ec-btn ec-btn--outline"
         (click)="onReset()"
         [disabled]="isLoading()"
       >
@@ -113,7 +113,7 @@
 
   @if (isLoading()) {
     <p
-      class="search-status"
+      class="search-status ec-alert ec-alert--info"
       role="status"
       aria-live="polite"
       data-testid="search-loading"
@@ -124,48 +124,59 @@
 
   @if (hasError()) {
     <div
-      class="search-error"
+      class="search-error ec-alert ec-alert--error"
       role="alert"
       aria-live="assertive"
       data-testid="search-error"
     >
+      <app-icon name="error" />
       @if (errorProblem(); as problem) {
-        <p class="search-error-title">
-          <strong>{{ problem.title }}</strong>
-          <span class="search-error-status">(HTTP {{ problem.status }})</span>
-        </p>
-        @if (problem.detail) {
-          <p>{{ problem.detail }}</p>
-        }
-        @if (errorFields().length > 0) {
-          <ul class="search-error-fields">
-            @for (entry of errorFields(); track entry.field) {
-              @for (msg of entry.messages; track msg) {
-                <li>
-                  <code>{{ entry.field }}</code
-                  >: {{ msg }}
-                </li>
+        <div class="search-error__body">
+          <p class="search-error-title">
+            <strong>{{ problem.title }}</strong>
+            <span class="search-error-status">(HTTP {{ problem.status }})</span>
+          </p>
+          @if (problem.detail) {
+            <p>{{ problem.detail }}</p>
+          }
+          @if (errorFields().length > 0) {
+            <ul class="search-error-fields">
+              @for (entry of errorFields(); track entry.field) {
+                @for (msg of entry.messages; track msg) {
+                  <li>
+                    <code>{{ entry.field }}</code
+                    >: {{ msg }}
+                  </li>
+                }
               }
-            }
-          </ul>
-        }
-        <button type="button" (click)="onRetry()">Reintentar</button>
+            </ul>
+          }
+          <button
+            type="button"
+            class="ec-btn ec-btn--outline"
+            (click)="onRetry()"
+          >
+            Reintentar
+          </button>
+        </div>
       }
     </div>
   }
 
   @if (isEmpty()) {
     <div
-      class="search-empty"
+      class="search-empty ec-alert ec-alert--info"
       role="status"
       aria-live="polite"
       data-testid="search-empty"
     >
-      <h2>Sin coincidencias</h2>
-      <p>
-        La combinación seleccionada existe en los catálogos, pero no hay
-        inscripciones registradas. Verifique el año académico o los filtros.
-      </p>
+      <div>
+        <h2>Sin coincidencias</h2>
+        <p>
+          La combinación seleccionada existe en los catálogos, pero no hay
+          inscripciones registradas. Verifique el año académico o los filtros.
+        </p>
+      </div>
     </div>
   }
 
@@ -178,58 +189,75 @@
       data-testid="search-results"
     >
       <h2 id="results-title">Inscripciones encontradas</h2>
+
+      @if (isStale()) {
+        <div
+          class="search-stale ec-alert ec-alert--warning"
+          role="status"
+          data-testid="search-stale"
+        >
+          <app-icon name="update" />
+          <span>
+            Los filtros cambiaron desde la última búsqueda. Ejecute una nueva
+            búsqueda para ver resultados actualizados.
+          </span>
+        </div>
+      }
+
       <p class="search-count" aria-live="polite">
         {{ rows.length }}
         {{ rows.length === 1 ? "inscripción" : "inscripciones" }}
       </p>
-      <table class="search-table">
-        <caption class="visually-hidden">
-          Inscripciones resultantes de la búsqueda. El orden refleja el devuelto
-          por el backend.
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col">Identidad</th>
-            <th scope="col">Nombre completo</th>
-            <th scope="col">Edad</th>
-            <th scope="col">Escuela</th>
-            <th scope="col">Año</th>
-            <th scope="col">Grado</th>
-            <th scope="col">Grupo</th>
-            <th scope="col">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (row of rows; track row.enrollmentId) {
+      <div class="ec-table">
+        <table>
+          <caption class="visually-hidden">
+            Inscripciones resultantes de la búsqueda. El orden refleja el
+            devuelto por el backend.
+          </caption>
+          <thead>
             <tr>
-              <td>
-                <span class="search-document">
-                  {{ row.documentType }} · {{ row.documentNumber }}
-                </span>
-              </td>
-              <td>{{ row.fullName }}</td>
-              <td>{{ row.age }}</td>
-              <td>
-                {{ row.schoolName }}
-                <small class="search-sector">({{ row.schoolSector }})</small>
-              </td>
-              <td>{{ row.academicYearName }}</td>
-              <td>{{ row.gradeName }}</td>
-              <td>{{ row.classGroupCode }}</td>
-              <td>
-                <button
-                  type="button"
-                  class="search-history"
-                  (click)="viewHistory(row)"
-                  [attr.aria-label]="'Ver historial de ' + row.fullName"
-                >
-                  Ver historial
-                </button>
-              </td>
+              <th scope="col">Identidad</th>
+              <th scope="col">Nombre completo</th>
+              <th scope="col">Edad</th>
+              <th scope="col">Escuela</th>
+              <th scope="col">Año</th>
+              <th scope="col">Grado</th>
+              <th scope="col">Grupo</th>
+              <th scope="col">Acciones</th>
             </tr>
-          }
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            @for (row of rows; track row.enrollmentId) {
+              <tr>
+                <td>
+                  <span class="search-document">
+                    {{ row.documentType }} · {{ row.documentNumber }}
+                  </span>
+                </td>
+                <td>{{ row.fullName }}</td>
+                <td class="ec-numeric">{{ row.age }}</td>
+                <td>
+                  {{ row.schoolName }}
+                  <small class="search-sector">({{ row.schoolSector }})</small>
+                </td>
+                <td>{{ row.academicYearName }}</td>
+                <td>{{ row.gradeName }}</td>
+                <td>{{ row.classGroupCode }}</td>
+                <td>
+                  <button
+                    type="button"
+                    class="search-history ec-btn ec-btn--outline"
+                    (click)="viewHistory(row)"
+                    [attr.aria-label]="'Ver historial de ' + row.fullName"
+                  >
+                    Ver historial
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
     </div>
   }
 </section>

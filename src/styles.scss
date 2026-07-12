@@ -136,6 +136,179 @@ h4 {
   border: 0;
 }
 
+/* ==========================================================================
+ * EduCore shared primitives (`.ec-*`)
+ * Introduced in Phase 3 (Enrollments + Student Search) and reused by every
+ * later screen. Keep names and contracts stable — changing them here
+ * changes every consumer at once.
+ * ========================================================================== */
+
+.ec-card {
+  background: var(--app-header-bg);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-card);
+  padding: var(--app-space-5);
+}
+
+.ec-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-space-2);
+  border: 1px solid transparent;
+  border-radius: var(--app-radius-control);
+  padding: 10px 18px;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    filter 0.15s ease;
+}
+
+.ec-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.ec-btn[aria-busy="true"] {
+  opacity: 0.8;
+  cursor: progress;
+}
+
+.ec-btn--primary {
+  background: var(--app-primary);
+  color: var(--app-primary-fg);
+}
+
+.ec-btn--primary:hover:not(:disabled) {
+  background: #1b2c52;
+}
+
+.ec-btn--secondary {
+  background: var(--app-accent);
+  color: #ffffff;
+}
+
+.ec-btn--secondary:hover:not(:disabled) {
+  filter: brightness(0.92);
+}
+
+.ec-btn--outline {
+  background: transparent;
+  border-color: var(--app-border);
+  color: var(--app-text-alt);
+}
+
+.ec-btn--outline:hover:not(:disabled) {
+  background: var(--app-border-subtle);
+}
+
+.ec-field > span {
+  display: block;
+  margin-bottom: var(--app-space-1);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--app-text-alt);
+}
+
+.ec-field > input,
+.ec-field > select {
+  background: var(--app-header-bg);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-control);
+  padding: 10px 12px;
+}
+
+.ec-field > input:disabled,
+.ec-field > select:disabled {
+  background: var(--app-border-subtle);
+  color: var(--app-text-tertiary);
+  cursor: not-allowed;
+}
+
+.ec-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border: 1px solid transparent;
+  border-radius: var(--app-radius-alert);
+  padding: 14px 16px;
+}
+
+.ec-alert app-icon {
+  flex-shrink: 0;
+}
+
+.ec-alert--success {
+  background: var(--app-success-soft);
+  border-color: #c8e6d5;
+  color: var(--app-success);
+}
+
+.ec-alert--error {
+  background: var(--app-error-soft);
+  border-color: #f3c6c0;
+  color: var(--app-error);
+}
+
+.ec-alert--warning {
+  background: var(--app-warning-soft);
+  border-color: #f0dca6;
+  color: #7a4e0c;
+}
+
+.ec-alert--info {
+  background: var(--app-info-soft);
+  border-color: #c7dbfb;
+  color: #1849a9;
+}
+
+.ec-table {
+  overflow-x: auto;
+  background: var(--app-header-bg);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-card);
+}
+
+.ec-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ec-table th {
+  position: sticky;
+  top: 0;
+  background: #f7f8fa;
+  text-align: left;
+  padding: 12px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--app-muted);
+  border-bottom: 1px solid var(--app-border-soft);
+}
+
+.ec-table td {
+  padding: 12px 16px;
+  font-size: 14px;
+  color: var(--app-text-alt);
+  border-bottom: 1px solid var(--app-border-soft);
+  vertical-align: top;
+}
+
+.ec-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.ec-table tbody tr:hover {
+  background: var(--app-border-subtle);
+}
+
+.ec-table .ec-numeric {
+  font-variant-numeric: tabular-nums;
+}
+
 .catalog-status {
   display: flex;
   align-items: center;

@@ -3,6 +3,7 @@ import { enrollmentListResponseFixture } from "../../../testing/fixtures";
 import {
   enrollmentListItemToResult,
   studentSearchFiltersAreComplete,
+  studentSearchFiltersEqual,
   studentSearchFiltersToParams,
 } from "./student-search.mappers";
 import type { StudentSearchFiltersVm } from "./student-search.vm";
@@ -88,6 +89,41 @@ describe("studentSearchFiltersToParams", () => {
       gradeId: 1,
       academicYearId: 2,
     });
+  });
+});
+
+describe("studentSearchFiltersEqual", () => {
+  it("es true cuando los cuatro campos coinciden", () => {
+    expect(
+      studentSearchFiltersEqual(completeFilters, { ...completeFilters }),
+    ).toBe(true);
+  });
+
+  it("es false cuando difiere cualquier filtro que define la consulta", () => {
+    expect(
+      studentSearchFiltersEqual(completeFilters, {
+        ...completeFilters,
+        schoolId: 2,
+      }),
+    ).toBe(false);
+    expect(
+      studentSearchFiltersEqual(completeFilters, {
+        ...completeFilters,
+        gradeId: 2,
+      }),
+    ).toBe(false);
+    expect(
+      studentSearchFiltersEqual(completeFilters, {
+        ...completeFilters,
+        academicYearId: 3,
+      }),
+    ).toBe(false);
+    expect(
+      studentSearchFiltersEqual(completeFilters, {
+        ...completeFilters,
+        asOfDate: "2026-07-10",
+      }),
+    ).toBe(false);
   });
 });
 

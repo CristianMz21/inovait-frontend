@@ -57,6 +57,26 @@ export function studentSearchFiltersToParams(vm: StudentSearchFiltersVm): {
 }
 
 /**
+ * Compara dos `StudentSearchFiltersVm` campo a campo. Usada por la vista
+ * para detectar si los filtros vigentes del formulario difieren de los
+ * usados en la última búsqueda ejecutada (banner de resultados
+ * desactualizados). Los cuatro campos de la VM son exactamente los que
+ * definen la consulta a `listEnrollments` — incluido `asOfDate`, que viaja
+ * como parámetro de la petición — así que no hay campos a excluir.
+ */
+export function studentSearchFiltersEqual(
+  a: StudentSearchFiltersVm,
+  b: StudentSearchFiltersVm,
+): boolean {
+  return (
+    a.schoolId === b.schoolId &&
+    a.gradeId === b.gradeId &&
+    a.academicYearId === b.academicYearId &&
+    a.asOfDate === b.asOfDate
+  );
+}
+
+/**
  * Aplana `EnrollmentListItem` (DTO canónico) a `StudentSearchResultVm`
  * (VM de presentación). La composición de `fullName` colapsa espacios
  * múltiples, igual que en la creación de matrículas, para alinear la

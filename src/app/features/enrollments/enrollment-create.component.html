@@ -34,12 +34,15 @@
 
   @if (successData(); as success) {
     <div
-      class="enrollment-success"
+      class="enrollment-success ec-card"
       role="status"
       aria-live="polite"
       data-testid="enrollment-success"
     >
-      <h2>Inscripción registrada</h2>
+      <div class="enrollment-success__header ec-alert ec-alert--success">
+        <app-icon name="check_circle" />
+        <h2>Inscripción registrada</h2>
+      </div>
       <dl class="enrollment-summary">
         <div>
           <dt>Identificador de inscripción</dt>
@@ -74,7 +77,11 @@
           <dd>{{ success.classGroupCode }}</dd>
         </div>
       </dl>
-      <button type="button" class="enrollment-reset" (click)="onReset()">
+      <button
+        type="button"
+        class="enrollment-reset ec-btn ec-btn--primary"
+        (click)="onReset()"
+      >
         Registrar otra matrícula
       </button>
     </div>
@@ -87,10 +94,10 @@
       aria-label="Formulario de nueva matrícula"
       aria-describedby="enrollment-lede"
     >
-      <fieldset [disabled]="isSubmitting()">
+      <fieldset class="ec-card" [disabled]="isSubmitting()">
         <legend>Datos del estudiante</legend>
 
-        <label class="enrollment-field">
+        <label class="enrollment-field ec-field">
           <span>Tipo de documento</span>
           <select
             id="enrollment-document-type"
@@ -105,7 +112,7 @@
           </select>
         </label>
 
-        <label class="enrollment-field">
+        <label class="enrollment-field ec-field">
           <span>Número de documento</span>
           <input
             id="enrollment-document-number"
@@ -119,7 +126,7 @@
           />
         </label>
 
-        <label class="enrollment-field">
+        <label class="enrollment-field ec-field">
           <span>Nombres</span>
           <input
             id="enrollment-first-names"
@@ -132,7 +139,7 @@
           />
         </label>
 
-        <label class="enrollment-field">
+        <label class="enrollment-field ec-field">
           <span>Apellidos</span>
           <input
             id="enrollment-last-names"
@@ -145,7 +152,7 @@
           />
         </label>
 
-        <label class="enrollment-field">
+        <label class="enrollment-field ec-field">
           <span>Fecha de nacimiento</span>
           <input
             id="enrollment-birth-date"
@@ -157,10 +164,10 @@
         </label>
       </fieldset>
 
-      <fieldset [disabled]="isSubmitting()">
+      <fieldset class="ec-card" [disabled]="isSubmitting()">
         <legend>Cadena académica</legend>
 
-        <label class="enrollment-field">
+        <label class="enrollment-field ec-field">
           <span>Escuela</span>
           <select
             id="enrollment-school-id"
@@ -175,7 +182,7 @@
           </select>
         </label>
 
-        <label class="enrollment-field">
+        <label class="enrollment-field ec-field">
           <span>Año académico</span>
           <select
             id="enrollment-academic-year-id"
@@ -191,7 +198,7 @@
           </select>
         </label>
 
-        <label class="enrollment-field">
+        <label class="enrollment-field ec-field">
           <span>Grado</span>
           <select
             id="enrollment-grade-id"
@@ -207,7 +214,7 @@
           </select>
         </label>
 
-        <label class="enrollment-field">
+        <label class="enrollment-field ec-field">
           <span>Grupo</span>
           <select
             id="enrollment-class-group-id"
@@ -233,7 +240,7 @@
       <div class="enrollment-actions">
         <button
           type="submit"
-          class="enrollment-submit"
+          class="enrollment-submit ec-btn ec-btn--primary"
           [disabled]="form.invalid || isSubmitting()"
           [attr.aria-busy]="isSubmitting() ? 'true' : 'false'"
         >
@@ -245,7 +252,7 @@
         </button>
         <button
           type="button"
-          class="enrollment-cancel"
+          class="enrollment-cancel ec-btn ec-btn--outline"
           (click)="onReset()"
           [disabled]="isSubmitting()"
         >
@@ -255,34 +262,43 @@
 
       @if (hasError()) {
         <div
-          class="enrollment-error"
+          class="enrollment-error ec-alert ec-alert--error"
           role="alert"
           aria-live="assertive"
           data-testid="enrollment-error"
         >
+          <app-icon name="error" />
           @if (errorProblem(); as problem) {
-            <p class="enrollment-error-title">
-              <strong>{{ problem.title }}</strong>
-              <span class="enrollment-error-status">
-                (HTTP {{ problem.status }})
-              </span>
-            </p>
-            @if (problem.detail) {
-              <p>{{ problem.detail }}</p>
-            }
-            @if (errorFields().length > 0) {
-              <ul class="enrollment-error-fields">
-                @for (entry of errorFields(); track entry.field) {
-                  @for (msg of entry.messages; track msg) {
-                    <li>
-                      <code>{{ entry.field }}</code
-                      >: {{ msg }}
-                    </li>
+            <div class="enrollment-error__body">
+              <p class="enrollment-error-title">
+                <strong>{{ problem.title }}</strong>
+                <span class="enrollment-error-status">
+                  (HTTP {{ problem.status }})
+                </span>
+              </p>
+              @if (problem.detail) {
+                <p>{{ problem.detail }}</p>
+              }
+              @if (errorFields().length > 0) {
+                <ul class="enrollment-error-fields">
+                  @for (entry of errorFields(); track entry.field) {
+                    @for (msg of entry.messages; track msg) {
+                      <li>
+                        <code>{{ entry.field }}</code
+                        >: {{ msg }}
+                      </li>
+                    }
                   }
-                }
-              </ul>
-            }
-            <button type="button" (click)="onRetry()">Reintentar</button>
+                </ul>
+              }
+              <button
+                type="button"
+                class="ec-btn ec-btn--outline"
+                (click)="onRetry()"
+              >
+                Reintentar
+              </button>
+            </div>
           }
         </div>
       }

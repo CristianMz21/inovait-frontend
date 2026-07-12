@@ -1,8 +1,17 @@
 .search {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--app-space-4);
   max-width: 1100px;
+}
+
+.search h1 {
+  font-family: var(--app-font-heading);
+  font-weight: 700;
+  font-size: 33px;
+  letter-spacing: -0.02em;
+  color: var(--app-primary);
+  margin: 0;
 }
 
 .search-lede {
@@ -14,121 +23,46 @@
 .search-form {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: var(--app-space-4);
 }
 
 .search-form fieldset {
-  border: 1px solid var(--app-border);
-  border-radius: 6px;
-  padding: 1rem 1.25rem;
+  margin: 0;
   display: grid;
-  gap: 0.75rem;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  background: var(--app-header-bg);
+  // Fixed 4-column grid (School / Grade / Year / date) rather than
+  // auto-fit: at the `.ec-card` padding this primitive mandates, auto-fit
+  // drops to 3 columns right around the tested desktop widths, stranding
+  // the trailing date field alone on its own row. Columns are `start`
+  // (not `end`) aligned: the "Buscar"/"Limpiar" actions live in their own
+  // row below the grid (not as a fifth grid item), so there is no button
+  // to baseline-align against, and at this column width the longer date
+  // label wraps to two lines — `end` alignment would then throw its
+  // top edge out of line with its row-mates.
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: start;
+  gap: var(--app-space-4);
 }
 
 .search-form legend {
-  padding: 0 0.5rem;
+  padding: 0 var(--app-space-2);
+  font-family: var(--app-font-heading);
   font-weight: 600;
-}
-
-.search-field {
-  /* Use display: block instead of flex column so <input type="date"> keeps
-   * its native calendar picker icon. See enrollment-create for details. */
-  display: block;
-  font-size: 0.9rem;
-  margin-bottom: 0.75rem;
-}
-
-.search-field span {
-  display: block;
-  margin-bottom: 0.25rem;
-  color: var(--app-muted);
-}
-
-.search-field input,
-.search-field select {
-  /* Use individual font properties instead of `font: inherit` shorthand.
-   * `font: inherit` overrides Chromium's internal metrics for <input type="date">
-   * and stretches the calendar picker indicator to 100% width, hiding the icon. */
-  font-family: inherit;
-  font-size: 1rem;
-  line-height: 1.45;
-  padding: 0.45rem 0.6rem;
-  border-radius: 4px;
-  border: 1px solid var(--app-border);
-  background: var(--app-bg);
-  color: inherit;
-  display: inline-block;
-  min-height: 2.25rem;
-}
-
-.search-field input:focus-visible,
-.search-field select:focus-visible {
-  outline: 2px solid var(--app-accent);
-  outline-offset: 2px;
-}
-
-.search-field input[disabled],
-.search-field select[disabled] {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.search-help {
-  grid-column: 1 / -1;
-  margin: 0;
-  color: var(--app-muted);
-  font-size: 0.8rem;
+  font-size: 16px;
+  color: var(--app-primary);
 }
 
 .search-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: var(--app-space-3);
   align-items: center;
 }
 
-.search-submit,
-.search-cancel {
-  font: inherit;
-  padding: 0.55rem 1.1rem;
-  border-radius: 4px;
-  border: 1px solid var(--app-accent);
-  cursor: pointer;
-}
-
-.search-submit {
-  background: var(--app-accent);
-  color: #ffffff;
-}
-
-.search-cancel {
-  background: transparent;
-  color: var(--app-accent);
-}
-
-.search-submit[disabled],
-.search-cancel[disabled] {
-  cursor: not-allowed;
-  opacity: 0.65;
-}
-
-.search-status {
-  margin: 0;
-  color: var(--app-muted);
-  font-size: 0.95rem;
-}
-
-.search-error {
-  background: var(--app-error-soft);
-  border: 1px solid var(--app-error);
-  border-radius: 6px;
-  padding: 0.9rem 1.1rem;
+.search-error__body,
+.search-empty > div {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  color: var(--app-error);
+  gap: var(--app-space-2);
 }
 
 .search-error-title {
@@ -136,38 +70,20 @@
 }
 
 .search-error-status {
-  margin-left: 0.5rem;
+  margin-left: var(--app-space-2);
   font-size: 0.85rem;
-  color: var(--app-muted);
 }
 
 .search-error-fields {
   margin: 0;
-  padding-left: 1.25rem;
-}
-
-.search-error button {
-  align-self: flex-start;
-  font: inherit;
-  padding: 0.4rem 0.8rem;
-  border-radius: 4px;
-  border: 1px solid var(--app-error);
-  background: transparent;
-  color: var(--app-error);
-  cursor: pointer;
-}
-
-.search-empty {
-  background: var(--app-accent-soft);
-  border: 1px solid var(--app-accent);
-  border-radius: 6px;
-  padding: 1rem 1.25rem;
-  color: var(--app-text);
+  padding-left: var(--app-space-4);
 }
 
 .search-empty h2 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.05rem;
+  margin: 0;
+  font-family: var(--app-font-heading);
+  font-weight: 600;
+  font-size: 18px;
 }
 
 .search-empty p {
@@ -177,44 +93,21 @@
 .search-results {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  overflow-x: auto;
+  gap: var(--app-space-3);
 }
 
 .search-results h2 {
   margin: 0;
-  font-size: 1.05rem;
+  font-family: var(--app-font-heading);
+  font-weight: 600;
+  font-size: 18px;
+  color: var(--app-primary);
 }
 
 .search-count {
   margin: 0;
   color: var(--app-muted);
   font-size: 0.9rem;
-}
-
-.search-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-  background: var(--app-header-bg);
-  border: 1px solid var(--app-border);
-}
-
-.search-table th,
-.search-table td {
-  text-align: left;
-  padding: 0.5rem 0.65rem;
-  border-bottom: 1px solid var(--app-border);
-  vertical-align: top;
-}
-
-.search-table th {
-  background: var(--app-accent-soft);
-  font-weight: 600;
-}
-
-.search-table tr:last-child td {
-  border-bottom: none;
 }
 
 .search-document {
@@ -229,38 +122,9 @@
 }
 
 .search-history {
-  font: inherit;
+  padding: 6px 12px;
+  font-size: 13px;
   font-weight: 600;
-  padding: 0.3rem 0.6rem;
-  border-radius: 4px;
-  border: 1px solid var(--app-accent);
-  background: transparent;
-  color: var(--app-accent);
-  display: inline-flex;
-  align-items: center;
-  min-height: 24px;
-  cursor: pointer;
-}
-
-.search-history:hover {
-  background: var(--app-accent-soft);
-}
-
-.search-history:focus-visible {
-  outline: 2px solid var(--app-accent);
-  outline-offset: 2px;
-}
-
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
 }
 
 @media (max-width: 320px) {
@@ -268,12 +132,9 @@
     grid-template-columns: 1fr;
   }
 
-  .search-table {
+  .ec-table th,
+  .ec-table td {
+    padding: 8px 10px;
     font-size: 0.8rem;
-  }
-
-  .search-table th,
-  .search-table td {
-    padding: 0.35rem 0.45rem;
   }
 }

@@ -6,7 +6,7 @@ import {
   inject,
   type OnInit,
 } from "@angular/core";
-import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { takeUntilDestroyed, toSignal } from "@angular/core/rxjs-interop";
 import { ActivatedRoute, Router } from "@angular/router";
 import {
   type AbstractControl,
@@ -17,8 +17,10 @@ import {
   type ValidatorFn,
   Validators,
 } from "@angular/forms";
+import { map } from "rxjs";
 import { CatalogFacade } from "../../core/catalogs/catalog.facade";
 import { CatalogStatusComponent } from "../../core/catalogs/catalog-status.component";
+import { AppIconComponent } from "../../layout/educore-shell/app-icon.component";
 import type { RemoteState } from "../../core/api/remote-state";
 import { StudentSearchFacade } from "./student-search.facade";
 import {
@@ -26,6 +28,7 @@ import {
   studentSearchFiltersFromQueryValues,
   studentSearchFiltersToQueryParams,
 } from "./student-search.navigation";
+import { studentSearchFiltersEqual } from "./student-search.mappers";
 import { StudentHistoryNavigationHandoff } from "../student-history/student-history.navigation";
 import type {
   StudentSearchFieldVm,
@@ -84,7 +87,7 @@ type StudentSearchFormGroup = FormGroup<StudentSearchFormShape>;
 @Component({
   selector: "app-student-search",
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, CatalogStatusComponent],
+  imports: [ReactiveFormsModule, CatalogStatusComponent, AppIconComponent],
   providers: [StudentSearchFacade],
   templateUrl: "./student-search.component.html",
   styleUrl: "./student-search.component.scss",
@@ -110,6 +113,20 @@ export class StudentSearchComponent implements OnInit {
     academicYearId: this.fb.control<number | null>(null, [requiredValidator]),
     asOfDate: this.fb.control("", [calendarDateValidator]),
   });
+
+  /**
+   * Reflejo en signal del valor vigente del formulario (no necesariamente
+   * enviado). Se recalcula de forma síncrona en cada `valueChanges`, ya
+   * que la suscripción de `toSignal` se activa en el constructor —antes de
+   * `ngOnInit`— por lo que también captura los `setValue`/`reset`
+   * programáticos que disparan la restauración de filtros desde la URL.
+   * Es la base de `isStale`: compara este valor contra el snapshot que
+   * guarda la fachada para la última búsqueda ejecutada.
+   */
+  private readonly formFilters = toSignal(
+    this.form.valueChanges.pipe(map(() => this.toVm())),
+    { initialValue: this.toVm() },
+  );
 
   readonly schoolOptions = computed(() =>
     this.mapOptions(this.catalog.schoolsState(), (school) => ({
@@ -141,6 +158,24 @@ export class StudentSearchComponent implements OnInit {
   readonly isSuccess = computed(() => this.result().status === "success");
   readonly isEmpty = computed(() => this.result().status === "empty");
   readonly hasError = computed(() => this.result().status === "error");
+
+  /**
+   * True cuando hay resultados visibles (`result().status === "success"`)
+   * pero el formulario ya no refleja los filtros de esa búsqueda. Al
+   * apoyarse en una comparación de snapshots (formulario vigente vs.
+   * `search.filters()`), tanto re-ejecutar la búsqueda como devolver los
+   * filtros a los valores ya buscados hacen desaparecer el banner —no hace
+   * falta una bandera "dirty" separada.
+   */
+  readonly isStale = computed(() => {
+    if (this.result().status !== "success") {
+      return false;
+    }
+    return !studentSearchFiltersEqual(
+      this.formFilters(),
+      this.search.filters(),
+    );
+  });
 
   readonly errorProblem = computed(() => {
     const state = this.result();

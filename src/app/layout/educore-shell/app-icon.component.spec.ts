@@ -35,6 +35,25 @@ describe("AppIconComponent", () => {
     expect(d).toContain("M4 5h16v14H4Z");
   });
 
+  it("renders a distinct path for each EduCore alert icon added in Phase 3", async () => {
+    await TestBed.configureTestingModule({
+      imports: [AppIconComponent],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(AppIconComponent);
+
+    const paths = new Set<string>();
+    for (const name of ["check_circle", "error", "update"] as const) {
+      fixture.componentRef.setInput("name", name);
+      fixture.detectChanges();
+      const d = (fixture.nativeElement as HTMLElement)
+        .querySelector("path")
+        ?.getAttribute("d");
+      expect(d).toBeTruthy();
+      paths.add(d!);
+    }
+    expect(paths.size).toBe(3);
+  });
+
   it("renders nothing for an unrecognized icon name", async () => {
     await TestBed.configureTestingModule({
       imports: [AppIconComponent],

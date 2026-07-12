@@ -14,7 +14,10 @@ export type AppIconName =
   | "history_edu"
   | "menu"
   | "close"
-  | "event_available";
+  | "event_available"
+  | "check_circle"
+  | "error"
+  | "update";
 
 /**
  * Stroke-based path data for each icon, expressed on a 24x24 grid. Kept as a
@@ -34,6 +37,9 @@ const ICON_PATHS: Readonly<Record<AppIconName, string>> = {
     "M4 4h16v16H4ZM8 6A2 2 0 0 1 8 10A2 2 0 0 1 8 6ZM6 18C6.5 15.5 8 14 10 14S13.5 15.5 14 18M14 8h6M14 12h6",
   assessment: "M4 20V10M10 20V4M16 20V13M4 20h16",
   history_edu: "M12 5A7 7 0 0 1 12 19A7 7 0 0 1 12 5ZM12 9v4l3 2",
+  check_circle: "M12 3A9 9 0 1 0 12 21A9 9 0 1 0 12 3ZM7.5 12.5l3 3 6-6.5",
+  error: "M12 3A9 9 0 1 0 12 21A9 9 0 1 0 12 3ZM12 8v5M12 16.5v.01",
+  update: "M4 12a8 8 0 0 1 14-5.3M20 4v5h-5M20 12a8 8 0 0 1-14 5.3M4 20v-5h5",
 };
 
 /**

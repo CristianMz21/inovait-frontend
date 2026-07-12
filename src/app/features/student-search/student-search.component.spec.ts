@@ -399,6 +399,111 @@ describe("StudentSearchComponent", () => {
     expect(first?.textContent?.trim()).toBe("Ver historial");
   });
 
+  // -- Stale-results banner ------------------------------------------------
+  //
+  // The banner (`data-testid="search-stale"`) warns that the visible
+  // results no longer match the filters currently shown in the form. It is
+  // derived purely from view state: `component.isStale()` compares the live
+  // form value against the filters snapshot captured by the facade for the
+  // last executed search (`StudentSearchFacade#filters`).
+
+  it("never shows the stale-results banner before the first search", () => {
+    flushInitialCatalogs();
+
+    expect(component.isStale()).toBe(false);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('[data-testid="search-stale"]')).toBeNull();
+  });
+
+  it("never shows the stale-results banner while a search is loading", async () => {
+    flushInitialCatalogs();
+    component.form.patchValue({ schoolId: 1, gradeId: 1, academicYearId: 2 });
+
+    await component.onSubmit();
+
+    expect(component.isLoading()).toBe(true);
+    expect(component.isStale()).toBe(false);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('[data-testid="search-stale"]')).toBeNull();
+
+    http
+      .expectOne(
+        (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
+      )
+      .flush(enrollmentListResponseFixture);
+  });
+
+  it("shows the stale-results banner when a query-defining filter changes after results are displayed, without hiding the results", async () => {
+    flushInitialCatalogs();
+    component.form.patchValue({ schoolId: 1, gradeId: 1, academicYearId: 2 });
+    await component.onSubmit();
+    http
+      .expectOne(
+        (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
+      )
+      .flush(enrollmentListResponseFixture);
+    expect(component.isStale()).toBe(false);
+
+    component.form.controls.schoolId.setValue(2);
+
+    expect(component.isStale()).toBe(true);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    const banner = compiled.querySelector('[data-testid="search-stale"]');
+    expect(banner).not.toBeNull();
+    expect(banner?.getAttribute("role")).toBe("status");
+    expect(banner?.textContent?.trim()).toBe(
+      "Los filtros cambiaron desde la última búsqueda. Ejecute una nueva búsqueda para ver resultados actualizados.",
+    );
+    const results = compiled.querySelector('[data-testid="search-results"]');
+    expect(results).not.toBeNull();
+    expect(results?.textContent).toContain("2 inscripciones");
+  });
+
+  it("hides the stale-results banner once the search is re-executed", async () => {
+    flushInitialCatalogs();
+    component.form.patchValue({ schoolId: 1, gradeId: 1, academicYearId: 2 });
+    await component.onSubmit();
+    http
+      .expectOne(
+        (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
+      )
+      .flush(enrollmentListResponseFixture);
+    component.form.controls.schoolId.setValue(2);
+    expect(component.isStale()).toBe(true);
+
+    await component.onSubmit();
+
+    expect(component.isStale()).toBe(false);
+    http
+      .expectOne(
+        (r) =>
+          r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments` &&
+          r.params.get("schoolId") === "2",
+      )
+      .flush(enrollmentListResponseFixture);
+    expect(component.isStale()).toBe(false);
+  });
+
+  it("hides the stale-results banner when filters return to the values used in the last search, without re-searching", async () => {
+    flushInitialCatalogs();
+    component.form.patchValue({ schoolId: 1, gradeId: 1, academicYearId: 2 });
+    await component.onSubmit();
+    http
+      .expectOne(
+        (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
+      )
+      .flush(enrollmentListResponseFixture);
+
+    component.form.controls.schoolId.setValue(2);
+    expect(component.isStale()).toBe(true);
+
+    component.form.controls.schoolId.setValue(1);
+    expect(component.isStale()).toBe(false);
+  });
+
   it("delegates history navigation to the volatile handoff", async () => {
     const handoff = TestBed.inject(StudentHistoryNavigationHandoff);
     const navigate = vi

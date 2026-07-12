@@ -19,6 +19,7 @@ import {
 } from "@angular/forms";
 import { CatalogFacade } from "../../core/catalogs/catalog.facade";
 import { CatalogStatusComponent } from "../../core/catalogs/catalog-status.component";
+import { AppIconComponent } from "../../layout/educore-shell/app-icon.component";
 import type { RemoteState } from "../../core/api/remote-state";
 import { EnrollmentCreateFacade } from "./enrollment-create.facade";
 import { enrollmentFormToRequest } from "./enrollment.mappers";
@@ -85,7 +86,7 @@ type EnrollmentFormGroup = FormGroup<EnrollmentFormShape>;
 @Component({
   selector: "app-enrollment-create",
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, CatalogStatusComponent],
+  imports: [ReactiveFormsModule, CatalogStatusComponent, AppIconComponent],
   providers: [EnrollmentCreateFacade],
   templateUrl: "./enrollment-create.component.html",
   styleUrl: "./enrollment-create.component.scss",
