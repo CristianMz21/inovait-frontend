@@ -48,3 +48,49 @@ jobs:
             test-results/playwright
             test-results/playwright-production
           if-no-files-found: ignore
+
+  # Cross-repo gate: confirms the OpenAPI contract this frontend was built
+  # against is still the authorized baseline (or an explicitly approved
+  # successor commit) in inovait-backend. See
+  # src/app/scripts/verify-openapi-contract.mjs.
+  #
+  # IMPORTANT: this job is EXPECTED TO FAIL after any change to the
+  # backend's contract files under
+  # specs/001-school-enrollment-management/contracts, unless that backend
+  # commit has already been reviewed and deliberately added to
+  # APPROVED_SUCCESSORS in verify-openapi-contract.mjs. That is the gate
+  # working as designed, not a flake -- do not silence it by widening the
+  # allowlist without doing the review.
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout inovait-frontend
+        uses: actions/checkout@v4
+        with:
+          path: inovait-frontend
+
+      # Public repo, read-only checkout: no token needed. Default
+      # fetch-depth: 1 is sufficient -- the script only inspects HEAD and
+      # `git status`/`git ls-files` on the working tree, it never walks
+      # history.
+      - name: Checkout inovait-backend
+        uses: actions/checkout@v4
+        with:
+          repository: CristianMz21/inovait-backend
+          path: inovait-backend
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.11.1
+
+      # The script (src/app/scripts/verify-openapi-contract.mjs) imports
+      # only node:crypto / node:child_process / node:fs / node:url -- no
+      # npm dependencies, so `npm ci` is unnecessary here. It resolves the
+      # backend contracts directory as `<frontend-repo-root>/../inovait-backend/...`,
+      # which matches this sibling checkout layout under $GITHUB_WORKSPACE.
+      - name: Verify OpenAPI contract against backend repo
+        working-directory: inovait-frontend
+        run: node src/app/scripts/verify-openapi-contract.mjs
