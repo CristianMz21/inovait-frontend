@@ -94,6 +94,7 @@ export class TopSchoolsComponent implements OnInit {
     return [];
   });
 
+  readonly isIdle = computed(() => this.result().status === "idle");
   readonly isLoading = computed(() => this.result().status === "loading");
   readonly isSuccess = computed(() => this.result().status === "success");
   readonly isEmpty = computed(() => this.result().status === "empty");

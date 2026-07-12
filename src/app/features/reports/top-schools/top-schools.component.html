@@ -1,11 +1,8 @@
 <section class="top" aria-labelledby="top-title">
   <h1 id="top-title" tabindex="-1">Escuelas líderes por matrícula</h1>
   <p id="top-lede" class="top-lede">
-    Seleccione el <strong>año académico</strong> para obtener las escuelas con
-    mayor cantidad de inscripciones del año. Cuando hay empates en el conteo
-    máximo, se muestran <strong>todas</strong> las escuelas empatadas, en el
-    orden que devuelve el backend (por <code>school.name</code> y luego
-    <code>school.id</code>).
+    Consulta las escuelas con mayor número de inscripciones durante un año
+    académico.
   </p>
 
   <app-catalog-status
@@ -27,7 +24,11 @@
       <legend>Filtros</legend>
 
       <label class="top-field ec-field">
-        <span>Año académico</span>
+        <span
+          >Año académico<span class="ec-required-mark" aria-hidden="true"
+            >*</span
+          ></span
+        >
         <select
           id="top-academic-year-id"
           formControlName="academicYearId"
@@ -41,6 +42,8 @@
         </select>
       </label>
     </fieldset>
+
+    <p class="top-required-note">* Campo obligatorio.</p>
 
     <div class="top-actions">
       <button
@@ -61,10 +64,17 @@
         (click)="onReset()"
         [disabled]="isLoading()"
       >
-        Limpiar
+        Limpiar filtros
       </button>
     </div>
   </form>
+
+  @if (isIdle()) {
+    <p class="top-idle ec-empty-hint" data-testid="top-idle">
+      <app-icon name="manage_search" />
+      Elige un año académico y consulta el reporte.
+    </p>
+  }
 
   @if (isLoading()) {
     <p

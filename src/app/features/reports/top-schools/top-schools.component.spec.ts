@@ -132,6 +132,23 @@ describe("TopSchoolsComponent (CT-TOP-RPT)", () => {
     expect(submit?.getAttribute("aria-busy")).toBe("false");
   });
 
+  // -- Idle ---------------------------------------------------------------
+
+  it('expone el prompt idle "top-idle" antes de enviar y lo retira tras el submit', () => {
+    flushAcademicYears(http);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('[data-testid="top-idle"]')).toBeTruthy();
+
+    component.form.patchValue({ academicYearId: 2 });
+    component.onSubmit();
+    fixture.detectChanges();
+
+    expect(compiled.querySelector('[data-testid="top-idle"]')).toBeNull();
+
+    http.expectOne((r) => r.url === topUrl).flush(topSchoolsFixture);
+  });
+
   // -- Estado del formulario --------------------------------------------
 
   it("bloquea el botón Consultar sin año académico", () => {
