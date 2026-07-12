@@ -57,11 +57,6 @@ describe("StudentSearchFacade", () => {
     http.verify();
   });
 
-  it("canSearch() rechaza la VM cuando falta cualquier filtro académico", () => {
-    expect(facade.canSearch(completeFilters)).toBe(true);
-    expect(facade.canSearch(incompleteFilters)).toBe(false);
-  });
-
   it("search() con VM inválida es no-op y conserva el estado idle", () => {
     facade.search(incompleteFilters);
     expect(facade.result().status).toBe("idle");

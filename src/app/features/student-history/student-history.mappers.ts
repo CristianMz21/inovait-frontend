@@ -3,7 +3,7 @@
  *
  * Convierten entre:
  *
- * - `StudentHistoryFiltersVm` (formulario) ⇄ path + query canónicos del
+ * - `StudentHistoryFiltersVm` (formulario) ⇄ path canónico del
  *   endpoint `getStudentHistory`.
  * - `StudentHistoryResponseDto` (DTO canónico) → `StudentHistoryVm`
  *   (vista de presentación), preservando el orden estable del backend
@@ -40,7 +40,6 @@ const DOCUMENT_NUMBER_MAX = 32;
  * `documentNumber` (1–32) en el path; las cadenas vacías o sólo espacios
  * se tratan como ausentes (la UI bloquea el envío en ese caso).
  *
- * `asOfDate` es opcional y se omite cuando es `null` o vacío.
  */
 export function studentHistoryFiltersAreValid(
   vm: StudentHistoryFiltersVm,
@@ -67,32 +66,20 @@ export function studentHistoryFiltersAreValid(
  * endpoint `getStudentHistory`. Devuelve `null` cuando falta
  * `documentType` o `documentNumber`; el llamador debe bloquear el envío.
  *
- * `asOfDate` se incluye sólo cuando la operadora lo define
- * explícitamente (no vacío ni sólo espacios). Los path-params se
- * devuelven tal cual — la fachada los pasa al servicio HTTP que se
- * encarga del encoding de URL.
+ * Los path-params se devuelven recortados; la fachada los pasa al servicio
+ * HTTP que se encarga del encoding de URL.
  */
 export function studentHistoryFiltersToParams(vm: StudentHistoryFiltersVm): {
   documentType: string;
   documentNumber: string;
-  asOfDate?: string;
 } | null {
   if (!studentHistoryFiltersAreValid(vm)) {
     return null;
   }
-  const params: {
-    documentType: string;
-    documentNumber: string;
-    asOfDate?: string;
-  } = {
+  return {
     documentType: vm.documentType.trim(),
     documentNumber: vm.documentNumber.trim(),
   };
-  const trimmedAsOf = vm.asOfDate?.trim();
-  if (trimmedAsOf) {
-    params.asOfDate = trimmedAsOf;
-  }
-  return params;
 }
 
 /**

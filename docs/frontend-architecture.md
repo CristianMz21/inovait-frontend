@@ -35,9 +35,14 @@ flowchart LR
 | `/student-search` | `EnrollmentSearchPage` | P0 |
 | `/teacher-contracts` | `TeacherContractsPage` | P0 |
 | `/reports` | `ReportsPage` | P1 bloqueado por puerta P0 |
-| `/students/:documentType/:documentNumber/history` | `StudentHistoryPage` | P1; accesible desde búsqueda |
+| `/student-history` | `StudentHistoryPage` | P1; manual o `?selection=<opaque-token>` desde búsqueda |
 
 Las rutas técnicas son inglesas; la navegación visible usa Matrículas, Consulta de estudiantes, Contratos docentes y Reportes por decisión contextual documentada.
+
+La búsqueda conserva sólo filtros académicos no sensibles en query params. Para
+abrir historial, un servicio root registra temporalmente la identidad en memoria
+y navega con un UUID opaco `selection`; no usa path/query de identidad, history
+state ni Web Storage. El token expira y no constituye autorización.
 
 El shell aplica una sola política tras cada `NavigationEnd`: resuelve el título
 de ruta, actualiza `document.title`, enfoca el `h1` una vez y anuncia el mismo

@@ -23,7 +23,7 @@ El shell incluye “Saltar al contenido”, `nav` con `aria-label="Navegación p
 | `/student-search` | `Consulta de estudiantes — Inovait` |
 | `/teacher-contracts` | `Contratos docentes — Inovait` |
 | `/reports` | `Reportes municipales — Inovait` |
-| `/students/:documentType/:documentNumber/history` | `Historial del estudiante — Inovait` |
+| `/student-history` | `Historial del estudiante — Inovait` |
 
 Al completar cualquier navegación SPA, el shell actualiza el título, enfoca una
 sola vez el `h1` con `tabindex="-1"` y anuncia el mismo nombre en la región
@@ -126,9 +126,9 @@ lo declara para otra regla semántica, por ejemplo una fecha de reporte inválid
 Los catálogos de Escuela, Grado y Año aplican la misma exclusividad y reintento.
 Un fallo de catálogo no se representa como resultado de búsqueda vacío.
 
-Columnas: Documento, Estudiante, Edad, Escuela, Grado, Grupo, Año y Acciones. “Ver historial” tiene nombre accesible que incluye al estudiante y navega con identidad documental inequívoca.
+Columnas: Documento, Estudiante, Edad, Escuela, Grado, Grupo, Año y Acciones. “Ver historial” tiene nombre accesible que incluye al estudiante y navega con un token opaco `selection`; la identidad documental queda únicamente en un handoff volátil en memoria y nunca forma parte de la URL ni del estado del historial del navegador.
 
-En móvil, cada fila se vuelve `article` con pares término/valor (`dl`) y acción al final. No se omite ningún dato. El foco vuelve al encabezado de resultados al navegar atrás solo si la plataforma conserva historial; no se fuerza scroll inesperado.
+En móvil, cada fila se vuelve `article` con pares término/valor (`dl`) y acción al final. No se omite ningún dato. Los filtros académicos no sensibles viven en la query de `/student-search`, por lo que Back restaura formulario y resultados sin serializar filas ni identidad; no se fuerza scroll inesperado.
 
 ## Pantalla 3 — Contratos docentes
 

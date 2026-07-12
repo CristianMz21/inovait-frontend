@@ -42,7 +42,7 @@ describe("StudentHistoryApiService (ST-HIST-GET)", () => {
     http.verify();
   });
 
-  it("getStudentHistory() invoca GET con el path canónico y sin query cuando asOfDate es undefined", () => {
+  it("getStudentHistory() invokes the canonical GET without query parameters", () => {
     let received: unknown;
     service
       .getStudentHistory(baseParams)
@@ -54,7 +54,7 @@ describe("StudentHistoryApiService (ST-HIST-GET)", () => {
           `${DEFAULT_API_CONFIG.apiBaseUrl}/api/students/DNI/99.001.101/history` &&
         r.method === "GET",
     );
-    expect(req.request.params.has("asOfDate")).toBe(false);
+    expect(req.request.params.keys()).toEqual([]);
     req.flush(studentHistoryFixture);
 
     expect(received).toEqual(studentHistoryFixture);
@@ -75,22 +75,5 @@ describe("StudentHistoryApiService (ST-HIST-GET)", () => {
     );
     expect(req.request.method).toBe("GET");
     req.flush(studentHistoryFixture);
-  });
-
-  it("getStudentHistory() envía asOfDate sólo cuando la operadora lo define", () => {
-    let received: unknown;
-    service
-      .getStudentHistory({ ...baseParams, asOfDate: "2026-07-10" })
-      .subscribe((value) => (received = value));
-
-    const req = http.expectOne(
-      (r) =>
-        r.url ===
-        `${DEFAULT_API_CONFIG.apiBaseUrl}/api/students/DNI/99.001.101/history`,
-    );
-    expect(req.request.params.get("asOfDate")).toBe("2026-07-10");
-    req.flush(studentHistoryFixture);
-
-    expect(received).toEqual(studentHistoryFixture);
   });
 });

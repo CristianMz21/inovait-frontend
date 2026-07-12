@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from "@angular/common/http";
+import { HttpClient } from "@angular/common/http";
 import { Injectable, inject } from "@angular/core";
 import type { Observable } from "rxjs";
 import { map } from "rxjs";
@@ -8,7 +8,7 @@ import type { StudentHistoryResponseDto } from "../../core/api/dtos/student-hist
 /**
  * Parámetros de la operación canónica `getStudentHistory`. Sólo
  * `documentType` (1–20) y `documentNumber` (1–32) son obligatorios y
- * viajan en el path; `asOfDate` (ISO date, opcional) viaja como query.
+ * viajan en el path.
  *
  * El orden de los campos refleja la firma declarada en
  * `paths/enrollments.yaml#/api/students/{documentType}/{documentNumber}/history`.
@@ -16,25 +16,13 @@ import type { StudentHistoryResponseDto } from "../../core/api/dtos/student-hist
 export interface GetStudentHistoryParams {
   readonly documentType: string;
   readonly documentNumber: string;
-  readonly asOfDate?: string;
-}
-
-function toStudentHistoryHttpParams(
-  params: GetStudentHistoryParams,
-): HttpParams {
-  let httpParams = new HttpParams();
-  if (params.asOfDate) {
-    httpParams = httpParams.set("asOfDate", params.asOfDate);
-  }
-  return httpParams;
 }
 
 /**
  * Servicio de transporte HTTP para la operación canónica `getStudentHistory`
  * (`paths/enrollments.yaml`). Emite un `GET` contra
  * `${apiBaseUrl}/api/students/{documentType}/{documentNumber}/history`
- * con `asOfDate` opcional como query string y devuelve el payload canónico
- * del backend.
+ * y devuelve el payload canónico del backend.
  *
  * Esta clase no aplica reglas de UI ni mutación de estado: su única
  * responsabilidad es mantener la trazabilidad exacta con el
@@ -51,9 +39,8 @@ export class StudentHistoryApiService {
    * — devuelve la `StudentHistoryResponseDto` con las inscripciones del
    * estudiante, ordenadas por `academicYear.startDate` descendente.
    *
-   * `asOfDate` se omite cuando es `undefined` para que el backend use la
-   * fecha actual. El `documentType` y `documentNumber` viajan en el path
-   * — Angular `HttpClient` aplica el encoding correspondiente.
+   * El `documentType` y `documentNumber` viajan en el path; Angular
+   * `HttpClient` aplica el encoding correspondiente.
    */
   getStudentHistory(
     params: GetStudentHistoryParams,
@@ -63,9 +50,7 @@ export class StudentHistoryApiService {
       `${encodeURIComponent(params.documentType)}/` +
       `${encodeURIComponent(params.documentNumber)}/history`;
     return this.http
-      .get<StudentHistoryResponseDto>(url, {
-        params: toStudentHistoryHttpParams(params),
-      })
+      .get<StudentHistoryResponseDto>(url)
       .pipe(map((data) => ({ ...data })));
   }
 }

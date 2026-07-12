@@ -2,9 +2,12 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   inject,
   type OnInit,
 } from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { ActivatedRoute, Router } from "@angular/router";
 import {
   type AbstractControl,
   type FormControl,
@@ -18,7 +21,12 @@ import { CatalogFacade } from "../../core/catalogs/catalog.facade";
 import { CatalogStatusComponent } from "../../core/catalogs/catalog-status.component";
 import type { RemoteState } from "../../core/api/remote-state";
 import { StudentSearchFacade } from "./student-search.facade";
-import { studentSearchFiltersToParams } from "./student-search.mappers";
+import {
+  isCalendarDateOnly,
+  studentSearchFiltersFromQueryValues,
+  studentSearchFiltersToQueryParams,
+} from "./student-search.navigation";
+import { StudentHistoryNavigationHandoff } from "../student-history/student-history.navigation";
 import type {
   StudentSearchFieldVm,
   StudentSearchFiltersVm,
@@ -27,6 +35,16 @@ import type {
 
 const requiredValidator: ValidatorFn = (control: AbstractControl<unknown>) =>
   Validators.required(control);
+const calendarDateValidator: ValidatorFn = (
+  control: AbstractControl<unknown>,
+) => {
+  const value = control.value;
+  return typeof value !== "string" ||
+    value.length === 0 ||
+    isCalendarDateOnly(value)
+    ? null
+    : { calendarDate: true };
+};
 
 interface StudentSearchFormShape {
   schoolId: FormControl<number | null>;
@@ -48,9 +66,13 @@ type StudentSearchFormGroup = FormGroup<StudentSearchFormShape>;
  * - Bloquear el botón "Buscar" hasta que la combinación esté completa.
  *   El `reset` se hace a través del `CatalogFacade` para que las opciones
  *   mostradas reflejen exactamente los catálogos disponibles.
+ * - Mantener los filtros académicos no sensibles en query params. La ruta es
+ *   la fuente de verdad: submit reemplaza la URL actual y cada emisión válida
+ *   ejecuta exactamente una consulta, incluido browser Back.
  * - Renderizar resultados en una tabla accesible que respeta el orden
- *   canónico del backend. Cada fila expone un placeholder para la acción
- *   "Ver historial" (P1 bloqueado) sin revelar datos sensibles.
+ *   canónico del backend. Cada fila expone una acción "Ver historial"
+ *   que registra identidad en el handoff volátil y navega con un token opaco.
+ *   La página de historial resuelve ese token y consulta automáticamente.
  * - Mantener los cuatro estados remotos excluyentes (`loading`, `error`,
  *   `empty`, `success`) en regiones `aria-live` separadas. El error
  *   expone un botón "Reintentar" que re-envía la última consulta con los
@@ -71,6 +93,11 @@ export class StudentSearchComponent implements OnInit {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly catalog = inject(CatalogFacade);
   private readonly search = inject(StudentSearchFacade);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly historyHandoff = inject(StudentHistoryNavigationHandoff);
+  private suppressNextQuerylessRouteReset = false;
 
   readonly result = this.search.result;
   readonly schoolsState = this.catalog.schoolsState;
@@ -81,7 +108,7 @@ export class StudentSearchComponent implements OnInit {
     schoolId: this.fb.control<number | null>(null, [requiredValidator]),
     gradeId: this.fb.control<number | null>(null, [requiredValidator]),
     academicYearId: this.fb.control<number | null>(null, [requiredValidator]),
-    asOfDate: this.fb.control("", [Validators.pattern(/^\d{4}-\d{2}-\d{2}$/)]),
+    asOfDate: this.fb.control("", [calendarDateValidator]),
   });
 
   readonly schoolOptions = computed(() =>
@@ -137,21 +164,41 @@ export class StudentSearchComponent implements OnInit {
     this.catalog.loadSchools();
     this.catalog.loadGrades();
     this.catalog.loadAcademicYears();
+    this.route.queryParamMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((params) => {
+        const filters = studentSearchFiltersFromQueryValues({
+          schoolId: params.get("schoolId"),
+          gradeId: params.get("gradeId"),
+          academicYearId: params.get("academicYearId"),
+          asOfDate: params.get("asOfDate"),
+        });
+        if (filters === null && this.suppressNextQuerylessRouteReset) {
+          this.suppressNextQuerylessRouteReset = false;
+          return;
+        }
+        this.applyRouteFilters(filters);
+      });
   }
 
   // -- Acciones de UI -----------------------------------------------------
 
-  onSubmit(): void {
+  async onSubmit(): Promise<void> {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
     const vm = this.toVm();
-    if (studentSearchFiltersToParams(vm) === null) {
+    const queryParams = studentSearchFiltersToQueryParams(vm);
+    if (queryParams === null) {
       this.form.markAllAsTouched();
       return;
     }
-    this.search.search(vm);
+    await this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams,
+      replaceUrl: true,
+    });
   }
 
   onRetry(): void {
@@ -170,13 +217,29 @@ export class StudentSearchComponent implements OnInit {
     this.catalog.loadAcademicYears();
   }
 
-  onReset(): void {
-    this.search.reset();
-    this.form.reset({
-      schoolId: null,
-      gradeId: null,
-      academicYearId: null,
-      asOfDate: "",
+  async onReset(): Promise<void> {
+    this.applyRouteFilters(null);
+    if (this.route.snapshot.queryParamMap.keys.length === 0) {
+      return;
+    }
+
+    this.suppressNextQuerylessRouteReset = true;
+    try {
+      await this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: {},
+        replaceUrl: true,
+      });
+    } finally {
+      this.suppressNextQuerylessRouteReset = false;
+    }
+  }
+
+  /** Delegates private identity handoff and opaque-token navigation. */
+  async viewHistory(row: StudentSearchResultVm): Promise<void> {
+    await this.historyHandoff.navigateToHistory({
+      documentType: row.documentType,
+      documentNumber: row.documentNumber,
     });
   }
 
@@ -190,6 +253,26 @@ export class StudentSearchComponent implements OnInit {
       academicYearId: raw.academicYearId,
       asOfDate: raw.asOfDate.length === 0 ? null : raw.asOfDate,
     };
+  }
+
+  private applyRouteFilters(filters: StudentSearchFiltersVm | null): void {
+    if (filters === null) {
+      this.search.reset();
+      this.form.reset({
+        schoolId: null,
+        gradeId: null,
+        academicYearId: null,
+        asOfDate: "",
+      });
+      return;
+    }
+    this.form.setValue({
+      schoolId: filters.schoolId,
+      gradeId: filters.gradeId,
+      academicYearId: filters.academicYearId,
+      asOfDate: filters.asOfDate ?? "",
+    });
+    this.search.search(filters);
   }
 
   private mapOptions<T, TValue extends number | string>(

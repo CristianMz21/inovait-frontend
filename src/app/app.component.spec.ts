@@ -16,6 +16,7 @@ describe("App", () => {
       imports: [App],
       providers: [
         provideRouter([
+          { path: "enrollments", component: FirstPage },
           { path: "first", component: FirstPage },
           { path: "second", component: SecondPage },
         ]),
@@ -46,7 +47,7 @@ describe("App", () => {
     expect(labels).toContain("Historia");
   });
 
-  it("marks both reports and history as enabled (P1 fully operative)", () => {
+  it("exposes operative P1 links without fake disabled state", () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
@@ -58,11 +59,33 @@ describe("App", () => {
       (link) => link.textContent?.trim() === "Historia",
     );
 
-    expect(reports?.getAttribute("aria-disabled")).toBe("false");
-    expect(history?.getAttribute("aria-disabled")).toBe("false");
+    expect(reports?.getAttribute("href")).toBe("/reports");
+    expect(history?.getAttribute("href")).toBe("/student-history");
+    expect(reports?.hasAttribute("aria-disabled")).toBe(false);
+    expect(history?.hasAttribute("aria-disabled")).toBe(false);
     expect(compiled.querySelector("footer")?.textContent).toContain(
       "Reportes operativos · Historia operativa",
     );
+  });
+
+  it("announces the full product scope and marks the active page", async () => {
+    const fixture = TestBed.createComponent(App);
+    const router = TestBed.inject(Router);
+    fixture.detectChanges();
+
+    await router.navigateByUrl("/enrollments");
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector(".app-subtitle")?.textContent).not.toContain(
+      "P0",
+    );
+    expect(
+      Array.from(compiled.querySelectorAll("nav a"))
+        .find((link) => link.textContent?.trim() === "Matrículas")
+        ?.getAttribute("aria-current"),
+    ).toBe("page");
   });
 
   it("exposes a skip link to main content", () => {

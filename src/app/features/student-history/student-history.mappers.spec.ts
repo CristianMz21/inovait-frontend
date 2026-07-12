@@ -17,7 +17,6 @@ import type { StudentHistoryFiltersVm } from "./student-history.vm";
 const validFilters: StudentHistoryFiltersVm = {
   documentType: "DNI",
   documentNumber: "99.001.101",
-  asOfDate: null,
 };
 
 describe("StudentHistoryMappers (CT-HIST-MAP)", () => {
@@ -73,7 +72,6 @@ describe("StudentHistoryMappers (CT-HIST-MAP)", () => {
         studentHistoryFiltersAreValid({
           documentType: "  DNI  ",
           documentNumber: "  99.001.101  ",
-          asOfDate: null,
         }),
       ).toBe(true);
     });
@@ -87,34 +85,11 @@ describe("StudentHistoryMappers (CT-HIST-MAP)", () => {
       });
     });
 
-    it("envía asOfDate sólo cuando la operadora lo define", () => {
-      expect(
-        studentHistoryFiltersToParams({
-          ...validFilters,
-          asOfDate: "2026-07-10",
-        }),
-      ).toEqual({
-        documentType: "DNI",
-        documentNumber: "99.001.101",
-        asOfDate: "2026-07-10",
-      });
-    });
-
-    it("omite asOfDate cuando es vacío o sólo espacios", () => {
-      expect(
-        studentHistoryFiltersToParams({ ...validFilters, asOfDate: "" }),
-      ).toEqual({ documentType: "DNI", documentNumber: "99.001.101" });
-      expect(
-        studentHistoryFiltersToParams({ ...validFilters, asOfDate: "   " }),
-      ).toEqual({ documentType: "DNI", documentNumber: "99.001.101" });
-    });
-
     it("recorta espacios en los segmentos antes de enviarlos", () => {
       expect(
         studentHistoryFiltersToParams({
           documentType: "  DNI  ",
           documentNumber: "  99.001.101  ",
-          asOfDate: null,
         }),
       ).toEqual({
         documentType: "DNI",

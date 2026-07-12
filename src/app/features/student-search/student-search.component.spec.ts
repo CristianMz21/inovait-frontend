@@ -7,7 +7,7 @@ import {
 } from "@angular/common/http/testing";
 import { provideRouter } from "@angular/router";
 import { ReactiveFormsModule } from "@angular/forms";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   API_CONFIG,
   DEFAULT_API_CONFIG,
@@ -21,7 +21,9 @@ import {
   gradesFixture,
   schoolsFixture,
 } from "../../../testing/fixtures";
+import { StudentHistoryNavigationHandoff } from "../student-history/student-history.navigation";
 import { StudentSearchComponent } from "./student-search.component";
+import { StudentSearchFacade } from "./student-search.facade";
 
 describe("StudentSearchComponent", () => {
   let http: HttpTestingController;
@@ -149,7 +151,21 @@ describe("StudentSearchComponent", () => {
     expect(component.form.invalid).toBe(false);
   });
 
-  it("busca cuando la combinación es válida y refleja success con datos", () => {
+  it("rechaza fechas imposibles y acepta 29 de febrero sólo en año bisiesto", () => {
+    flushInitialCatalogs();
+    component.form.patchValue({
+      schoolId: 1,
+      gradeId: 1,
+      academicYearId: 2,
+      asOfDate: "2026-02-29",
+    });
+    expect(component.form.invalid).toBe(true);
+
+    component.form.controls.asOfDate.setValue("2024-02-29");
+    expect(component.form.invalid).toBe(false);
+  });
+
+  it("busca cuando la combinación es válida y refleja success con datos", async () => {
     flushInitialCatalogs();
     component.form.patchValue({
       schoolId: 1,
@@ -157,7 +173,7 @@ describe("StudentSearchComponent", () => {
       academicYearId: 2,
     });
 
-    component.onSubmit();
+    await component.onSubmit();
 
     const req = http.expectOne(
       (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
@@ -176,7 +192,7 @@ describe("StudentSearchComponent", () => {
     expect(rows?.[0].fullName).toBe("Ana María Solís");
   });
 
-  it("envía asOfDate cuando se completa en el formulario", () => {
+  it("envía asOfDate cuando se completa en el formulario", async () => {
     flushInitialCatalogs();
     component.form.patchValue({
       schoolId: 1,
@@ -185,7 +201,7 @@ describe("StudentSearchComponent", () => {
       asOfDate: "2026-07-10",
     });
 
-    component.onSubmit();
+    await component.onSubmit();
 
     const req = http.expectOne(
       (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
@@ -196,23 +212,23 @@ describe("StudentSearchComponent", () => {
     expect(component.isEmpty()).toBe(true);
   });
 
-  it("submit inválido no genera GET y marca todos los campos como touched", () => {
+  it("submit inválido no genera GET y marca todos los campos como touched", async () => {
     flushInitialCatalogs();
-    component.onSubmit();
+    await component.onSubmit();
     expect(component.form.touched).toBe(true);
     http.expectNone(
       (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
     );
   });
 
-  it("respuesta 200 [] se traduce a estado empty/noResults", () => {
+  it("respuesta 200 [] se traduce a estado empty/noResults", async () => {
     flushInitialCatalogs();
     component.form.patchValue({
       schoolId: 1,
       gradeId: 1,
       academicYearId: 2,
     });
-    component.onSubmit();
+    await component.onSubmit();
     http
       .expectOne(
         (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
@@ -223,14 +239,14 @@ describe("StudentSearchComponent", () => {
     expect(component.isSuccess()).toBe(false);
   });
 
-  it("404 con ProblemDetails expone error mapeado", () => {
+  it("404 con ProblemDetails expone error mapeado", async () => {
     flushInitialCatalogs();
     component.form.patchValue({
       schoolId: 1,
       gradeId: 1,
       academicYearId: 2,
     });
-    component.onSubmit();
+    await component.onSubmit();
     http
       .expectOne(
         (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
@@ -247,14 +263,14 @@ describe("StudentSearchComponent", () => {
     expect(component.errorProblem()?.code).toBe("resource_not_found");
   });
 
-  it("retry() reenvía la búsqueda tras un error con los filtros vigentes", () => {
+  it("retry() reenvía la búsqueda tras un error con los filtros vigentes", async () => {
     flushInitialCatalogs();
     component.form.patchValue({
       schoolId: 1,
       gradeId: 1,
       academicYearId: 2,
     });
-    component.onSubmit();
+    await component.onSubmit();
     http
       .expectOne(
         (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
@@ -280,30 +296,62 @@ describe("StudentSearchComponent", () => {
     expect(component.successData()?.length).toBe(2);
   });
 
-  it("reset() cancela la búsqueda en curso y vuelve a idle", () => {
+  it("el método de ciclo de vida onReset cancela una búsqueda programática", async () => {
     flushInitialCatalogs();
     component.form.patchValue({
       schoolId: 1,
       gradeId: 1,
       academicYearId: 2,
     });
-    component.onSubmit();
+    await component.onSubmit();
     const req = http.expectOne(
       (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
     );
+    const search = fixture.debugElement.injector.get(StudentSearchFacade);
+    const resetSearch = vi.spyOn(search, "reset");
     expect(component.isLoading()).toBe(true);
 
-    component.onReset();
+    await component.onReset();
 
     expect(req.cancelled).toBe(true);
+    expect(resetSearch).toHaveBeenCalledOnce();
     expect(component.result().status).toBe("idle");
     expect(component.form.controls.schoolId.value).toBeNull();
   });
 
-  it("cambiar filtros durante loading cancela el GET previo (stale descartado)", () => {
+  it("clears unsubmitted filters immediately when reset on the queryless route", async () => {
+    flushInitialCatalogs();
+    const search = fixture.debugElement.injector.get(StudentSearchFacade);
+    const resetSearch = vi.spyOn(search, "reset");
+    component.form.setValue({
+      schoolId: 1,
+      gradeId: 1,
+      academicYearId: 2,
+      asOfDate: "2026-07-10",
+    });
+
+    const reset = component.onReset();
+
+    expect(component.form.getRawValue()).toEqual({
+      schoolId: null,
+      gradeId: null,
+      academicYearId: null,
+      asOfDate: "",
+    });
+    expect(component.result().status).toBe("idle");
+    expect(resetSearch).toHaveBeenCalledOnce();
+    http.expectNone(
+      (request) =>
+        request.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
+    );
+    await reset;
+    expect(resetSearch).toHaveBeenCalledOnce();
+  });
+
+  it("un segundo submit programático cancela el GET previo", async () => {
     flushInitialCatalogs();
     component.form.patchValue({ schoolId: 1, gradeId: 1, academicYearId: 2 });
-    component.onSubmit();
+    await component.onSubmit();
     const first = http.expectOne(
       (r) =>
         r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments` &&
@@ -311,7 +359,7 @@ describe("StudentSearchComponent", () => {
     );
 
     component.form.patchValue({ schoolId: 2 });
-    component.onSubmit();
+    await component.onSubmit();
     const second = http.expectOne(
       (r) =>
         r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments` &&
@@ -321,5 +369,70 @@ describe("StudentSearchComponent", () => {
 
     second.flush(enrollmentListResponseFixture);
     expect(component.isSuccess()).toBe(true);
+  });
+
+  it("exposes an enabled history command with a student-specific accessible name", async () => {
+    flushInitialCatalogs();
+    component.form.patchValue({
+      schoolId: 1,
+      gradeId: 1,
+      academicYearId: 2,
+    });
+    await component.onSubmit();
+    http
+      .expectOne(
+        (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
+      )
+      .flush(enrollmentListResponseFixture);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const buttons = Array.from(
+      compiled.querySelectorAll<HTMLButtonElement>("button.search-history"),
+    );
+    expect(buttons).toHaveLength(2);
+    const first = buttons[0];
+    expect(first?.disabled).toBe(false);
+    expect(first?.getAttribute("aria-label")).toBe(
+      "Ver historial de Ana María Solís",
+    );
+    expect(first?.textContent?.trim()).toBe("Ver historial");
+  });
+
+  it("delegates history navigation to the volatile handoff", async () => {
+    const handoff = TestBed.inject(StudentHistoryNavigationHandoff);
+    const navigate = vi
+      .spyOn(handoff, "navigateToHistory")
+      .mockResolvedValue(true);
+    flushInitialCatalogs();
+    component.form.patchValue({
+      schoolId: 1,
+      gradeId: 1,
+      academicYearId: 2,
+      asOfDate: "2026-07-10",
+    });
+    await component.onSubmit();
+    http
+      .expectOne(
+        (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
+      )
+      .flush(enrollmentListResponseFixture);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const command = compiled.querySelector<HTMLButtonElement>(
+      'button[aria-label="Ver historial de Ana María Solís"]',
+    );
+    expect(command).not.toBeNull();
+    if (command === null) {
+      throw new Error("Expected the history command for Ana María Solís");
+    }
+    command.click();
+
+    expect(navigate).toHaveBeenCalledOnce();
+    expect(navigate).toHaveBeenCalledWith({
+      documentType: "DNI",
+      documentNumber: "99.001.101",
+    });
   });
 });

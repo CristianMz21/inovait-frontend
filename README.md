@@ -36,10 +36,17 @@ fails closed to the build default. This runtime flag has precedence over the bui
 The mock table contains the 15 API routes currently consumed by frontend API
 services; it does not add or redefine backend contracts.
 
-Student history keeps propagating its optional `asOfDate` end to end because it
-is an existing frontend requirement, although the current backend OpenAPI path
-does not list that query parameter. This frontend behavior does not modify the
-backend contract.
+Student history follows the backend contract exactly: its request contains only
+the required document identity path segments. The `asOfDate` filter remains
+available in student search, teacher contracts, and reports where the backend
+contract defines it.
+
+Student search persists only its non-sensitive academic filters in the route
+query. Opening a result's history registers identity in a small volatile
+in-memory handoff and navigates with a random opaque `selection` token. The
+token is not an authorization boundary; it cannot resolve after application
+memory is lost, and document identity is never written to the browser URL,
+history state, or web storage.
 
 ## Quality gates
 

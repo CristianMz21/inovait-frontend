@@ -304,7 +304,7 @@ describe("StudentHistoryComponent (CT-HIST-COMP)", () => {
     expect(component.isSuccess()).toBe(true);
   });
 
-  it("reset cancela la búsqueda en curso y vuelve a idle", () => {
+  it("el método de ciclo de vida onReset cancela una consulta programática", () => {
     component.form.patchValue({
       documentType: "DNI",
       documentNumber: "99.001.101",
@@ -322,7 +322,7 @@ describe("StudentHistoryComponent (CT-HIST-COMP)", () => {
     expect(component.form.controls.documentNumber.value).toBe("");
   });
 
-  it("cambiar documentNumber durante loading cancela el GET previo (stale descartado)", () => {
+  it("un segundo submit programático cancela el GET previo", () => {
     component.form.patchValue({
       documentType: "DNI",
       documentNumber: "99.001.101",

@@ -64,14 +64,6 @@ export class StudentSearchFacade {
   });
 
   /**
-   * Indica si la VM actual es consultable. La UI usa este predicado para
-   * activar/desactivar el botón "Buscar" antes de ejecutar la consulta.
-   */
-  canSearch(filters: StudentSearchFiltersVm): boolean {
-    return studentSearchFiltersToParams(filters) !== null;
-  }
-
-  /**
    * Ejecuta una consulta con los filtros indicados. Si ya hay una búsqueda
    * en curso, la cancela y descarta cualquier respuesta tardía. No-op
    * cuando la VM es inválida (filtros académicos incompletos).

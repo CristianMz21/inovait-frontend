@@ -361,16 +361,11 @@ describe("CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0", () => {
       expect(submit?.getAttribute("aria-busy")).toBe("false");
     });
 
-    it("success expone region con resultados y contador aria-live", () => {
+    it("success expone region con resultados y contador aria-live", async () => {
       flushCatalog(http);
-      const comp = fixture.componentInstance as unknown as {
-        form: { controls: Record<string, { setValue(v: unknown): void }> };
-        onSubmit(): void;
-      };
-      comp.form.controls["schoolId"].setValue(1);
-      comp.form.controls["gradeId"].setValue(1);
-      comp.form.controls["academicYearId"].setValue(2);
-      comp.onSubmit();
+      const comp = fixture.componentInstance;
+      comp.form.patchValue({ schoolId: 1, gradeId: 1, academicYearId: 2 });
+      await comp.onSubmit();
 
       http
         .expectOne(
@@ -387,16 +382,11 @@ describe("CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0", () => {
       expect(compiled.querySelector('[role="alert"]')).toBeNull();
     });
 
-    it('empty (200 []) expone region role="status"', () => {
+    it('empty (200 []) expone region role="status"', async () => {
       flushCatalog(http);
-      const comp = fixture.componentInstance as unknown as {
-        form: { controls: Record<string, { setValue(v: unknown): void }> };
-        onSubmit(): void;
-      };
-      comp.form.controls["schoolId"].setValue(1);
-      comp.form.controls["gradeId"].setValue(1);
-      comp.form.controls["academicYearId"].setValue(2);
-      comp.onSubmit();
+      const comp = fixture.componentInstance;
+      comp.form.patchValue({ schoolId: 1, gradeId: 1, academicYearId: 2 });
+      await comp.onSubmit();
 
       http
         .expectOne(
@@ -412,16 +402,11 @@ describe("CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0", () => {
       expect(compiled.querySelector('[role="alert"]')).toBeNull();
     });
 
-    it('error 404 expone region role="alert"', () => {
+    it('error 404 expone region role="alert"', async () => {
       flushCatalog(http);
-      const comp = fixture.componentInstance as unknown as {
-        form: { controls: Record<string, { setValue(v: unknown): void }> };
-        onSubmit(): void;
-      };
-      comp.form.controls["schoolId"].setValue(1);
-      comp.form.controls["gradeId"].setValue(1);
-      comp.form.controls["academicYearId"].setValue(2);
-      comp.onSubmit();
+      const comp = fixture.componentInstance;
+      comp.form.patchValue({ schoolId: 1, gradeId: 1, academicYearId: 2 });
+      await comp.onSubmit();
 
       http
         .expectOne(

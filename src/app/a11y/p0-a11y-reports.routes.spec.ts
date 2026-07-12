@@ -88,11 +88,11 @@ describe("CT-A11Y-RPT — Hardening accesibilidad rutas de reportes", () => {
       );
 
       expect(reports?.textContent?.trim()).toBe("Reportes");
-      expect(reports?.getAttribute("aria-disabled")).toBe("false");
-      // Tras 003-student-history (WU11-STU) la etiqueta del nav pierde el
-      // sufijo "(P1)" y el `aria-disabled` queda `false`.
+      expect(reports?.getAttribute("href")).toBe("/reports");
+      expect(reports?.hasAttribute("aria-disabled")).toBe(false);
       expect(history).toBeTruthy();
-      expect(history?.getAttribute("aria-disabled")).toBe("false");
+      expect(history?.getAttribute("href")).toBe("/student-history");
+      expect(history?.hasAttribute("aria-disabled")).toBe(false);
       expect(compiled.querySelector("footer")?.textContent).toContain(
         "Reportes operativos · Historia operativa",
       );

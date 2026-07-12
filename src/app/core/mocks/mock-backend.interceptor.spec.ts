@@ -250,25 +250,16 @@ describe("mock backend interceptor integration", () => {
     httpTesting.verify();
   });
 
-  it("returns 400 for malformed propagated query dates through HttpClient", async () => {
+  it("returns 400 for a malformed supported query date through HttpClient", async () => {
     const httpTesting = configure(true);
     const client = TestBed.inject(HttpClient);
 
-    const historyError = await firstValueFrom(
-      client.get("/api/students/DNI/99.001.101/history", {
-        params: { asOfDate: "2026-02-31" },
-      }),
-    ).catch((caught: unknown) => caught);
     const contractError = await firstValueFrom(
       client.get("/api/teachers/10/contracts", {
         params: { asOfDate: "not-a-date" },
       }),
     ).catch((caught: unknown) => caught);
 
-    expect((historyError as ApiProblemError).problem).toMatchObject({
-      status: 400,
-      code: "invalid_request",
-    });
     expect((contractError as ApiProblemError).problem).toMatchObject({
       status: 400,
       code: "invalid_request",

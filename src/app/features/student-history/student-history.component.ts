@@ -2,8 +2,10 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   inject,
 } from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import {
   type AbstractControl,
   type FormControl,
@@ -13,8 +15,11 @@ import {
   type ValidatorFn,
   Validators,
 } from "@angular/forms";
+import { ActivatedRoute } from "@angular/router";
+import { distinctUntilChanged, map } from "rxjs";
 import { StudentHistoryFacade } from "./student-history.facade";
 import { studentHistoryFiltersToParams } from "./student-history.mappers";
+import { StudentHistoryNavigationHandoff } from "./student-history.navigation";
 import type {
   StudentHistoryFiltersVm,
   StudentHistoryVm,
@@ -23,7 +28,6 @@ import type {
 interface StudentHistoryFormShape {
   documentType: FormControl<string>;
   documentNumber: FormControl<string>;
-  asOfDate: FormControl<string>;
 }
 
 const requiredValidator: ValidatorFn = (control: AbstractControl<unknown>) =>
@@ -38,10 +42,12 @@ type StudentHistoryFormGroup = FormGroup<StudentHistoryFormShape>;
  * Responsabilidades de UI:
  *
  * - Renderizar el formulario de identidad (`documentType`, `documentNumber`)
- *   con dos campos de texto obligatorio (rangos 1–20 / 1–32) y un campo
- *   opcional `asOfDate`.
- * - Bloquear el botón "Buscar" hasta que la combinación sea válida
- *   (`canLoadHistory() === true`).
+ *   con dos campos de texto obligatorio (rangos 1–20 / 1–32).
+ * - Resolver el token opaco enviado por Consulta de estudiantes contra el
+ *   handoff volátil. Cada token distinto y resoluble completa el formulario
+ *   y consulta una vez; una selección ausente, desconocida o expirada cancela
+ *   el estado remoto y restaura el formulario manual.
+ * - Bloquear el botón "Buscar" hasta que la combinación sea válida.
  * - Exponer los cuatro estados remotos excluyentes (`loading`, `error`,
  *   `empty`, `success`) en regiones `aria-live` separadas. El error
  *   expone un botón "Reintentar" que re-envía la última consulta con
@@ -69,6 +75,9 @@ type StudentHistoryFormGroup = FormGroup<StudentHistoryFormShape>;
 export class StudentHistoryComponent {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly history = inject(StudentHistoryFacade);
+  private readonly route = inject(ActivatedRoute);
+  private readonly handoff = inject(StudentHistoryNavigationHandoff);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly result = this.history.result;
 
@@ -83,7 +92,6 @@ export class StudentHistoryComponent {
       Validators.minLength(1),
       Validators.maxLength(32),
     ]),
-    asOfDate: this.fb.control("", [Validators.pattern(/^\d{4}-\d{2}-\d{2}$/)]),
   });
 
   readonly isLoading = computed(() => this.result().status === "loading");
@@ -112,11 +120,15 @@ export class StudentHistoryComponent {
     }));
   });
 
-  /**
-   * Estado del botón "Reintentar" — habilitado en `error` o `empty`.
-   * Mantiene paridad con `top-schools.component.canRetry`.
-   */
-  readonly canRetry = computed(() => this.hasError() || this.isEmpty());
+  constructor() {
+    this.route.queryParamMap
+      .pipe(
+        map((params) => params.get("selection")),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((selection) => this.applySelection(selection));
+  }
 
   onSubmit(): void {
     if (this.form.invalid) {
@@ -140,7 +152,6 @@ export class StudentHistoryComponent {
     this.form.reset({
       documentType: "",
       documentNumber: "",
-      asOfDate: "",
     });
   }
 
@@ -149,7 +160,20 @@ export class StudentHistoryComponent {
     return {
       documentType: raw.documentType,
       documentNumber: raw.documentNumber,
-      asOfDate: raw.asOfDate.length === 0 ? null : raw.asOfDate,
     };
+  }
+
+  private applySelection(selection: string | null): void {
+    const filters = this.handoff.resolveSelection(selection);
+    if (filters === null) {
+      this.history.resetHistory();
+      this.form.reset({
+        documentType: "",
+        documentNumber: "",
+      });
+      return;
+    }
+    this.form.setValue(filters);
+    this.history.loadHistory(filters);
   }
 }

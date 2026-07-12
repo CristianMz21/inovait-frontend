@@ -220,20 +220,11 @@
                 <button
                   type="button"
                   class="search-history"
-                  disabled
-                  aria-disabled="true"
-                  [attr.aria-describedby]="
-                    'history-locked-help-' + row.enrollmentId
-                  "
+                  (click)="viewHistory(row)"
+                  [attr.aria-label]="'Ver historial de ' + row.fullName"
                 >
                   Ver historial
                 </button>
-                <small
-                  [id]="'history-locked-help-' + row.enrollmentId"
-                  class="search-help"
-                >
-                  Disponible tras la apertura de P1.
-                </small>
               </td>
             </tr>
           }

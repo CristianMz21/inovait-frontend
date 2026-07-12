@@ -148,6 +148,110 @@ test("student search renders the valid empty state", async ({ appPage }) => {
   await assertNoAxeViolations(appPage, "student search empty");
 });
 
+test("student history handoff stays opaque, restores query-backed search on Back, and resolves on Forward", async ({
+  appPage,
+}) => {
+  await appPage.goto("/student-search");
+  await appPage
+    .getByLabel("Escuela")
+    .selectOption({ label: "Escuela Río Claro · Público" });
+  await appPage.getByLabel("Grado").selectOption({ label: "Grade 1" });
+  await appPage
+    .getByLabel("Año académico")
+    .selectOption({ label: "2026 (actual)" });
+  await appPage.getByLabel("Fecha de referencia (opcional)").fill("2026-07-10");
+  await appPage.getByRole("button", { name: "Buscar" }).click();
+
+  await expect
+    .poll(() => new URL(appPage.url()).searchParams.get("schoolId"))
+    .toBe("1");
+  const searchUrl = new URL(appPage.url());
+  expect(searchUrl.pathname).toBe("/student-search");
+  expect(Object.fromEntries(searchUrl.searchParams)).toEqual({
+    schoolId: "1",
+    gradeId: "1",
+    academicYearId: "2",
+    asOfDate: "2026-07-10",
+  });
+
+  await appPage.reload();
+  await expect(appPage.getByTestId("search-results")).toContainText(
+    "2 inscripciones",
+  );
+  await expect(
+    appPage.getByLabel("Fecha de referencia (opcional)"),
+  ).toHaveValue("2026-07-10");
+
+  await appPage
+    .getByRole("button", { name: "Ver historial de Ana María Solís" })
+    .click();
+
+  await expect(appPage).toHaveURL(/\/student-history\?selection=/);
+  const historyUrl = new URL(appPage.url());
+  expect(historyUrl.pathname).toBe("/student-history");
+  expect(historyUrl.searchParams.get("selection")).toMatch(/^[0-9a-f-]{36}$/);
+  expect(historyUrl.href).not.toContain("DNI");
+  expect(historyUrl.href).not.toContain("99.001.101");
+  const browserHistoryState = await appPage.evaluate(() =>
+    JSON.stringify(window.history.state),
+  );
+  expect(browserHistoryState).not.toContain("DNI");
+  expect(browserHistoryState).not.toContain("99.001.101");
+  await expect(
+    appPage.getByRole("heading", {
+      level: 2,
+      name: "Línea de tiempo de Ana María Solís",
+    }),
+  ).toBeVisible();
+  await expect(appPage.getByLabel("Tipo de documento")).toHaveValue("DNI");
+  await expect(appPage.getByLabel("Número de documento")).toHaveValue(
+    "99.001.101",
+  );
+  await assertUniqueIdsAndLabels(appPage);
+  await assertNoAxeViolations(appPage, "student search to history success");
+
+  await appPage.goBack();
+  await expect(appPage).toHaveURL(searchUrl.href);
+  await expect(appPage.getByTestId("search-results")).toContainText(
+    "2 inscripciones",
+  );
+  await expect(
+    appPage
+      .getByLabel("Escuela")
+      .getByRole("option", { name: "Escuela Río Claro · Público" }),
+  ).toHaveJSProperty("selected", true);
+  await expect(
+    appPage.getByLabel("Grado").getByRole("option", { name: "Grade 1" }),
+  ).toHaveJSProperty("selected", true);
+  await expect(
+    appPage
+      .getByLabel("Año académico")
+      .getByRole("option", { name: "2026 (actual)" }),
+  ).toHaveJSProperty("selected", true);
+  await expect(
+    appPage.getByLabel("Fecha de referencia (opcional)"),
+  ).toHaveValue("2026-07-10");
+  await assertNoAxeViolations(appPage, "student search restored after Back");
+
+  await appPage.goForward();
+  await expect(appPage).toHaveURL(historyUrl.href);
+  await expect(
+    appPage.getByRole("heading", {
+      level: 2,
+      name: "Línea de tiempo de Ana María Solís",
+    }),
+  ).toBeVisible();
+
+  await appPage.reload();
+  await expect(appPage.getByLabel("Tipo de documento")).toHaveValue("");
+  await expect(appPage.getByLabel("Número de documento")).toHaveValue("");
+  await expect(
+    appPage.getByRole("button", { name: "Consultar" }),
+  ).toBeDisabled();
+  await expect(appPage.getByTestId("history-results")).toBeHidden();
+  await assertNoAxeViolations(appPage, "unknown selection after reload");
+});
+
 test("student history ProblemDetails stops loading, restores controls, and shows an alert", async ({
   appPage,
 }) => {

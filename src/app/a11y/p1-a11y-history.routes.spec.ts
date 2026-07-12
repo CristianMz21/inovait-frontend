@@ -66,7 +66,7 @@ describe("CT-A11Y-RPT-HIST — Hardening accesibilidad ruta historial", () => {
       expect(nav).toBeTruthy();
     });
 
-    it("habilita Historia con aria-disabled=false tras activar WU11-STU", () => {
+    it("habilita Historia como enlace real sin estado ARIA redundante", () => {
       const fixture = TestBed.createComponent(App);
       fixture.detectChanges();
       const compiled = fixture.nativeElement as HTMLElement;
@@ -76,7 +76,8 @@ describe("CT-A11Y-RPT-HIST — Hardening accesibilidad ruta historial", () => {
       );
 
       expect(history).toBeTruthy();
-      expect(history?.getAttribute("aria-disabled")).toBe("false");
+      expect(history?.getAttribute("href")).toBe("/student-history");
+      expect(history?.hasAttribute("aria-disabled")).toBe(false);
     });
 
     it('el footer refleja "Reportes operativos · Historia operativa"', () => {

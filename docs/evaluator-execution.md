@@ -725,7 +725,7 @@ Veredicto: **FAIL local por entorno backend**. Tracking y limpieza contractual p
 3. Frontend servido en configuración `production` (mocks apagados) vía `deploy-local.sh`.
 4. Se recorrió `/student-history` con el equivalente al paso H6 (identidad válida → success). H7–H10 (empty, 404, cancel-on-switch, reintentar) no se ejercitaron en esta corrida.
 5. Endpoint confirmado: `GET /api/students/{documentType}/{documentNumber}/history` — coincide con el contrato (`paths/enrollments.yaml:111`) y con la implementación real de `StudentHistoryApiService`. La referencia previa de este documento a `GET /api/enrollments/students/.../history` (también citada en "Notas operativas" más abajo, con origen en `design.md:38`) queda desactualizada: el código y el walkthrough real usan la ruta del contrato, sin el segmento `/enrollments`. `/reports/*` no consume `getStudentHistory`.
-6. Hallazgo benigno confirmado en vivo: el frontend envía un parámetro `asOfDate` en la query de `getStudentHistory` que no está declarado en el contrato; la minimal API del backend lo ignora silenciosamente — sin ruptura observada.
+6. Corrección contractual posterior: `getStudentHistory` ya no envía `asOfDate`; la solicitud contiene únicamente los dos segmentos de identidad declarados por OpenAPI.
 
 ### Resultado
 
@@ -738,7 +738,7 @@ Timeline de Valentina Rojas Paredes: año 2026, North / First Grade / CG-01,
 | H2 | `getStudentHistory` 404 `student_not_found` | No ejercitado en este walkthrough | — | 2026-07-11/12 | Cubierto solo por suites automatizadas (mock) |
 | H3 | `getStudentHistory` 400 `invalid_request` | No ejercitado en este walkthrough | — | 2026-07-11/12 | Cubierto solo por suites automatizadas (mock) |
 | H4 | Cancel-on-switch verificado contra backend | No ejercitado en este walkthrough | — | 2026-07-11/12 | Cubierto solo por suites automatizadas (mock) |
-| H5 | CORS / endpoint de historia | ✅ PASS | `5d8e0f81e1195c3f70a84caeae5f8bda013f785e` | 2026-07-11/12 | Mismo allowlist que `T034`; `asOfDate` extra ignorado sin ruptura (ver hallazgo benigno arriba) |
+| H5 | CORS / endpoint de historia | ✅ PASS | `5d8e0f81e1195c3f70a84caeae5f8bda013f785e` | 2026-07-11/12 | Mismo allowlist que `T034`; solicitud alineada al contrato, sin query `asOfDate` |
 
 ### Gate WU11-STU (T084)
 
@@ -829,9 +829,9 @@ Veredicto: **FAIL local documentado por entorno** — mismo resultado que WU10.
 Tracking + directorio limpio pasan; el script aborta en el commit-check porque
 el repositorio backend local está fuera del commit autorizado
 (`247794aa41597f5c6d65934e3215a0f99a5d9352` vs baseline `1223630ab99bf1bfaa4f5919fccf5ff539379c8e`).
-No se modificó backend ni se agregó sucesor aprobado. El verificador no valida
-URLs exactas — sólo `operationId` — por lo que el drift `/api/students/...` vs
-`/api/enrollments/students/...` queda sin detectar por esta herramienta.
+No se modificó backend ni se agregó sucesor aprobado. En esa corrida histórica,
+el verificador validaba `operationId` pero no URLs exactas; la implementación
+actual ya usa la ruta canónica `/api/students/...`.
 
 #### Resumen del gate WU11-STU
 
@@ -852,12 +852,7 @@ URLs exactas — sólo `operationId` — por lo que el drift `/api/students/...`
   `npm test -- --no-watch --no-progress`; Angular recibió flags duplicados
   (`ng test --no-watch --no-progress --no-watch --no-progress`) y la suite
   pasó correctamente.
-- **Drift contractual observado**: el endpoint canónico registrado en
-  `paths/enrollments.yaml:111` del backend autorizado declara la ruta como
-  `GET /api/students/{documentType}/{documentNumber}/history`, mientras que
-  la URL construida por `StudentHistoryApiService` y reflejada en
-  `design.md:38` es `GET /api/enrollments/students/{documentType}/{documentNumber}/history`.
-  El `verify-openapi-contract.mjs` no chequea URLs exactas (sólo
-  `operationIds`), por lo que el gate pasa sin reportar drift. Esta
-  discrepancia se documenta como hallazgo pendiente de alineación con
-  backend antes de cualquier ejercicio end-to-end.
+- **Drift contractual corregido**: `StudentHistoryApiService` usa
+  `GET /api/students/{documentType}/{documentNumber}/history`, igual que
+  `paths/enrollments.yaml:111`. La referencia distinta en el diseño archivado
+  es evidencia histórica y no describe la implementación activa.

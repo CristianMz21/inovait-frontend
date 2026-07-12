@@ -20,7 +20,6 @@ import { teachersFixture } from "../../../testing/fixtures/teachers.fixture";
 import { subjectsFixture } from "../../../testing/fixtures/subjects.fixture";
 import {
   studentHistoryFixture,
-  studentHistorySecondYearFixture,
   studentHistoryNoAssignmentsFixture,
 } from "../../../testing/fixtures/student-history.fixture";
 import {
@@ -261,20 +260,10 @@ export const MOCK_ROUTES: readonly MockRoute[] = [
     method: "GET",
     pattern: "/api/students/{documentType}/{documentNumber}/history",
     description: "Student history (lookup by document)",
-    handler: ({ pathParams, params }) => {
+    handler: ({ pathParams }) => {
       const documentNumber = pathParams["documentNumber"];
-      const asOfDate = params["asOfDate"];
-      // The current backend OpenAPI omits this query parameter, but the
-      // existing frontend capability explicitly propagates it end to end.
-      if (asOfDate !== undefined && !isValidDateOnly(asOfDate)) {
-        return mockProblem(400, "invalid_request", "asOfDate inválido");
-      }
       if (documentNumber === "99.001.101") {
-        const fixture =
-          asOfDate === "2026-07-10"
-            ? studentHistorySecondYearFixture
-            : studentHistoryFixture;
-        return mockOk<StudentHistoryResponseDto>(fixture);
+        return mockOk<StudentHistoryResponseDto>(studentHistoryFixture);
       }
       if (documentNumber === "99.001.404") {
         return mockProblem(

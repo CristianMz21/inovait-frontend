@@ -222,7 +222,6 @@ describe("MOCK_ROUTES", () => {
         asOfDate: "2026-02-31",
       },
     ],
-    ["GET", "/api/students/DNI/99.001.101/history", { asOfDate: "not-a-date" }],
     ["GET", "/api/teachers/10/contracts", { asOfDate: "2026-13-01" }],
     [
       "GET",
@@ -244,11 +243,8 @@ describe("MOCK_ROUTES", () => {
     },
   );
 
-  it("supports student-history success, reference date, empty assignments, and 404", async () => {
+  it("supports student-history success, empty assignments, and 404", async () => {
     const normal = await execute("GET", "/api/students/DNI/99.001.101/history");
-    const dated = await execute("GET", "/api/students/DNI/99.001.101/history", {
-      params: { asOfDate: "2026-07-10" },
-    });
     const noAssignments = await execute(
       "GET",
       "/api/students/DNI/88.200.300/history",
@@ -256,9 +252,6 @@ describe("MOCK_ROUTES", () => {
     expect(
       (normal.body as { enrollments: readonly unknown[] }).enrollments,
     ).toHaveLength(1);
-    expect(
-      (dated.body as { enrollments: readonly unknown[] }).enrollments,
-    ).toHaveLength(2);
     expect(
       (noAssignments.body as { enrollments: readonly unknown[] }).enrollments,
     ).toHaveLength(1);

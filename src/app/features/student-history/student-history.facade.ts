@@ -65,16 +65,7 @@ export class StudentHistoryFacade {
   readonly filters = signal<StudentHistoryFiltersVm>({
     documentType: "",
     documentNumber: "",
-    asOfDate: null,
   });
-
-  /**
-   * Indica si la VM actual es consultable. La UI usa este predicado para
-   * activar/desactivar el botón "Buscar" antes de ejecutar la consulta.
-   */
-  canLoadHistory(filters: StudentHistoryFiltersVm): boolean {
-    return studentHistoryFiltersToParams(filters) !== null;
-  }
 
   /**
    * Ejecuta una consulta con los filtros indicados. Si ya hay una
@@ -119,7 +110,6 @@ export class StudentHistoryFacade {
     this.filters.set({
       documentType: "",
       documentNumber: "",
-      asOfDate: null,
     });
   }
 

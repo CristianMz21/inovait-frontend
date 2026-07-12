@@ -8,10 +8,10 @@ import {
 import { RouterLink, RouterLinkActive, RouterOutlet } from "@angular/router";
 
 /**
- * Shell raíz de la aplicación. Provee navegación entre las tres rutas P0
- * y dos entradas P1 visibles pero bloqueadas. El header anuncia el documento
- * y la navegación principal queda expuesta como landmark `<nav>` con
- * etiqueta accesible.
+ * Shell raíz de la aplicación. Provee navegación entre las cinco rutas
+ * operativas. El header anuncia el producto y la navegación principal queda
+ * expuesta como landmark `<nav>` con etiqueta accesible y estado de página
+ * actual.
  */
 @Component({
   selector: "app-root",

@@ -26,13 +26,11 @@ import type { StudentHistoryFiltersVm } from "./student-history.vm";
 const completeFilters: StudentHistoryFiltersVm = {
   documentType: "DNI",
   documentNumber: "99.001.101",
-  asOfDate: null,
 };
 
 const incompleteFilters: StudentHistoryFiltersVm = {
   documentType: "",
   documentNumber: "99.001.101",
-  asOfDate: null,
 };
 
 const historyUrl = `${DEFAULT_API_CONFIG.apiBaseUrl}/api/students/${completeFilters.documentType}/${completeFilters.documentNumber}/history`;
@@ -59,11 +57,6 @@ describe("StudentHistoryFacade (CT-HIST-FAC)", () => {
     http.verify();
   });
 
-  it("canLoadHistory() rechaza la VM cuando falta cualquier filtro obligatorio", () => {
-    expect(facade.canLoadHistory(completeFilters)).toBe(true);
-    expect(facade.canLoadHistory(incompleteFilters)).toBe(false);
-  });
-
   it("loadHistory() con VM inválida es no-op y conserva el estado idle", () => {
     facade.loadHistory(incompleteFilters);
     expect(facade.result().status).toBe("idle");
@@ -76,7 +69,7 @@ describe("StudentHistoryFacade (CT-HIST-FAC)", () => {
 
     const req = http.expectOne((r) => r.url === historyUrl);
     expect(req.request.method).toBe("GET");
-    expect(req.request.params.has("asOfDate")).toBe(false);
+    expect(req.request.params.keys()).toEqual([]);
     req.flush(studentHistoryFixture);
 
     const state = facade.result();
@@ -195,7 +188,6 @@ describe("StudentHistoryFacade (CT-HIST-FAC)", () => {
     expect(facade.filters()).toEqual({
       documentType: "",
       documentNumber: "",
-      asOfDate: null,
     });
   });
 
@@ -215,7 +207,7 @@ describe("StudentHistoryFacade (CT-HIST-FAC)", () => {
 
     facade.retryHistory();
     const retryReq = http.expectOne((r) => r.url === historyUrl);
-    expect(retryReq.request.params.has("asOfDate")).toBe(false);
+    expect(retryReq.request.params.keys()).toEqual([]);
     retryReq.flush(studentHistoryFixture);
 
     const state = facade.result();
@@ -243,25 +235,6 @@ describe("StudentHistoryFacade (CT-HIST-FAC)", () => {
     http.expectOne((r) => r.url === historyUrl);
     facade.retryHistory();
     expect(facade.result().status).toBe("loading");
-  });
-
-  it("loadHistory() persiste los filtros vigentes para futuros retry", () => {
-    facade.loadHistory({ ...completeFilters, asOfDate: "2026-07-10" });
-    const req = http.expectOne((r) => r.url === historyUrl);
-    expect(req.request.params.get("asOfDate")).toBe("2026-07-10");
-    req.flush(apiProblemStudentNotFoundFixture, {
-      status: 404,
-      statusText: "Not Found",
-      headers: new HttpHeaders({ "Content-Type": "application/problem+json" }),
-    });
-
-    expect(facade.filters().asOfDate).toBe("2026-07-10");
-
-    facade.retryHistory();
-    const retryReq = http.expectOne((r) => r.url === historyUrl);
-    expect(retryReq.request.params.get("asOfDate")).toBe("2026-07-10");
-    retryReq.flush(studentHistoryFixture);
-    expect(facade.result().status).toBe("success");
   });
 
   it("termina en error seguro ante un fallo inesperado no normalizado", () => {

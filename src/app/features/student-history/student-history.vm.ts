@@ -6,8 +6,7 @@
  *
  * - `StudentHistoryFiltersVm` representa los filtros del formulario.
  *   `documentType` y `documentNumber` son obligatorios por contrato
- *   (rangos 1–20 / 1–32); `asOfDate` es opcional y se omite cuando la
- *   operadora no lo define.
+ *   (rangos 1–20 / 1–32).
  * - `StudentHistoryVm` es la vista de presentación del recorrido; se
  *   compone de `identity` + `enrollments` y conserva el orden contractual.
  * - `EnrollmentHistoryItemVm` aplana `EnrollmentHistoryItemDto` con un
@@ -27,8 +26,6 @@ export interface StudentHistoryFiltersVm {
   readonly documentType: string;
   /** Número de documento (1–32 caracteres); obligatorio. */
   readonly documentNumber: string;
-  /** Fecha opcional (`YYYY-MM-DD`) para filtrar la foto del momento; omitida = null. */
-  readonly asOfDate: string | null;
 }
 
 export interface StudentIdentityVm {
