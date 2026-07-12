@@ -80,6 +80,79 @@ describe("AgeDistributionComponent (CT-AGE-RPT)", () => {
     expect(component.gradeOptions().length).toBe(gradesFixture.length);
   });
 
+  it("muestra error de catálogo y permite reintentar años académicos", () => {
+    http
+      .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/academic-years`)
+      .flush(apiProblemBadRequestFixture, {
+        status: 400,
+        statusText: "Bad Request",
+        headers: new HttpHeaders({
+          "Content-Type": "application/problem+json",
+        }),
+      });
+    http
+      .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/schools`)
+      .flush(schoolsFixture);
+    http
+      .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/grades`)
+      .flush(gradesFixture);
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.textContent).toContain(
+      "No se pudieron cargar años académicos para distribución",
+    );
+    const retry = Array.from(host.querySelectorAll("button")).find((button) =>
+      button.textContent?.includes(
+        "Reintentar años académicos para distribución",
+      ),
+    );
+
+    retry?.click();
+
+    http
+      .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/academic-years`)
+      .flush(academicYearsFixture);
+    expect(retry).toBeDefined();
+  });
+
+  it("permite reintentar escuelas y grados desde sus alertas", () => {
+    http
+      .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/academic-years`)
+      .flush(academicYearsFixture);
+    http
+      .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/schools`)
+      .flush(apiProblemBadRequestFixture, {
+        status: 400,
+        statusText: "Bad Request",
+      });
+    http
+      .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/grades`)
+      .flush(apiProblemBadRequestFixture, {
+        status: 400,
+        statusText: "Bad Request",
+      });
+    fixture.detectChanges();
+    const buttons = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll("button"),
+    );
+    buttons
+      .find((button) =>
+        button.textContent?.includes("Reintentar escuelas para distribución"),
+      )
+      ?.click();
+    http
+      .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/schools`)
+      .flush(schoolsFixture);
+    buttons
+      .find((button) =>
+        button.textContent?.includes("Reintentar grados para distribución"),
+      )
+      ?.click();
+    http
+      .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/grades`)
+      .flush(gradesFixture);
+  });
+
   // -- Accesibilidad -----------------------------------------------------
 
   it('renderiza exactamente un <h1> con tabindex="-1" enfocable programáticamente', () => {

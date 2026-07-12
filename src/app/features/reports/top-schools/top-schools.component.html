@@ -8,11 +8,19 @@
     <code>school.id</code>).
   </p>
 
+  <app-catalog-status
+    [state]="academicYearsState()"
+    label="años académicos para escuelas líderes"
+    testId="top-years"
+    (retry)="retryAcademicYears()"
+  />
+
   <form
     class="top-form"
     [formGroup]="form"
     (ngSubmit)="onSubmit()"
     novalidate
+    aria-label="Filtros de escuelas líderes"
     aria-describedby="top-lede"
   >
     <fieldset [disabled]="isLoading()">

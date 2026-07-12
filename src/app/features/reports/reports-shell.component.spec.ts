@@ -66,9 +66,9 @@ describe("ReportsShellComponent (WU10-RPT)", () => {
     TestBed.resetTestingModule();
   });
 
-  it("renderiza tres <section> shell y aloja los tres reportes hijos", () => {
+  it("renderiza tres contenedores shell y aloja los tres reportes hijos", () => {
     const compiled = fixture.nativeElement as HTMLElement;
-    const sections = compiled.querySelectorAll("section.reports-shell-section");
+    const sections = compiled.querySelectorAll("div.reports-shell-section");
 
     expect(sections.length).toBe(3);
     expect(Array.from(sections).map((section) => section.id)).toEqual([

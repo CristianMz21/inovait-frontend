@@ -64,6 +64,35 @@ describe("TopSchoolsComponent (CT-TOP-RPT)", () => {
 
   // -- Accesibilidad ----------------------------------------------------
 
+  it("muestra error de catálogo y permite reintentar años académicos", () => {
+    http
+      .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/academic-years`)
+      .flush(apiProblemNotFoundFixture, {
+        status: 404,
+        statusText: "Not Found",
+        headers: new HttpHeaders({
+          "Content-Type": "application/problem+json",
+        }),
+      });
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.textContent).toContain(
+      "No se pudieron cargar años académicos para escuelas líderes",
+    );
+    const retry = Array.from(host.querySelectorAll("button")).find((button) =>
+      button.textContent?.includes(
+        "Reintentar años académicos para escuelas líderes",
+      ),
+    );
+
+    retry?.click();
+
+    http
+      .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/academic-years`)
+      .flush(academicYearsFixture);
+    expect(retry).toBeDefined();
+  });
+
   it('renderiza exactamente un <h1> con tabindex="-1" enfocable programáticamente', () => {
     flushAcademicYears(http);
     const compiled = fixture.nativeElement as HTMLElement;

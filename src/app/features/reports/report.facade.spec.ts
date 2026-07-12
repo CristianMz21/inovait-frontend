@@ -5,7 +5,8 @@ import {
   provideHttpClientTesting,
 } from "@angular/common/http/testing";
 import { TestBed } from "@angular/core/testing";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { throwError } from "rxjs";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   API_CONFIG,
   DEFAULT_API_CONFIG,
@@ -754,5 +755,52 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
 
       expect(facade.topState().status).toBe("success");
     });
+  });
+
+  it("termina los tres slots en error seguro ante fallos inesperados", () => {
+    const api = TestBed.inject(ReportApiService);
+    vi.spyOn(api, "getAgeDistribution").mockReturnValue(
+      throwError(() => new Error("unexpected age")),
+    );
+    vi.spyOn(api, "getDistinctTeacherCountsBySector").mockReturnValue(
+      throwError(() => new Error("unexpected sector")),
+    );
+    vi.spyOn(api, "getTopSchoolsByEnrollment").mockReturnValue(
+      throwError(() => new Error("unexpected top")),
+    );
+
+    facade.loadAge(validFilters);
+    facade.loadSector(validSectorFilters);
+    facade.loadTop(validTopFilters);
+
+    expect(facade.ageState()).toMatchObject({
+      status: "error",
+      problem: { code: "unknown_error" },
+    });
+    expect(facade.sectorState()).toMatchObject({
+      status: "error",
+      problem: { code: "unknown_error" },
+    });
+    expect(facade.topState()).toMatchObject({
+      status: "error",
+      problem: { code: "unknown_error" },
+    });
+  });
+
+  it("cancela los tres slots HTTP pendientes al destruir la fachada", () => {
+    facade.loadAge(validFilters);
+    facade.loadSector(validSectorFilters);
+    facade.loadTop(validTopFilters);
+    const ageRequest = http.expectOne((candidate) => candidate.url === ageUrl);
+    const sectorRequest = http.expectOne(
+      (candidate) => candidate.url === sectorUrl,
+    );
+    const topRequest = http.expectOne((candidate) => candidate.url === topUrl);
+
+    TestBed.resetTestingModule();
+
+    expect(ageRequest.cancelled).toBe(true);
+    expect(sectorRequest.cancelled).toBe(true);
+    expect(topRequest.cancelled).toBe(true);
   });
 });

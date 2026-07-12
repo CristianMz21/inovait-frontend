@@ -1,6 +1,7 @@
-import { Injectable, inject, signal } from "@angular/core";
+import { DestroyRef, Injectable, inject, signal } from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import type { Subscription } from "rxjs";
-import { ApiProblemError } from "../../core/api/api-problem-error";
+import { toSafeApiProblem } from "../../core/api/to-safe-api-problem";
 import {
   empty as emptyState,
   errorState,
@@ -62,6 +63,7 @@ import type {
 @Injectable()
 export class ReportFacade {
   private readonly api = inject(ReportApiService);
+  private readonly destroyRef = inject(DestroyRef);
 
   private readonly age = signal<RemoteState<AgeDistributionVm>>(idle());
   private ageSubscription: Subscription | null = null;
@@ -286,28 +288,27 @@ export class ReportFacade {
     const requestKey = `report-age#${this.ageSequence}`;
     this.age.set(loading<AgeDistributionVm>(requestKey));
 
-    this.ageSubscription = this.api.getAgeDistribution(params).subscribe({
-      next: (dto) => {
-        if (this.isStale(this.age(), requestKey)) {
-          return;
-        }
-        const vm = ageDistributionResponseToVm(dto);
-        // El DTO canónico siempre devuelve las tres bandas; incluso con
-        // count=0 se considera un resultado exitoso (`success`) — la UI
-        // muestra los tramos en 0 sin tratarlo como error ni como vacío.
-        this.age.set(success(vm));
-      },
-      error: (err: unknown) => {
-        if (this.isStale(this.age(), requestKey)) {
-          return;
-        }
-        const problem = err instanceof ApiProblemError ? err.problem : null;
-        if (!problem) {
-          return;
-        }
-        this.age.set(errorState<AgeDistributionVm>(problem));
-      },
-    });
+    this.ageSubscription = this.api
+      .getAgeDistribution(params)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (dto) => {
+          if (this.isStale(this.age(), requestKey)) {
+            return;
+          }
+          const vm = ageDistributionResponseToVm(dto);
+          // El DTO canónico siempre devuelve las tres bandas; incluso con
+          // count=0 se considera un resultado exitoso (`success`) — la UI
+          // muestra los tramos en 0 sin tratarlo como error ni como vacío.
+          this.age.set(success(vm));
+        },
+        error: (err: unknown) => {
+          if (this.isStale(this.age(), requestKey)) {
+            return;
+          }
+          this.age.set(errorState<AgeDistributionVm>(toSafeApiProblem(err)));
+        },
+      });
   }
 
   private dispatchSector(params: GetTeacherCountsBySectorParams): void {
@@ -318,6 +319,7 @@ export class ReportFacade {
 
     this.sectorSubscription = this.api
       .getDistinctTeacherCountsBySector(params)
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (dto) => {
           if (this.isStale(this.sector(), requestKey)) {
@@ -333,11 +335,9 @@ export class ReportFacade {
           if (this.isStale(this.sector(), requestKey)) {
             return;
           }
-          const problem = err instanceof ApiProblemError ? err.problem : null;
-          if (!problem) {
-            return;
-          }
-          this.sector.set(errorState<TeacherCountsBySectorVm>(problem));
+          this.sector.set(
+            errorState<TeacherCountsBySectorVm>(toSafeApiProblem(err)),
+          );
         },
       });
   }
@@ -350,6 +350,7 @@ export class ReportFacade {
 
     this.topSubscription = this.api
       .getTopSchoolsByEnrollment(params)
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (dto) => {
           if (this.isStale(this.top(), requestKey)) {
@@ -370,11 +371,7 @@ export class ReportFacade {
           if (this.isStale(this.top(), requestKey)) {
             return;
           }
-          const problem = err instanceof ApiProblemError ? err.problem : null;
-          if (!problem) {
-            return;
-          }
-          this.top.set(errorState<TopSchoolsVm>(problem));
+          this.top.set(errorState<TopSchoolsVm>(toSafeApiProblem(err)));
         },
       });
   }

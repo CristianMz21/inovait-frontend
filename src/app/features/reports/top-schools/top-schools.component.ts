@@ -17,6 +17,7 @@ import {
   Validators,
 } from "@angular/forms";
 import { CatalogFacade } from "../../../core/catalogs/catalog.facade";
+import { CatalogStatusComponent } from "../../../core/catalogs/catalog-status.component";
 import type { RemoteState } from "../../../core/api/remote-state";
 import { ReportFacade } from "../report.facade";
 import { topSchoolsFiltersToParams } from "../report.mappers";
@@ -63,7 +64,7 @@ type TopFiltersFormGroup = FormGroup<TopFiltersFormShape>;
 @Component({
   selector: "app-top-schools",
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, CatalogStatusComponent],
   providers: [ReportFacade],
   templateUrl: "./top-schools.component.html",
   styleUrl: "./top-schools.component.scss",
@@ -75,6 +76,7 @@ export class TopSchoolsComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly result = this.reports.topState;
+  readonly academicYearsState = this.catalog.academicYearsState;
 
   readonly form: TopFiltersFormGroup = this.fb.group({
     academicYearId: this.fb.control<number | null>(null, [requiredValidator]),
@@ -153,6 +155,10 @@ export class TopSchoolsComponent implements OnInit {
 
   onRetry(): void {
     this.reports.retryTop();
+  }
+
+  retryAcademicYears(): void {
+    this.catalog.loadAcademicYears();
   }
 
   onReset(): void {

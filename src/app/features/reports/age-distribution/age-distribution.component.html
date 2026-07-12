@@ -7,11 +7,31 @@
     <strong>fecha de referencia</strong>.
   </p>
 
+  <app-catalog-status
+    [state]="academicYearsState()"
+    label="años académicos para distribución"
+    testId="age-years"
+    (retry)="retryAcademicYears()"
+  />
+  <app-catalog-status
+    [state]="schoolsState()"
+    label="escuelas para distribución"
+    testId="age-schools"
+    (retry)="retrySchools()"
+  />
+  <app-catalog-status
+    [state]="gradesState()"
+    label="grados para distribución"
+    testId="age-grades"
+    (retry)="retryGrades()"
+  />
+
   <form
     class="age-form"
     [formGroup]="form"
     (ngSubmit)="onSubmit()"
     novalidate
+    aria-label="Filtros de distribución por edad"
     aria-describedby="age-lede"
   >
     <fieldset [disabled]="isLoading()">
@@ -132,7 +152,7 @@
       aria-labelledby="age-results-title"
       data-testid="age-results"
     >
-      <h2 id="age-results-title">Distribución por edad</h2>
+      <h2 id="age-results-title">Resultados de distribución por edad</h2>
       <p class="age-context" role="status" aria-live="polite">
         Año académico <strong>{{ data.academicYearId }}</strong> · Fecha de
         referencia <strong>{{ data.asOfDate }}</strong> · Total
