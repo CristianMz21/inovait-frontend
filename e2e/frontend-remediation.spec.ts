@@ -1,5 +1,12 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test as base, type Page } from "@playwright/test";
+import {
+  expect,
+  test as base,
+  type Locator,
+  type Page,
+} from "@playwright/test";
+
+const geometryTolerance = 1;
 
 const test = base.extend<{ appPage: Page }>({
   appPage: async ({ page }, use) => {
@@ -147,6 +154,57 @@ test("student search renders the valid empty state", async ({ appPage }) => {
   await expect(appPage.getByTestId("search-loading")).toBeHidden();
   await assertNoAxeViolations(appPage, "student search empty");
 });
+
+for (const [path, width] of [
+  ["/enrollments", 800],
+  ["/enrollments", 320],
+  ["/student-search", 1024],
+  ["/student-search", 320],
+] as const) {
+  test(`responsive form containment: ${path} at ${width}px`, async ({
+    appPage,
+  }) => {
+    await appPage.setViewportSize({ width, height: 900 });
+    await appPage.goto(path);
+    await waitForTerminalInitialState(appPage, path);
+
+    const isEnrollment = path === "/enrollments";
+    const form = appPage.getByRole("form", {
+      name: isEnrollment
+        ? "Formulario de nueva matrícula"
+        : "Filtros de consulta de estudiantes",
+    });
+    const labels = isEnrollment
+      ? ["Escuela", "Año académico", "Grado"]
+      : ["Escuela", "Grado", "Año académico"];
+    for (const label of labels) {
+      const select = form.getByRole("combobox", { name: label, exact: true });
+      await expect(select).toBeEnabled();
+      await selectLongestValidOption(select);
+    }
+
+    const date = form.locator('input[type="date"]');
+    await expect(date).toHaveAttribute("type", "date");
+    await date.fill("2026-07-10");
+    await expect(date).toHaveValue("2026-07-10");
+
+    await date.focus();
+    await appPage.keyboard.press("Shift+Tab");
+    await appPage.keyboard.press("Tab");
+    await assertFormGeometry(
+      form.locator(isEnrollment ? ".enrollment-field" : ".search-field"),
+      date,
+      width > 320,
+    );
+    await expect
+      .poll(() =>
+        appPage.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      )
+      .toBe(true);
+  });
+}
 
 test("student history handoff stays opaque, restores query-backed search on Back, and resolves on Forward", async ({
   appPage,
@@ -383,4 +441,95 @@ async function assertUniqueIdsAndLabels(page: Page): Promise<void> {
         .map((control) => control.id),
     );
   expect(controlsWithoutLabels).toEqual([]);
+}
+
+async function selectLongestValidOption(select: Locator): Promise<void> {
+  const labels = await select
+    .locator("option:not([disabled])")
+    .allTextContents();
+  const label = labels
+    .map((text) => text.trim())
+    .sort((a, b) => b.length - a.length)[0]!;
+  await select.selectOption({ label });
+  await expect(select.locator("option:checked")).toHaveText(label);
+}
+
+async function assertFormGeometry(
+  fields: Locator,
+  focusedControl: Locator,
+  requireAdjacentField: boolean,
+): Promise<void> {
+  await expect(focusedControl).toBeFocused();
+  const result = await fields.evaluateAll(
+    (elements, { focusedId, tolerance }) => {
+      const overlaps = (first: DOMRect, second: DOMRect) =>
+        first.left < second.right - tolerance &&
+        first.right > second.left + tolerance &&
+        first.top < second.bottom - tolerance &&
+        first.bottom > second.top + tolerance;
+      const pairs = elements.map((field) => {
+        const control = field.querySelector<HTMLElement>(
+          ':scope > input:not([type="checkbox"]), :scope > select, :scope > textarea',
+        )!;
+        return {
+          field: field.getBoundingClientRect(),
+          control: control.getBoundingClientRect(),
+          id: control.id,
+        };
+      });
+      const focused = pairs.find(({ id }) => id === focusedId)!;
+      const style = getComputedStyle(document.getElementById(focusedId)!);
+      const extent =
+        parseFloat(style.outlineWidth) + parseFloat(style.outlineOffset);
+      const focusRect = new DOMRect(
+        focused.control.left - extent,
+        focused.control.top - extent,
+        focused.control.width + extent * 2,
+        focused.control.height + extent * 2,
+      );
+      const peers = pairs.filter(
+        (pair) =>
+          pair.id !== focusedId &&
+          Math.abs(pair.field.top - focused.field.top) <= tolerance,
+      );
+      return {
+        contained: pairs.every(
+          ({ field, control }) =>
+            control.width > 0 &&
+            control.height > 0 &&
+            control.left >= field.left - tolerance &&
+            control.right <= field.right + tolerance,
+        ),
+        separated: pairs.every((current) =>
+          pairs.every(
+            (adjacent) =>
+              current.id === adjacent.id ||
+              Math.abs(current.field.top - adjacent.field.top) > tolerance ||
+              !overlaps(current.control, adjacent.field),
+          ),
+        ),
+        focusClear: peers.every((peer) => !overlaps(focusRect, peer.field)),
+        peerCount: peers.length,
+        outlineStyle: style.outlineStyle,
+        outlineColor: style.outlineColor,
+        outlineExtent: extent,
+      };
+    },
+    {
+      focusedId: (await focusedControl.getAttribute("id"))!,
+      tolerance: geometryTolerance,
+    },
+  );
+
+  expect(result.contained, "controls stay inside their field cells").toBe(true);
+  expect(result.separated, "same-row controls stay separate").toBe(true);
+  expect(result.focusClear, "focus extent stays clear of same-row fields").toBe(
+    true,
+  );
+  expect(result.outlineStyle).not.toBe("none");
+  expect(result.outlineColor).not.toBe("rgba(0, 0, 0, 0)");
+  expect(result.outlineExtent).toBeGreaterThan(0);
+  if (requireAdjacentField) {
+    expect(result.peerCount).toBeGreaterThan(0);
+  }
 }

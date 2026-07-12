@@ -21,6 +21,32 @@
   box-sizing: border-box;
 }
 
+:where(
+  .enrollment-field,
+  .search-field,
+  .contracts-field,
+  .history-field,
+  .age-field,
+  .sector-field,
+  .top-field
+) {
+  min-inline-size: 0;
+}
+
+:where(
+    .enrollment-field,
+    .search-field,
+    .contracts-field,
+    .history-field,
+    .age-field,
+    .sector-field,
+    .top-field
+  )
+  > :where(input:not([type="checkbox"]), select, textarea) {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
 html,
 body {
   margin: 0;
