@@ -593,6 +593,8 @@ fieldset.ec-card > legend {
  * before the first query. No live role: it is static guidance, not a state
  * announcement that needs to interrupt the user.
  * `.ec-field-error`: inline validation message rendered in `--app-error`.
+ * `.ec-required-note`: muted footnote pairing the `.ec-required-mark`
+ * asterisk with its "Campo obligatorio" legend below a filter fieldset.
  * ========================================================================== */
 
 @keyframes ec-spin {
@@ -615,6 +617,12 @@ fieldset.ec-card > legend {
 .ec-required-mark {
   color: var(--app-accent);
   margin-inline-start: 2px;
+}
+
+.ec-required-note {
+  margin: 0;
+  color: var(--app-muted);
+  font-size: 0.8rem;
 }
 
 .ec-empty-hint {

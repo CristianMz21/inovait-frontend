@@ -45,7 +45,7 @@ Clases globales en `styles.scss`, reutilizadas por el shell y las cinco pantalla
 | `.ec-badge` (`--status` / `--temporal`) | Par de familias de badge visualmente distintas (rectángulo vs. píldora) para no confundir un estado persistido con uno temporal, incluso sin color. |
 | `.ec-legend` | Leyenda que explica los tonos de `.ec-badge` junto a la tabla que los usa. |
 | `.ec-chip-toggle` | Checkbox nativo estilizado como píldora seleccionable (multiselección de escuelas). |
-| `.ec-segmented` | Riel de navegación interna / toggle de dos vías (pestañas de reportes). |
+| `.ec-segmented` | Riel de navegación interna / toggle de dos vías. Definido para uso general; las pestañas de Reportes NO lo usan — son un `role=tablist` bespoke (`.reports-shell-tab`, ver Pantalla 4). |
 | `.ec-kpi` (`--featured`) | Tarjeta de métrica destacada; `--featured` invierte a la superficie primaria para el valor más relevante del grupo. |
 
 ## Navegación y shell
@@ -214,34 +214,49 @@ Cada estado se presenta con `.ec-badge` de una de dos familias visualmente disti
 
 ## Pantalla 4 — Reportes
 
-Reportes es P1 y no se considera disponible hasta validar P0. Usa secciones con filtros propios y valores exactos; no hay charts.
+Reportes es P1 y no se considera disponible hasta validar P0. Un único `h1` y tres reportes independientes conmutados por pestañas ARIA — valores exactos por filtro, no charts. La Historia documental (BQ-005) ya no vive aquí: es la Pantalla 5 dedicada, alcanzable desde Consulta de estudiantes.
 
 ### Wireframe
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│ h1 Reportes municipales                                    │
-│ [Distribución por edad — BQ-001/BQ-002]                     │
-│ Año* Escuela? Grado? Fecha? [Consultar]                     │
-│ [3–7: 4] [8–12: 6] [>12: 2]  Referencia: 10/07/2026       │
-│ [Docentes por sector — BQ-003]                              │
-│ Período opcional completo [Consultar] [Pública: 3][Privada:2]│
-│ [Escuelas líderes — BQ-004] Año* [Consultar]                │
-│ Escuela | Sector | Matrículas (incluye todos los empates)   │
-│ [Historia — BQ-005] Tipo doc.* Número* [Consultar]          │
-└─────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────┐
+│ h1 Reportes operativos                                        │
+│ "Consulte los reportes operativos de matrícula y planta        │
+│  docente. Seleccione una pestaña para ver un reporte a la vez."│
+│ ┌ tablist ─────────────────────────────────────────────────┐  │
+│ │ [Distribución por edad*][Docentes por sector][Escuelas    │  │
+│ │  líderes]                                                  │  │
+│ └─────────────────────────────────────────────────────────┘  │
+│ ┌ tabpanel activo — los otros dos siguen montados, [hidden] ┐ │
+│ │ Año* Escuela? Grado? Fecha? [Consultar] [Limpiar filtros] │ │
+│ │ * Campo obligatorio.                                       │ │
+│ │ idle → “Completa los filtros y consulta el reporte.”      │ │
+│ │ success → [3–7: 4][8–12: 6][>12: 2] · Referencia 10/07/26 │ │
+│ └─────────────────────────────────────────────────────────┘  │
+└───────────────────────────────────────────────────────────────┘
 ```
 
-Cada bloque tiene su propio `form`, encabezado, status y error. Consultar un bloque no borra resultados de otros, pero tampoco comparte filtros implícitamente.
+### Navegación entre reportes
 
-- Edad: tarjeta destacada 3–7 para BQ-001 y tabla/tarjetas de los tres buckets para BQ-002; muestra `asOfDate` devuelta y ceros explícitos. Toda combinación de año y filtros School/Grade existentes es válida; sin grupos o inscripciones devuelve `200` con ceros, no `422`.
-- Sector: período completo o ninguno; cards Pública/Privada siempre visibles, incluidos ceros; copy aclara “docentes distintos”.
-- Líderes: tabla simple; todos los empates y un año existente sin inscripciones produce `200 []` con estado vacío informativo.
-- Historia: permite consulta documental directa y enlaza a la pantalla dedicada.
+- El shell (`ReportsShellComponent`) expone un único `role=tablist` etiquetado por el `h1` (`aria-labelledby="reports-title"`) con tres botones `role=tab`: **Distribución por edad**, **Docentes por sector**, **Escuelas líderes**.
+- Activación manual (patrón WAI-ARIA APG): `ArrowRight`/`ArrowLeft`/`Home`/`End` solo mueven el foco entre pestañas; `aria-selected` y el panel visible cambian únicamente con Enter, Espacio o click. Tabindex circulante — la pestaña activa expone `tabindex="0"`, el resto `tabindex="-1"` — así Tab entra/sale del tablist en un solo salto.
+- Cada reporte vive en su propio `role=tabpanel` (`#age-report`, `#sector-report`, `#top-schools-report`), etiquetado por su pestaña (`aria-labelledby="tab-{id}"`). Solo un panel es visible a la vez vía `[hidden]` — nunca `@if`/render condicional — porque los tres permanecen montados en el DOM para conservar formulario, resultados y error de cada reporte al alternar de pestaña.
+- La pestaña activa se persiste en el fragmento de la URL (`#age-report` / `#sector-report` / `#top-schools-report`): sostiene deep-link directo a un reporte y back/forward del navegador sin perder la selección.
+- En móvil, el propio riel de pestañas gana scroll horizontal (`overflow-x: auto`, cada pestaña `flex: 0 0 auto`); la página nunca gana scroll horizontal.
 
-Los valores de cada bloque se presentan como tarjetas `.ec-kpi`; el bucket o valor más relevante de cada resultado (por ejemplo 3–7 años en BQ-001) usa `.ec-kpi--featured`, que invierte a la superficie primaria en vez de depender solo de su tamaño para destacar. La navegación entre los tres reportes internos usa un riel `.ec-segmented` con `aria-current="location"` sobre el ítem activo.
+### Los tres reportes
 
-En móvil, report cards se apilan. Las cifras usan texto y label; no dependen de posición/color. Filtros de cada bloque permanecen antes de su resultado.
+Cada reporte tiene su propio `form`, encabezado y estados `idle`/`loading`/`error`/`success` (y `empty` solo donde aplica) exclusivos entre sí. Cambiar de pestaña no borra resultados de otro reporte ni comparte filtros implícitamente.
+
+- **Distribución por edad** (BQ-001/BQ-002): filtros Año académico*, Escuela, Grado, Fecha de referencia. Idle: “Completa los filtros y consulta el reporte.” Tarjeta destacada 3–7 para BQ-001 y tabla/tarjetas de los tres buckets para BQ-002; muestra `asOfDate` devuelta y ceros explícitos. Toda combinación de año y filtros School/Grade existentes es válida; sin grupos o inscripciones el reporte sigue en `success` con ceros, nunca `empty` ni `422`.
+- **Docentes por sector** (BQ-003): período completo o ninguno. Si se completa solo un extremo, ese campo gana `aria-required` dinámico y un mensaje inline `.ec-field-error` enlazado vía `aria-describedby`; si ambos extremos están definidos y fin < inicio, un segundo mensaje inline bloquea el submit local sin impedir que el backend aplique su propia regla canónica. Idle: “Completa el período y consulta el reporte. Sin período, se usa la fecha actual.” Cards Pública/Privada siempre visibles, incluidos ceros; copy aclara “docentes distintos”. Nunca `empty`.
+- **Escuelas líderes** (BQ-004): filtro Año académico* únicamente. Idle: “Elige un año académico y consulta el reporte.” Tabla simple; todos los empates se conservan y un año existente sin inscripciones produce `200 []` → estado `empty` informativo con botón “Reintentar” (además del que ofrece el estado `error`).
+
+Los campos obligatorios marcan su label con `.ec-required-mark` (asterisco `aria-hidden`, redundante con `aria-required`/`required` del control) y, donde corresponde, el formulario cierra con la nota `.ec-required-note` (“* Campo obligatorio.”). “Limpiar filtros” resetea formulario y estado remoto del reporte activo, sin tocar los otros dos.
+
+Los valores de cada reporte se presentan como tarjetas `.ec-kpi`; el bucket o valor más relevante de cada resultado (por ejemplo 3–7 años en BQ-001) usa `.ec-kpi--featured`, que invierte a la superficie primaria en vez de depender solo de su tamaño para destacar.
+
+En móvil, cada reporte apila filtros, estado y resultados en una sola columna bajo su pestaña activa. Las cifras usan texto y label; no dependen de posición/color.
 
 ## Pantalla 5 — Historial del estudiante
 

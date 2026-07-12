@@ -139,9 +139,15 @@ describe("ReportsShellComponent (WU10-RPT · ARIA tabs)", () => {
     expect(visible.length).toBe(1);
     expect(visible[0]?.id).toBe("age-report");
 
-    expect(compiled.querySelector("app-age-distribution")).toBeTruthy();
-    expect(compiled.querySelector("app-teacher-counts-by-sector")).toBeTruthy();
-    expect(compiled.querySelector("app-top-schools")).toBeTruthy();
+    expect(
+      compiled.querySelector("#age-report app-age-distribution"),
+    ).toBeTruthy();
+    expect(
+      compiled.querySelector("#sector-report app-teacher-counts-by-sector"),
+    ).toBeTruthy();
+    expect(
+      compiled.querySelector("#top-schools-report app-top-schools"),
+    ).toBeTruthy();
   });
 
   it("ArrowRight/ArrowLeft mueven el foco entre pestañas sin cambiar la selección", () => {
