@@ -2,13 +2,14 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
-  computed,
+  ElementRef,
   inject,
   signal,
+  viewChildren,
   type OnInit,
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { ActivatedRoute, RouterLink } from "@angular/router";
+import { ActivatedRoute, Router } from "@angular/router";
 import { AgeDistributionComponent } from "./age-distribution/age-distribution.component";
 import { TeacherCountsBySectorComponent } from "./teacher-counts-by-sector/teacher-counts-by-sector.component";
 import { TopSchoolsComponent } from "./top-schools/top-schools.component";
@@ -18,25 +19,12 @@ type ReportSectionId = "age-report" | "sector-report" | "top-schools-report";
 interface ReportSection {
   readonly id: ReportSectionId;
   readonly label: string;
-  readonly summary: string;
 }
 
 const REPORT_SECTIONS: readonly ReportSection[] = [
-  {
-    id: "age-report",
-    label: "Distribución por edad",
-    summary: "Rangos 3–7, 8–12 y mayores de 12 años",
-  },
-  {
-    id: "sector-report",
-    label: "Docentes por sector",
-    summary: "Docentes distintos en escuelas públicas y privadas",
-  },
-  {
-    id: "top-schools-report",
-    label: "Escuelas líderes",
-    summary: "Escuelas con mayor matrícula y empates preservados",
-  },
+  { id: "age-report", label: "Distribución por edad" },
+  { id: "sector-report", label: "Docentes por sector" },
+  { id: "top-schools-report", label: "Escuelas líderes" },
 ];
 
 function isReportSectionId(value: string | null): value is ReportSectionId {
@@ -44,21 +32,24 @@ function isReportSectionId(value: string | null): value is ReportSectionId {
 }
 
 /**
- * Shell operativo de `/reports` (WU10).
+ * Shell operativo de `/reports` (WU10 · rediseño de pestañas ARIA).
  *
- * Expone una sola ruta con navegación interna por anclas y tres secciones
- * autónomas. Cada sección aloja el componente de reporte correspondiente;
- * no hay child routes ni consumo de `student-history` en este cambio.
+ * Expone una sola ruta con un `tablist` ARIA de activación manual: las tres
+ * secciones permanecen montadas en el DOM (`[hidden]`, nunca `@if`) para
+ * conservar el estado de cada `ReportFacade` al alternar de pestaña. El
+ * fragmento de la URL sigue siendo el mecanismo de persistencia (deep-link
+ * + back/forward): la suscripción existente lo lee, y `activate()` ahora
+ * también lo escribe.
  *
- * La suscripción al fragmento se cierra con `takeUntilDestroyed()` y la
- * sección activa se conserva en Signals para mantener el template sin
- * suscripciones manuales.
+ * El `tablist` sigue el patrón de activación manual del WAI-ARIA APG: las
+ * flechas y Home/End sólo mueven el foco entre pestañas (tabindex
+ * circulante — activa en 0, resto en -1); Enter/Espacio/click son los
+ * únicos disparadores de activación.
  */
 @Component({
   selector: "app-reports-shell",
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    RouterLink,
     AgeDistributionComponent,
     TeacherCountsBySectorComponent,
     TopSchoolsComponent,
@@ -68,19 +59,15 @@ function isReportSectionId(value: string | null): value is ReportSectionId {
 })
 export class ReportsShellComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly active = signal<ReportSectionId>("age-report");
+  private readonly tabButtons =
+    viewChildren<ElementRef<HTMLButtonElement>>("tabButton");
 
   readonly sections =
     signal<readonly ReportSection[]>(REPORT_SECTIONS).asReadonly();
   readonly activeSectionId = this.active.asReadonly();
-  readonly activeSectionLabel = computed(() => {
-    const activeId = this.active();
-    return (
-      this.sections().find((section) => section.id === activeId)?.label ??
-      "Distribución por edad"
-    );
-  });
 
   ngOnInit(): void {
     this.route.fragment
@@ -94,5 +81,61 @@ export class ReportsShellComponent implements OnInit {
 
   isActive(sectionId: ReportSectionId): boolean {
     return this.active() === sectionId;
+  }
+
+  tabIndexFor(sectionId: ReportSectionId): number {
+    return this.isActive(sectionId) ? 0 : -1;
+  }
+
+  activate(sectionId: ReportSectionId): void {
+    this.active.set(sectionId);
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      fragment: sectionId,
+    });
+  }
+
+  /**
+   * Maneja el teclado del `tablist`. Flechas y Home/End mueven el foco
+   * entre botones sin activar ninguno; Enter/Espacio activan la pestaña
+   * enfocada. `preventDefault()` en Enter/Espacio evita que el `<button>`
+   * dispare además su propio `click` sintético (ver HTML Standard,
+   * "activation behavior"), así que cada tecla activa una única vez.
+   */
+  onTablistKeydown(event: KeyboardEvent, currentId: ReportSectionId): void {
+    const sections = this.sections();
+    const currentIndex = sections.findIndex(
+      (section) => section.id === currentId,
+    );
+
+    switch (event.key) {
+      case "ArrowRight":
+        event.preventDefault();
+        this.focusTabAt((currentIndex + 1) % sections.length);
+        return;
+      case "ArrowLeft":
+        event.preventDefault();
+        this.focusTabAt((currentIndex - 1 + sections.length) % sections.length);
+        return;
+      case "Home":
+        event.preventDefault();
+        this.focusTabAt(0);
+        return;
+      case "End":
+        event.preventDefault();
+        this.focusTabAt(sections.length - 1);
+        return;
+      case "Enter":
+      case " ":
+        event.preventDefault();
+        this.activate(currentId);
+        return;
+      default:
+        return;
+    }
+  }
+
+  private focusTabAt(index: number): void {
+    this.tabButtons()[index]?.nativeElement.focus();
   }
 }

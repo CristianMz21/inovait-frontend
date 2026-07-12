@@ -2,83 +2,73 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  max-width: 1100px;
 }
 
-.reports-shell-nav {
-  border: 1px solid var(--app-border);
-  border-radius: 8px;
+.reports-shell-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.reports-shell-header h1 {
+  margin: 0;
+}
+
+.reports-shell-description {
+  margin: 0;
+  max-width: 70ch;
+  color: var(--app-muted);
+}
+
+.reports-shell-tablist {
+  display: flex;
+  gap: 0.4rem;
+  border-bottom: 1px solid var(--app-border);
+}
+
+.reports-shell-tab {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0.6rem 1.1rem;
+  border: none;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--app-muted);
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+/* Active tab is never color-only: background tint + bottom border + bolder
+ * weight together carry the "selected" signal so it stays legible under
+ * `prefers-contrast` and for anyone who can't distinguish the accent hue. */
+.reports-shell-tab[aria-selected="true"] {
   background: var(--app-header-bg);
-  padding: 1rem 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-}
-
-.reports-shell-kicker {
-  margin: 0;
-  color: var(--app-muted);
-  font-size: 0.85rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.reports-shell-tabs {
-  list-style: none;
-  margin: 0;
-}
-
-.reports-shell-tabs li {
-  display: flex;
-}
-
-/* Adapts the shared `.ec-segmented__item` pill (single-line by default) to
- * this nav's two-line label + summary content: a smaller radius reads
- * better than a full stadium shape once the item grows taller than one
- * line, but the active/focus states stay the primitive's own — only
- * layout is overridden here, never the semantics. */
-.reports-shell-tabs .ec-segmented__item {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.15rem;
-  min-width: 160px;
-  border-radius: var(--app-radius-control);
-  padding: 0.65rem 0.9rem;
-}
-
-.reports-shell-link-label {
+  color: var(--app-text);
+  border-bottom-color: var(--app-accent);
   font-weight: 700;
 }
 
-.reports-shell-link-summary {
-  /* `color: inherit` (not a diluted/opacity variant) so the summary text
-   * keeps the same AA-compliant contrast as the label against the
-   * `.ec-segmented` track background in both the resting and active
-   * states — `opacity` would blend it toward the track color and fail
-   * WCAG 2 AA (axe `color-contrast`). */
-  color: inherit;
-  font-size: 0.78rem;
-  font-weight: 400;
+.reports-shell-tab:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: 2px;
 }
 
-.reports-shell-active {
-  margin: 0;
-  padding-left: 0.6rem;
-  border-left: 3px solid var(--app-accent);
-  color: var(--app-muted);
-  font-size: 0.88rem;
-}
+@media (max-width: 480px) {
+  .reports-shell-tablist {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
 
-.reports-shell-section {
-  scroll-margin-top: 1rem;
-  border-top: 1px solid var(--app-border);
-  padding-top: 1.5rem;
-}
-
-.reports-shell-section:first-of-type {
-  border-top: 0;
-  padding-top: 0;
+  .reports-shell-tab {
+    flex: 0 0 auto;
+  }
 }
 
 @media (max-width: 320px) {
@@ -86,20 +76,7 @@
     gap: 1rem;
   }
 
-  .reports-shell-nav {
-    padding: 0.85rem;
-  }
-
-  .reports-shell-tabs {
-    flex-direction: column;
-  }
-
-  .reports-shell-tabs .ec-segmented__item {
-    min-width: 0;
-    width: 100%;
-  }
-
-  .reports-shell-section {
-    padding-top: 1rem;
+  .reports-shell-tab {
+    padding: 0.6rem 0.85rem;
   }
 }
