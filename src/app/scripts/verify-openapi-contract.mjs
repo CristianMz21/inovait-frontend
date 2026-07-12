@@ -39,6 +39,11 @@ const APPROVED_SUCCESSORS = new Set([
   // Backend production-model-v2.0.0 completion (103/103 tasks); contract
   // tree verified byte-identical to the authorized baseline.
   "5d8e0f81e1195c3f70a84caeae5f8bda013f785e",
+  // Backend HEAD as of the E2E integration audit; contract tree verified
+  // checksum-identical to the authorized baseline (combined SHA-256
+  // 802c13b91bf5c6425d24c540b6841a2abe134e084ea310fc2b7041e32c24a81a),
+  // clean git status for `specs/001-school-enrollment-management/contracts`.
+  "8878e668790c01e110ac0de432d6be3189d1566f",
 ]);
 
 // Orden canónico declarado en `quickstart.md`.
