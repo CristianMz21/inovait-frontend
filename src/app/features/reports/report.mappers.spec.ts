@@ -118,7 +118,7 @@ describe("ReportMappers (CT-AGE-MAP)", () => {
 
     it("preserva los ids canónicos age3To7, age8To12, ageOver12", () => {
       const vm = ageDistributionResponseToVm(ageDistributionFixture);
-      expect(vm.bands.map((b) => b.id)).toEqual([
+      expect(vm.bands.map(b => b.id)).toEqual([
         "age3To7",
         "age8To12",
         "ageOver12",
@@ -154,9 +154,9 @@ describe("ReportMappers (CT-AGE-MAP)", () => {
       expect(vm.bands[2].label).toBe("Mayores de 12 años");
     });
 
-    it("calcula totalCount como la suma de las tres bandas", () => {
+    it("no deriva un total de inscripciones a partir de las bandas", () => {
       const vm = ageDistributionResponseToVm(ageDistributionFixture);
-      expect(vm.totalCount).toBe(4 + 6 + 2);
+      expect(vm).not.toHaveProperty("totalCount");
     });
 
     it("preserva conteos en 0 sin mapearlos a error (escenario sin inscripciones)", () => {
@@ -164,7 +164,7 @@ describe("ReportMappers (CT-AGE-MAP)", () => {
       expect(vm.bands[0].count).toBe(0);
       expect(vm.bands[1].count).toBe(0);
       expect(vm.bands[2].count).toBe(0);
-      expect(vm.totalCount).toBe(0);
+      expect(vm).not.toHaveProperty("totalCount");
     });
 
     it("propaga schoolId y gradeId cuando el backend los rellena", () => {
@@ -290,7 +290,7 @@ describe("ReportMappers (CT-AGE-MAP)", () => {
       const vm = teacherCountsBySectorResponseToVm(
         teacherCountsBySectorFixture,
       );
-      expect(vm.sectors.map((s) => s.id)).toEqual(["public", "private"]);
+      expect(vm.sectors.map(s => s.id)).toEqual(["public", "private"]);
     });
 
     it("preserva los conteos exactos del DTO sin recalcular ni deduplicar", () => {
@@ -315,11 +315,11 @@ describe("ReportMappers (CT-AGE-MAP)", () => {
       expect(vm.sectors[1].label).toBe("Privado");
     });
 
-    it("calcula totalDistinctTeacherCount como la suma de los dos sectores", () => {
+    it("no deriva un total global a partir de docentes distintos por sector", () => {
       const vm = teacherCountsBySectorResponseToVm(
         teacherCountsBySectorFixture,
       );
-      expect(vm.totalDistinctTeacherCount).toBe(3 + 2);
+      expect(vm).not.toHaveProperty("totalDistinctTeacherCount");
     });
 
     it("preserva conteos en 0 sin mapearlos a error (escenario sin docentes)", () => {
@@ -328,7 +328,7 @@ describe("ReportMappers (CT-AGE-MAP)", () => {
       );
       expect(vm.sectors[0].distinctTeacherCount).toBe(0);
       expect(vm.sectors[1].distinctTeacherCount).toBe(0);
-      expect(vm.totalDistinctTeacherCount).toBe(0);
+      expect(vm).not.toHaveProperty("totalDistinctTeacherCount");
     });
 
     it("no muta el DTO de entrada", () => {
@@ -377,18 +377,18 @@ describe("ReportMappers (CT-AGE-MAP)", () => {
 
     it("preserva el orden estable del backend (school.name ASC, school.id)", () => {
       const vm = topSchoolsResponseToVm(topSchoolsFixture);
-      expect(vm.schools.map((s) => s.schoolName)).toEqual([
+      expect(vm.schools.map(s => s.schoolName)).toEqual([
         "Escuela Río Claro",
         "Instituto Horizonte",
       ]);
-      expect(vm.schools.map((s) => s.schoolId)).toEqual([1, 2]);
+      expect(vm.schools.map(s => s.schoolId)).toEqual([1, 2]);
     });
 
     it("conserva los empates en count=12 (no colapsa ni filtra)", () => {
       // El contrato exige "todos los empates" (T062 spec). El mapper
       // no debe descartar entradas con el mismo `enrollmentCount`.
       const vm = topSchoolsResponseToVm(topSchoolsFixture);
-      expect(vm.schools.map((s) => s.enrollmentCount)).toEqual([12, 12]);
+      expect(vm.schools.map(s => s.enrollmentCount)).toEqual([12, 12]);
     });
 
     it("preserva los conteos exactos del DTO sin recalcular ni agregar", () => {

@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 import type { ApiProblem } from "./dtos/api-problem.dto";
 import { ApiProblemError } from "./api-problem-error";
 
@@ -9,5 +10,9 @@ const unexpectedProblem: ApiProblem = {
   detail: null,
 };
 
-export const toSafeApiProblem = (error: unknown): ApiProblem =>
-  error instanceof ApiProblemError ? error.problem : unexpectedProblem;
+export const toSafeApiProblem = (error: unknown): ApiProblem => {
+  if (error instanceof ApiProblemError) {
+    return error.problem;
+  }
+  return unexpectedProblem;
+};

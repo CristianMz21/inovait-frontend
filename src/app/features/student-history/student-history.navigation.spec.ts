@@ -1,6 +1,7 @@
 import { TestBed } from "@angular/core/testing";
 import { provideRouter, Router } from "@angular/router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { STUDENT_HISTORY_SELECTION_TTL_MS } from "./student-history.constants";
 import { StudentHistoryNavigationHandoff } from "./student-history.navigation";
 
 const selections = [
@@ -15,6 +16,11 @@ const selections = [
   "00000000-0000-4000-8000-000000000009",
   "00000000-0000-4000-8000-000000000010",
 ] as const;
+const SELECTION_CREATED_AT_MS = 1_000;
+const LAST_VALID_SELECTION_TIME_MS =
+  SELECTION_CREATED_AT_MS + STUDENT_HISTORY_SELECTION_TTL_MS - 1;
+const EXPIRED_SELECTION_TIME_MS =
+  SELECTION_CREATED_AT_MS + STUDENT_HISTORY_SELECTION_TTL_MS;
 
 describe("StudentHistoryNavigationHandoff transactional store", () => {
   let handoff: StudentHistoryNavigationHandoff;
@@ -138,19 +144,19 @@ describe("StudentHistoryNavigationHandoff transactional store", () => {
   it("denies and purges selections at the five-minute TTL", async () => {
     vi.spyOn(globalThis.crypto, "randomUUID").mockReturnValue(selections[0]);
     vi.spyOn(router, "navigate").mockResolvedValue(true);
-    const now = vi.spyOn(Date, "now").mockReturnValue(1_000);
+    const now = vi.spyOn(Date, "now").mockReturnValue(SELECTION_CREATED_AT_MS);
 
     await handoff.navigateToHistory({
       documentType: "DNI",
       documentNumber: "expires",
     });
-    now.mockReturnValue(300_999);
+    now.mockReturnValue(LAST_VALID_SELECTION_TIME_MS);
     expect(handoff.resolveSelection(selections[0])).toEqual({
       documentType: "DNI",
       documentNumber: "expires",
     });
 
-    now.mockReturnValue(301_000);
+    now.mockReturnValue(EXPIRED_SELECTION_TIME_MS);
     expect(handoff.resolveSelection(selections[0])).toBeNull();
   });
 
@@ -169,10 +175,10 @@ describe("StudentHistoryNavigationHandoff transactional store", () => {
 
     let settleFailed: (value: boolean) => void = () => undefined;
     let settleSuccessful: (value: boolean) => void = () => undefined;
-    const failedNavigation = new Promise<boolean>((resolve) => {
+    const failedNavigation = new Promise<boolean>(resolve => {
       settleFailed = resolve;
     });
-    const successfulNavigation = new Promise<boolean>((resolve) => {
+    const successfulNavigation = new Promise<boolean>(resolve => {
       settleSuccessful = resolve;
     });
     navigate

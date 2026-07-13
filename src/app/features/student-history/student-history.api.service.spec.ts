@@ -46,10 +46,10 @@ describe("StudentHistoryApiService (ST-HIST-GET)", () => {
     let received: unknown;
     service
       .getStudentHistory(baseParams)
-      .subscribe((value) => (received = value));
+      .subscribe(value => (received = value));
 
     const req = http.expectOne(
-      (r) =>
+      r =>
         r.url ===
           `${DEFAULT_API_CONFIG.apiBaseUrl}/api/students/DNI/99.001.101/history` &&
         r.method === "GET",
@@ -69,7 +69,7 @@ describe("StudentHistoryApiService (ST-HIST-GET)", () => {
       .subscribe(() => undefined);
 
     const req = http.expectOne(
-      (r) =>
+      r =>
         r.url ===
         `${DEFAULT_API_CONFIG.apiBaseUrl}/api/students/DNI%20Extranjero/88%2F001%20002/history`,
     );

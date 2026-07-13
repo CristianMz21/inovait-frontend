@@ -29,8 +29,6 @@
     @if (createSuccess(); as created) {
       <div
         class="contracts-create-success ec-card"
-        role="status"
-        aria-live="polite"
         data-testid="contracts-create-success"
       >
         <div
@@ -39,10 +37,10 @@
           <app-icon name="check_circle" />
           <h3>Contratos registrados</h3>
         </div>
-        <p>
+        <output class="contracts-created-count" aria-live="polite">
           Se crearon <strong>{{ created.length }}</strong>
           contratos independientes para el docente.
-        </p>
+        </output>
         <ul class="contracts-list">
           @for (contract of created; track contract.id) {
             <li>
@@ -124,9 +122,9 @@
             </small>
           </legend>
 
-          <p class="contracts-help" role="status" aria-live="polite">
+          <output class="contracts-help" aria-live="polite">
             Marque una o más escuelas. El backend rechaza escuelas repetidas.
-          </p>
+          </output>
 
           <ul class="contracts-school-list">
             @for (opt of schoolOptions(); track opt.value) {
@@ -151,7 +149,7 @@
             type="submit"
             class="contracts-submit ec-btn ec-btn--primary"
             [disabled]="!isCreateSubmittable() || isCreating()"
-            [attr.aria-busy]="isCreating() ? 'true' : 'false'"
+            [attr.aria-busy]="isCreating()"
           >
             @if (isCreating()) {
               Enviando…
@@ -265,7 +263,7 @@
           type="submit"
           class="contracts-submit ec-btn ec-btn--secondary"
           [disabled]="queryForm.invalid || isQuerying()"
-          [attr.aria-busy]="isQuerying() ? 'true' : 'false'"
+          [attr.aria-busy]="isQuerying()"
         >
           @if (isQuerying()) {
             Consultando…
@@ -285,31 +283,28 @@
     </form>
 
     @if (isQuerying()) {
-      <p
+      <output
         class="contracts-status ec-alert ec-alert--info"
-        role="status"
         aria-live="polite"
         data-testid="contracts-query-loading"
       >
         <app-icon name="update" />
         <span>Consultando contratos…</span>
-      </p>
+      </output>
     }
 
     @if (isQueryEmpty()) {
       <div
         class="contracts-empty ec-alert ec-alert--info"
-        role="status"
-        aria-live="polite"
         data-testid="contracts-query-empty"
       >
         <app-icon name="badge" />
         <div>
           <h3>Sin contratos</h3>
-          <p>
+          <output aria-live="polite">
             El docente no tiene contratos registrados. Verifique la identidad
             seleccionada.
-          </p>
+          </output>
           <button
             type="button"
             class="ec-btn ec-btn--outline"
@@ -353,16 +348,15 @@
     }
 
     @if (querySuccess(); as rows) {
-      <div
+      <section
         class="contracts-results"
-        role="region"
         aria-labelledby="query-results-title"
         data-testid="contracts-query-results"
       >
         <h3 id="query-results-title">Contratos del docente</h3>
         <p class="contracts-count" aria-live="polite">
           {{ rows.length }}
-          {{ rows.length === 1 ? "contrato" : "contratos" }}
+          {{ contractCountLabel(rows.length) }}
         </p>
         <div class="ec-legend">
           <span class="ec-legend-item">
@@ -378,7 +372,14 @@
             Estado efectivo: vigencia según las fechas al día de consulta.
           </span>
         </div>
-        <div class="ec-table">
+        <section class="ec-table" aria-label="Contratos históricos del docente">
+          <button
+            type="button"
+            class="ec-table__skip"
+            appTableSkip="contracts-results-table-end"
+          >
+            Omitir tabla de contratos
+          </button>
           <table>
             <caption class="visually-hidden">
               Contratos históricos del docente. El orden refleja el devuelto por
@@ -426,8 +427,15 @@
               }
             </tbody>
           </table>
-        </div>
-      </div>
+        </section>
+        <span
+          id="contracts-results-table-end"
+          class="ec-table__end visually-hidden"
+          tabindex="-1"
+        >
+          Fin de la tabla de contratos
+        </span>
+      </section>
     }
   </section>
 </section>

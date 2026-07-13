@@ -1,5 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { calculateCompletedYears } from "./date-only";
+import { calculateCompletedYears, compareDateOnly } from "./date-only";
+
+describe("compareDateOnly", () => {
+  it("compares valid date-only values numerically", () => {
+    expect(compareDateOnly("2026-01-01", "2025-12-31")).toBeGreaterThan(0);
+    expect(compareDateOnly("2025-12-31", "2026-01-01")).toBeLessThan(0);
+    expect(compareDateOnly("2026-07-10", "2026-07-10")).toBe(0);
+  });
+
+  it("rejects malformed values instead of comparing strings", () => {
+    expect(() => compareDateOnly("2026-02-30", "2026-03-01")).toThrow(
+      "Invalid date-only value",
+    );
+  });
+});
 
 describe("calculateCompletedYears", () => {
   it("changes age on the birthday boundary", () => {

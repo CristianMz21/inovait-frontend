@@ -49,6 +49,9 @@ const APPROVED_SUCCESSORS = new Set([
   // checksum-identical to the authorized baseline (combined SHA-256
   // 802c13b91bf5c6425d24c540b6841a2abe134e084ea310fc2b7041e32c24a81a).
   "a61170ed2f9976e4a364c18b1d5d8f67bc0f9089",
+  // Backend Sonar quality-gate remediation; contract tree verified clean and
+  // checksum-identical to the authorized baseline.
+  "8ed5e6e57aa90758059ebb84ebd2ea55b8dd5854",
 ]);
 
 // CI opt-in tolerance: when set to exactly "1", an unauthorized HEAD does
@@ -252,7 +255,6 @@ function extractOperationIds(contractsDir) {
   // no de `openapi.yaml` (que solo referencia paths/componentes sin inlinearlos).
   // No usamos un parser YAML para mantener el script 100% Node estándar
   // y sin dependencias de runtime.
-  const pathsDir = resolve(contractsDir, "paths");
   const declared = new Set();
   for (const rel of CONTRACT_FILES) {
     if (!rel.startsWith("paths/") || !rel.endsWith(".yaml")) {
@@ -260,7 +262,7 @@ function extractOperationIds(contractsDir) {
     }
     const absolute = resolve(contractsDir, rel);
     const source = readFileSync(absolute, "utf8");
-    const matches = source.matchAll(/operationId:\s*([A-Za-z0-9_]+)/g);
+    const matches = source.matchAll(/operationId:\s*(\w+)/g);
     for (const match of matches) {
       declared.add(match[1]);
     }
@@ -271,7 +273,7 @@ function extractOperationIds(contractsDir) {
 function assertOperationIds(contractsDir) {
   logStep("Verificando operationIds canónicos en paths/*.yaml");
   const declared = extractOperationIds(contractsDir);
-  const missing = REQUIRED_OPERATION_IDS.filter((id) => !declared.has(id));
+  const missing = REQUIRED_OPERATION_IDS.filter(id => !declared.has(id));
   if (missing.length > 0) {
     throw new VerificationError(
       `Faltan operationIds en paths/*.yaml: ${missing.join(", ")}`,

@@ -79,7 +79,7 @@ describe("TopSchoolsComponent (CT-TOP-RPT)", () => {
     expect(host.textContent).toContain(
       "No se pudieron cargar años académicos para escuelas líderes",
     );
-    const retry = Array.from(host.querySelectorAll("button")).find((button) =>
+    const retry = Array.from(host.querySelectorAll("button")).find(button =>
       button.textContent?.includes(
         "Reintentar años académicos para escuelas líderes",
       ),
@@ -146,7 +146,7 @@ describe("TopSchoolsComponent (CT-TOP-RPT)", () => {
 
     expect(compiled.querySelector('[data-testid="top-idle"]')).toBeNull();
 
-    http.expectOne((r) => r.url === topUrl).flush(topSchoolsFixture);
+    http.expectOne(r => r.url === topUrl).flush(topSchoolsFixture);
   });
 
   // -- Estado del formulario --------------------------------------------
@@ -169,8 +169,14 @@ describe("TopSchoolsComponent (CT-TOP-RPT)", () => {
     component.form.patchValue({ academicYearId: 2 });
     component.onSubmit();
     expect(component.isLoading()).toBe(true);
+    fixture.detectChanges();
 
-    const req = http.expectOne((r) => r.url === topUrl && r.method === "GET");
+    const loadingStatus = (fixture.nativeElement as HTMLElement).querySelector(
+      "output[data-testid='top-loading']",
+    );
+    expect(loadingStatus?.getAttribute("aria-live")).toBe("polite");
+
+    const req = http.expectOne(r => r.url === topUrl && r.method === "GET");
     expect(req.request.params.get("academicYearId")).toBe("2");
     req.flush(topSchoolsFixture);
     fixture.detectChanges();
@@ -180,23 +186,26 @@ describe("TopSchoolsComponent (CT-TOP-RPT)", () => {
     expect(data).not.toBeNull();
     expect(data?.schools).toHaveLength(2);
     // Orden estable preservado.
-    expect(data?.schools.map((s) => s.schoolName)).toEqual([
+    expect(data?.schools.map(s => s.schoolName)).toEqual([
       "Escuela Río Claro",
       "Instituto Horizonte",
     ]);
     // Empates preservados.
-    expect(data?.schools.map((s) => s.enrollmentCount)).toEqual([12, 12]);
+    expect(data?.schools.map(s => s.enrollmentCount)).toEqual([12, 12]);
 
     // Tabla accesible: caption + th scope=col
     const compiled = fixture.nativeElement as HTMLElement;
     const results = compiled.querySelector('[data-testid="top-results"]');
     expect(results).toBeTruthy();
+    expect(results?.tagName).toBe("SECTION");
+    const liveContext = results?.querySelector("output.top-context");
+    expect(liveContext?.getAttribute("aria-live")).toBe("polite");
     const caption = compiled.querySelector("caption.visually-hidden");
     expect(caption).toBeTruthy();
     expect(caption?.textContent?.trim().length ?? 0).toBeGreaterThan(0);
     const headers = compiled.querySelectorAll('th[scope="col"]');
     expect(headers.length).toBe(3);
-    expect(Array.from(headers).map((h) => h.textContent?.trim())).toEqual([
+    expect(Array.from(headers).map(h => h.textContent?.trim())).toEqual([
       "Escuela",
       "Sector",
       "Inscripciones",
@@ -209,7 +218,7 @@ describe("TopSchoolsComponent (CT-TOP-RPT)", () => {
     flushAcademicYears(http);
     component.form.patchValue({ academicYearId: 2 });
     component.onSubmit();
-    http.expectOne((r) => r.url === topUrl).flush(topSchoolsFixture);
+    http.expectOne(r => r.url === topUrl).flush(topSchoolsFixture);
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
@@ -233,7 +242,7 @@ describe("TopSchoolsComponent (CT-TOP-RPT)", () => {
     flushAcademicYears(http);
     component.form.patchValue({ academicYearId: 2 });
     component.onSubmit();
-    http.expectOne((r) => r.url === topUrl).flush(topSchoolsSingleFixture);
+    http.expectOne(r => r.url === topUrl).flush(topSchoolsSingleFixture);
     fixture.detectChanges();
 
     const data = component.successData();
@@ -249,7 +258,7 @@ describe("TopSchoolsComponent (CT-TOP-RPT)", () => {
     component.form.patchValue({ academicYearId: 2 });
     component.onSubmit();
 
-    http.expectOne((r) => r.url === topUrl).flush(emptyTopSchoolsFixture);
+    http.expectOne(r => r.url === topUrl).flush(emptyTopSchoolsFixture);
     fixture.detectChanges();
 
     expect(component.isEmpty()).toBe(true);
@@ -260,7 +269,9 @@ describe("TopSchoolsComponent (CT-TOP-RPT)", () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const empty = compiled.querySelector('[data-testid="top-empty"]');
     expect(empty).toBeTruthy();
-    expect(empty?.getAttribute("role")).toBe("status");
+    expect(empty?.hasAttribute("role")).toBe(false);
+    const emptyStatus = empty?.querySelector("output");
+    expect(emptyStatus?.getAttribute("aria-live")).toBe("polite");
     const emptyButton = empty?.querySelector("button");
     expect(emptyButton).toBeTruthy();
     expect(emptyButton?.textContent?.trim()).toBe("Reintentar");
@@ -271,11 +282,11 @@ describe("TopSchoolsComponent (CT-TOP-RPT)", () => {
     component.form.patchValue({ academicYearId: 2 });
     component.onSubmit();
 
-    http.expectOne((r) => r.url === topUrl).flush(emptyTopSchoolsFixture);
+    http.expectOne(r => r.url === topUrl).flush(emptyTopSchoolsFixture);
     expect(component.isEmpty()).toBe(true);
 
     component.onRetry();
-    const retryReq = http.expectOne((r) => r.url === topUrl);
+    const retryReq = http.expectOne(r => r.url === topUrl);
     retryReq.flush(topSchoolsFixture);
     expect(component.isSuccess()).toBe(true);
   });
@@ -287,7 +298,7 @@ describe("TopSchoolsComponent (CT-TOP-RPT)", () => {
     component.form.patchValue({ academicYearId: 0 });
     component.onSubmit();
 
-    const req = http.expectOne((r) => r.url === topUrl && r.method === "GET");
+    const req = http.expectOne(r => r.url === topUrl && r.method === "GET");
     req.flush(apiProblemBadRequestFixture, {
       status: 400,
       statusText: "Bad Request",
@@ -309,7 +320,7 @@ describe("TopSchoolsComponent (CT-TOP-RPT)", () => {
     component.form.patchValue({ academicYearId: 9999 });
     component.onSubmit();
 
-    const req = http.expectOne((r) => r.url === topUrl && r.method === "GET");
+    const req = http.expectOne(r => r.url === topUrl && r.method === "GET");
     req.flush(apiProblemNotFoundFixture, {
       status: 404,
       statusText: "Not Found",
@@ -336,7 +347,7 @@ describe("TopSchoolsComponent (CT-TOP-RPT)", () => {
     component.onSubmit();
 
     http
-      .expectOne((r) => r.url === topUrl)
+      .expectOne(r => r.url === topUrl)
       .flush(apiProblemBadRequestFixture, {
         status: 400,
         statusText: "Bad Request",
@@ -347,7 +358,7 @@ describe("TopSchoolsComponent (CT-TOP-RPT)", () => {
     expect(component.hasError()).toBe(true);
 
     component.onRetry();
-    const retryReq = http.expectOne((r) => r.url === topUrl);
+    const retryReq = http.expectOne(r => r.url === topUrl);
     retryReq.flush(topSchoolsFixture);
     expect(component.isSuccess()).toBe(true);
   });
@@ -357,7 +368,7 @@ describe("TopSchoolsComponent (CT-TOP-RPT)", () => {
     component.form.patchValue({ academicYearId: 2 });
     component.onSubmit();
 
-    const req = http.expectOne((r) => r.url === topUrl && r.method === "GET");
+    const req = http.expectOne(r => r.url === topUrl && r.method === "GET");
     expect(component.isLoading()).toBe(true);
 
     component.onReset();
@@ -373,13 +384,13 @@ describe("TopSchoolsComponent (CT-TOP-RPT)", () => {
     component.form.patchValue({ academicYearId: 1 });
     component.onSubmit();
     const first = http.expectOne(
-      (r) => r.url === topUrl && r.params.get("academicYearId") === "1",
+      r => r.url === topUrl && r.params.get("academicYearId") === "1",
     );
 
     component.form.patchValue({ academicYearId: 2 });
     component.onSubmit();
     const second = http.expectOne(
-      (r) => r.url === topUrl && r.params.get("academicYearId") === "2",
+      r => r.url === topUrl && r.params.get("academicYearId") === "2",
     );
     expect(first.cancelled).toBe(true);
 

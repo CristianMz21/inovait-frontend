@@ -15,6 +15,7 @@ import {
 } from "../../core/api";
 import { studentHistoryFixture } from "../../../testing/fixtures";
 import { StudentHistoryComponent } from "./student-history.component";
+import { STUDENT_HISTORY_REMOTE_STATUS } from "./student-history.constants";
 import { StudentHistoryNavigationHandoff } from "./student-history.navigation";
 
 @Component({
@@ -24,6 +25,16 @@ import { StudentHistoryNavigationHandoff } from "./student-history.navigation";
 class NavigationHostComponent {}
 
 const historyUrl = `${DEFAULT_API_CONFIG.apiBaseUrl}/api/students/DNI/99.001.101/history`;
+
+function selectionQueryParams(
+  selection: string | null,
+): Record<string, string> {
+  const queryParams: Record<string, string> = {};
+  if (selection !== null) {
+    queryParams["selection"] = selection;
+  }
+  return queryParams;
+}
 
 describe("StudentHistoryComponent selection route integration", () => {
   let hostFixture: ComponentFixture<NavigationHostComponent>;
@@ -77,7 +88,7 @@ describe("StudentHistoryComponent selection route integration", () => {
       documentNumber: "99.001.101",
     });
 
-    const requests = http.match((request) => request.url === historyUrl);
+    const requests = http.match(request => request.url === historyUrl);
     expect(requests).toHaveLength(1);
     const request = requests[0];
     if (!request) {
@@ -85,15 +96,15 @@ describe("StudentHistoryComponent selection route integration", () => {
     }
     request.flush(studentHistoryFixture);
     hostFixture.detectChanges();
-    http.expectNone((candidate) => candidate.url === historyUrl);
+    http.expectNone(candidate => candidate.url === historyUrl);
     expect(component?.isSuccess()).toBe(true);
   });
 
   it.each([null, "unknown-selection"])(
     "keeps manual mode with zero requests for missing or unknown selection",
-    async (selection) => {
+    async selection => {
       await router.navigate(["/student-history"], {
-        queryParams: selection === null ? {} : { selection },
+        queryParams: selectionQueryParams(selection),
       });
       hostFixture.detectChanges();
 
@@ -106,23 +117,25 @@ describe("StudentHistoryComponent selection route integration", () => {
         documentType: "",
         documentNumber: "",
       });
-      expect(component?.result().status).toBe("idle");
-      http.expectNone((request) => request.url.includes("/api/students/"));
+      expect(component?.result().status).toBe(
+        STUDENT_HISTORY_REMOTE_STATUS.idle,
+      );
+      http.expectNone(request => request.url.includes("/api/students/"));
     },
   );
 
   it.each([null, "unknown-selection"])(
     "resets a loaded same-route view when selection becomes missing or unknown",
-    async (selection) => {
+    async selection => {
       await handoff.navigateToHistory({
         documentType: "DNI",
         documentNumber: "99.001.101",
       });
       hostFixture.detectChanges();
-      const pending = http.expectOne((request) => request.url === historyUrl);
+      const pending = http.expectOne(request => request.url === historyUrl);
 
       await router.navigate(["/student-history"], {
-        queryParams: selection === null ? {} : { selection },
+        queryParams: selectionQueryParams(selection),
       });
       hostFixture.detectChanges();
 
@@ -136,8 +149,10 @@ describe("StudentHistoryComponent selection route integration", () => {
         documentType: "",
         documentNumber: "",
       });
-      expect(component?.result().status).toBe("idle");
-      http.expectNone((request) => request.url === historyUrl);
+      expect(component?.result().status).toBe(
+        STUDENT_HISTORY_REMOTE_STATUS.idle,
+      );
+      http.expectNone(request => request.url === historyUrl);
     },
   );
 
@@ -153,7 +168,7 @@ describe("StudentHistoryComponent selection route integration", () => {
     if (selection === null) {
       throw new Error("Expected an opaque selection token");
     }
-    const request = http.expectOne((candidate) => candidate.url === historyUrl);
+    const request = http.expectOne(candidate => candidate.url === historyUrl);
 
     await router.navigate(["/student-history"], {
       queryParams: { selection, view: "same-selection" },
@@ -161,7 +176,7 @@ describe("StudentHistoryComponent selection route integration", () => {
     hostFixture.detectChanges();
 
     expect(request.cancelled).toBe(false);
-    http.expectNone((candidate) => candidate.url === historyUrl);
+    http.expectNone(candidate => candidate.url === historyUrl);
     request.flush(studentHistoryFixture);
   });
 });

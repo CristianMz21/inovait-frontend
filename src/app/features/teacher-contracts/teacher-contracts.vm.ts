@@ -1,3 +1,6 @@
+/* Copyright (c) 2026. All rights reserved. */
+import type { TeacherContractResponse } from "../../core/api/dtos/teacher-contract-response.dto";
+
 /**
  * Tipos de la capa de vista del recorrido de **Contratos docentes**
  * (US3). Mantiene paridad con el contrato canónico (`paths/teacher-contracts.yaml`)
@@ -37,8 +40,8 @@ export interface TeacherContractResultVm {
   readonly schoolSector: string;
   readonly startDate: string;
   readonly endDate: string | null;
-  readonly persistedStatus: "Confirmed" | "Cancelled";
-  readonly effectiveStatus: "Upcoming" | "Effective" | "Expired" | "Cancelled";
+  readonly persistedStatus: TeacherContractResponse["persistedStatus"];
+  readonly effectiveStatus: TeacherContractResponse["effectiveStatus"];
   readonly evaluatedAt: string;
 }
 

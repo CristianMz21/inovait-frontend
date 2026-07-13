@@ -32,7 +32,7 @@ function createCatalogFacadeStub(): CatalogFacade {
 
 function styleText(): string {
   return Array.from(document.head.querySelectorAll("style"))
-    .map((style) => style.textContent ?? "")
+    .map(style => style.textContent ?? "")
     .join("\n");
 }
 
@@ -93,14 +93,14 @@ describe("ReportsShellComponent (WU10-RPT · ARIA tabs)", () => {
 
     const tabs = Array.from(compiled.querySelectorAll('button[role="tab"]'));
     expect(tabs.length).toBe(3);
-    expect(tabs.map((tab) => tab.textContent?.trim())).toEqual([
+    expect(tabs.map(tab => tab.textContent?.trim())).toEqual([
       "Distribución por edad",
       "Docentes por sector",
       "Escuelas líderes",
     ]);
 
     const selected = tabs.filter(
-      (tab) => tab.getAttribute("aria-selected") === "true",
+      tab => tab.getAttribute("aria-selected") === "true",
     );
     expect(selected.length).toBe(1);
     expect(selected[0]?.textContent?.trim()).toBe("Distribución por edad");
@@ -110,7 +110,7 @@ describe("ReportsShellComponent (WU10-RPT · ARIA tabs)", () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const tabs = Array.from(compiled.querySelectorAll('button[role="tab"]'));
 
-    expect(tabs.map((tab) => tab.getAttribute("tabindex"))).toEqual([
+    expect(tabs.map(tab => tab.getAttribute("tabindex"))).toEqual([
       "0",
       "-1",
       "-1",
@@ -122,20 +122,18 @@ describe("ReportsShellComponent (WU10-RPT · ARIA tabs)", () => {
     const panels = Array.from(compiled.querySelectorAll('[role="tabpanel"]'));
 
     expect(panels.length).toBe(3);
-    expect(panels.map((panel) => panel.id)).toEqual([
+    expect(panels.map(panel => panel.id)).toEqual([
       "age-report",
       "sector-report",
       "top-schools-report",
     ]);
-    expect(
-      panels.map((panel) => panel.getAttribute("aria-labelledby")),
-    ).toEqual([
+    expect(panels.map(panel => panel.getAttribute("aria-labelledby"))).toEqual([
       "tab-age-report",
       "tab-sector-report",
       "tab-top-schools-report",
     ]);
 
-    const visible = panels.filter((panel) => !panel.hasAttribute("hidden"));
+    const visible = panels.filter(panel => !panel.hasAttribute("hidden"));
     expect(visible.length).toBe(1);
     expect(visible[0]?.id).toBe("age-report");
 
@@ -203,10 +201,14 @@ describe("ReportsShellComponent (WU10-RPT · ARIA tabs)", () => {
 
   it.each(["Enter", " "])(
     "%s activa la pestaña enfocada: alterna aria-selected y [hidden] del panel",
-    (key) => {
+    key => {
       const compiled = fixture.nativeElement as HTMLElement;
       const sectorTab =
-        compiled.querySelector<HTMLButtonElement>("#tab-sector-report")!;
+        compiled.querySelector<HTMLButtonElement>("#tab-sector-report");
+      expect(sectorTab).not.toBeNull();
+      if (sectorTab === null) {
+        throw new Error("The sector report tab should be rendered");
+      }
 
       sectorTab.focus();
       sectorTab.dispatchEvent(
@@ -230,7 +232,11 @@ describe("ReportsShellComponent (WU10-RPT · ARIA tabs)", () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const topTab = compiled.querySelector<HTMLButtonElement>(
       "#tab-top-schools-report",
-    )!;
+    );
+    expect(topTab).not.toBeNull();
+    if (topTab === null) {
+      throw new Error("The top-schools report tab should be rendered");
+    }
 
     topTab.click();
     fixture.detectChanges();
@@ -275,9 +281,9 @@ describe("ReportsShellComponent (WU10-RPT · ARIA tabs)", () => {
   });
 
   it("mantiene /reports como ruta única y /student-history operativa (WU11-STU)", async () => {
-    const reportsRoute = routes.find((route) => route.path === "reports");
+    const reportsRoute = routes.find(route => route.path === "reports");
     const studentHistoryRoute = routes.find(
-      (route) => route.path === "student-history",
+      route => route.path === "student-history",
     );
 
     expect(reportsRoute?.data).toBeUndefined();

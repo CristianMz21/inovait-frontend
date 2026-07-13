@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 import { DestroyRef, Injectable, inject, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import type { Subscription } from "rxjs";
@@ -18,6 +19,7 @@ import {
 import {
   TeacherContractsApiService,
   type CreateTeacherContractsParams,
+  type ListTeacherContractsParams,
 } from "./teacher-contracts.api.service";
 import type {
   TeacherContractResultVm,
@@ -35,9 +37,8 @@ import type {
  *   (`listTeacherContracts`).
  *
  * Ambos comparten la disciplina de `RemoteState` exclusivo
- * (`idle|loading|success|empty|error`), cancelación del envío previo
- * ante nuevas solicitudes y descarte de respuestas obsoletas vía
- * `requestKey`. La invariante crítica de US3 —atomicidad: no debe
+ * (`idle|loading|success|empty|error`) y descarte de respuestas obsoletas
+ * vía `requestKey`. La invariante crítica de US3 —atomicidad: no debe
  * representarse ninguna creación parcial si el backend rechaza la
  * solicitud— se garantiza porque:
  *
@@ -46,6 +47,9 @@ import type {
  *   `error` y el resultado anterior (si lo había) no se conserva.
  * - Mientras un `POST` está en curso, nuevos submits son no-op: cancelar
  *   HTTP en el cliente no garantiza rollback de una escritura backend.
+ * - Tras un `201`, el resultado del POST conserva el anuncio de creación y
+ *   se ejecuta `listTeacherContracts` sin filtros. Sólo esa respuesta GET
+ *   reemplaza la lista visible; nunca se anexan filas optimistas.
  * - La validación local (`teacherContractsFormToRequest`) evita
  *   peticiones inválidas antes de invocar al backend.
  *
@@ -87,10 +91,10 @@ export class TeacherContractsFacade {
   }
 
   /**
-   * Envía la solicitud de creación multiescuela. Si ya hay un envío
-   * en curso, lo cancela y descarta cualquier respuesta tardía. No-op
-   * cuando la VM es inválida (formulario incompleto o con
-   * inconsistencias locales).
+   * Envía la solicitud de creación multiescuela. Si ya hay un envío en
+   * curso, no inicia otro. Tras un éxito, refresca la lista canónica del
+   * docente sin `asOfDate`. No-op cuando la VM es inválida (formulario
+   * incompleto o con inconsistencias locales).
    */
   submit(form: TeacherContractsFormVm): void {
     if (this.create().status === "loading") {
@@ -190,11 +194,12 @@ export class TeacherContractsFacade {
             this.create.set(
               empty<readonly TeacherContractResultVm[]>("noContracts"),
             );
-            return;
+          } else {
+            this.create.set(
+              success(response.map(teacherContractResponseToResult)),
+            );
           }
-          this.create.set(
-            success(response.map(teacherContractResponseToResult)),
-          );
+          this.searchByTeacher(params.teacherId);
         },
         error: (err: unknown) => {
           if (this.isStale(this.create(), requestKey)) {
@@ -214,9 +219,10 @@ export class TeacherContractsFacade {
     this.listSequence += 1;
     const requestKey = `teacher-contracts-list#${this.listSequence}`;
     this.list.set(loading(requestKey));
+    const params = this.listParams(teacherId, asOfDate);
 
     this.listSubscription = this.api
-      .list({ teacherId, ...(asOfDate ? { asOfDate } : {}) })
+      .list(params)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (response: readonly TeacherContractResponse[]) => {
@@ -242,6 +248,16 @@ export class TeacherContractsFacade {
           );
         },
       });
+  }
+
+  private listParams(
+    teacherId: number,
+    asOfDate: string | undefined,
+  ): ListTeacherContractsParams {
+    if (asOfDate === undefined) {
+      return { teacherId };
+    }
+    return { teacherId, asOfDate };
   }
 
   /**

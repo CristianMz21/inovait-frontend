@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 import {
   ChangeDetectionStrategy,
   Component,
@@ -19,6 +20,7 @@ import {
 import { CatalogFacade } from "../../../core/catalogs/catalog.facade";
 import { CatalogStatusComponent } from "../../../core/catalogs/catalog-status.component";
 import { AppIconComponent } from "../../../layout/educore-shell/app-icon.component";
+import { TableSkipDirective } from "../../../layout/educore-shell/table-skip.directive";
 import type { RemoteState } from "../../../core/api/remote-state";
 import { ReportFacade } from "../report.facade";
 import { topSchoolsFiltersToParams } from "../report.mappers";
@@ -65,7 +67,12 @@ type TopFiltersFormGroup = FormGroup<TopFiltersFormShape>;
 @Component({
   selector: "app-top-schools",
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, CatalogStatusComponent, AppIconComponent],
+  imports: [
+    ReactiveFormsModule,
+    CatalogStatusComponent,
+    AppIconComponent,
+    TableSkipDirective,
+  ],
   providers: [ReportFacade],
   templateUrl: "./top-schools.component.html",
   styleUrl: "./top-schools.component.scss",
@@ -86,10 +93,16 @@ export class TopSchoolsComponent implements OnInit {
   readonly academicYearOptions = computed(() => {
     const state = this.catalog.academicYearsState();
     if (state.status === "success") {
-      return state.data.map((year) => ({
-        value: year.id,
-        label: year.isCurrent ? `${year.name} (actual)` : year.name,
-      }));
+      return state.data.map(year => {
+        let label = year.name;
+        if (year.isCurrent) {
+          label = `${year.name} (actual)`;
+        }
+        return {
+          value: year.id,
+          label,
+        };
+      });
     }
     return [];
   });
@@ -102,12 +115,18 @@ export class TopSchoolsComponent implements OnInit {
 
   readonly successData = computed<TopSchoolsVm | null>(() => {
     const state = this.result();
-    return state.status === "success" ? state.data : null;
+    if (state.status === "success") {
+      return state.data;
+    }
+    return null;
   });
 
   readonly errorProblem = computed(() => {
     const state = this.result();
-    return state.status === "error" ? state.problem : null;
+    if (state.status === "error") {
+      return state.problem;
+    }
+    return null;
   });
 
   readonly errorFields = computed(() => {
@@ -176,6 +195,13 @@ export class TopSchoolsComponent implements OnInit {
    */
   remote(): RemoteState<TopSchoolsVm> {
     return this.result();
+  }
+
+  schoolNoun(count: number): string {
+    if (count === 1) {
+      return "escuela líder";
+    }
+    return "escuelas líderes";
   }
 
   // -- Helpers -----------------------------------------------------------

@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 /**
  * Sub-elementos del response canónico `StudentHistoryResponse`. Refleja la
  * definición de `components/enrollments.yaml#/schemas/EnrollmentHistoryItem`

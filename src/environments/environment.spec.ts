@@ -14,7 +14,7 @@ describe("resolveUseMocks", () => {
 
   it.each(["false", "true", 0, 1, null, [], {}, Symbol("true")])(
     "fails closed for a non-boolean runtime value: %s",
-    (runtimeValue) => {
+    runtimeValue => {
       expect(resolveUseMocks(false, runtimeValue)).toBe(false);
       expect(resolveUseMocks(true, runtimeValue)).toBe(true);
     },

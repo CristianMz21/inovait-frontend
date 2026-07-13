@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 import { HttpClient, HttpParams } from "@angular/common/http";
 import { Injectable, inject } from "@angular/core";
 import type { Observable } from "rxjs";
@@ -102,7 +103,7 @@ function toTopSchoolsHttpParams(
  * `operationId` declarado en `paths/reports.yaml`. El manejo uniforme
  * de errores 4xx/5xx queda delegado al `problemDetailsInterceptor`.
  *
- * Cada método clona el DTO recibido (`map((data) => ({ ...data }))`)
+ * Cada método clona el DTO recibido (`map(data => ({ ...data }))`)
  * para evitar fugas de referencia cruzada entre slots de la fachada.
  */
 @Injectable({ providedIn: "root" })
@@ -118,7 +119,7 @@ export class ReportApiService {
       .get<AgeDistributionResponseDto>(url, {
         params: toAgeDistributionHttpParams(params),
       })
-      .pipe(map((data) => ({ ...data })));
+      .pipe(map(data => ({ ...data })));
   }
 
   getDistinctTeacherCountsBySector(
@@ -129,7 +130,7 @@ export class ReportApiService {
       .get<TeacherCountsBySectorResponseDto>(url, {
         params: toSectorHttpParams(params),
       })
-      .pipe(map((data) => ({ ...data })));
+      .pipe(map(data => ({ ...data })));
   }
 
   /**
@@ -148,8 +149,8 @@ export class ReportApiService {
         params: toTopSchoolsHttpParams(params),
       })
       .pipe(
-        map((data) =>
-          data.map((entry) => ({ ...entry, school: { ...entry.school } })),
+        map(data =>
+          data.map(entry => ({ ...entry, school: { ...entry.school } })),
         ),
       );
   }

@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 import {
   ChangeDetectionStrategy,
   Component,
@@ -17,6 +18,7 @@ import {
 } from "@angular/forms";
 import type { RemoteState } from "../../../core/api/remote-state";
 import { AppIconComponent } from "../../../layout/educore-shell/app-icon.component";
+import { TableSkipDirective } from "../../../layout/educore-shell/table-skip.directive";
 import { ReportFacade } from "../report.facade";
 import { teacherCountsBySectorFiltersToParams } from "../report.mappers";
 import type {
@@ -31,6 +33,20 @@ interface SectorFiltersFormShape {
 }
 
 type SectorFiltersFormGroup = FormGroup<SectorFiltersFormShape>;
+
+interface SectorFiltersRawValue {
+  readonly periodStart: string;
+  readonly periodEnd: string;
+}
+
+const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+function emptyDateToNull(value: string): string | null {
+  if (value.length === 0) {
+    return null;
+  }
+  return value;
+}
 
 /**
  * Vista del recorrido **Docentes distintos por sector** (FR-RPT-003, WU08).
@@ -61,7 +77,7 @@ type SectorFiltersFormGroup = FormGroup<SectorFiltersFormShape>;
 @Component({
   selector: "app-teacher-counts-by-sector",
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, AppIconComponent],
+  imports: [ReactiveFormsModule, AppIconComponent, TableSkipDirective],
   providers: [ReportFacade],
   templateUrl: "./teacher-counts-by-sector.component.html",
   styleUrl: "./teacher-counts-by-sector.component.scss",
@@ -74,10 +90,8 @@ export class TeacherCountsBySectorComponent implements OnInit {
   readonly result = this.reports.sectorState;
 
   readonly form: SectorFiltersFormGroup = this.fb.group({
-    periodStart: this.fb.control("", [
-      Validators.pattern(/^\d{4}-\d{2}-\d{2}$/),
-    ]),
-    periodEnd: this.fb.control("", [Validators.pattern(/^\d{4}-\d{2}-\d{2}$/)]),
+    periodStart: this.fb.control("", [Validators.pattern(ISO_DATE_PATTERN)]),
+    periodEnd: this.fb.control("", [Validators.pattern(ISO_DATE_PATTERN)]),
   });
 
   readonly isIdle = computed(() => this.result().status === "idle");
@@ -99,22 +113,17 @@ export class TeacherCountsBySectorComponent implements OnInit {
 
   /**
    * Indica si los filtros actuales son simétricos. La UI usa este
-   * predicado para activar/desactivar el botón "Consultar". Se calcula
-   * imperativamente — no como `computed()` — porque el formulario
-   * reactivo no expone `Signal`s; un `computed` quedaría congelado en
-   * el estado inicial del componente.
-   *
-   * Nota: lee `form.getRawValue()` directamente en vez de `rawPeriod()`.
-   * Esto sólo re-evalúa en modo zoneless porque comparte el binding
-   * `[disabled]` con `hasDateRangeError()` (que sí es signal-backed vía
-   * `rawPeriod`) — ambas se leen en la misma expresión de plantilla, así
-   * que el cambio de `rawPeriod` fuerza el re-chequeo de todo el binding
-   * OnPush, incluyendo esta llamada. Si el binding `[disabled]` alguna
-   * vez se separa, `canSubmit()` deberá leer `rawPeriod()` en su lugar
-   * para no quedar desactualizado.
+   * predicado para activar/desactivar el botón "Consultar". Lee el puente
+   * `rawPeriod` para que el valor participe directamente del grafo de señales
+   * y siga actualizándose en modo zoneless aunque cambie la composición del
+   * binding `[disabled]`.
    */
   canSubmit(): boolean {
-    return teacherCountsBySectorFiltersToParams(this.toFiltersVm()) !== null;
+    return (
+      teacherCountsBySectorFiltersToParams(
+        this.toFiltersVm(this.rawPeriod()),
+      ) !== null
+    );
   }
 
   /**
@@ -131,13 +140,16 @@ export class TeacherCountsBySectorComponent implements OnInit {
     if (startFilled === endFilled) {
       return false;
     }
-    return which === "start" ? !startFilled : !endFilled;
+    if (which === "start") {
+      return !startFilled;
+    }
+    return !endFilled;
   }
 
   /**
    * `true` cuando ambos extremos están definidos y `periodEnd` es
-   * anterior a `periodStart` (comparación de strings ISO `YYYY-MM-DD`,
-   * válida porque el orden lexicográfico coincide con el cronológico).
+   * anterior a `periodStart`. Convierte ambos valores ISO `YYYY-MM-DD` a
+   * timestamps para que la comparación sea cronológica y no lexicográfica.
    * Sólo controla el `[disabled]` del botón — `onSubmit()` no la
    * consulta, así que el envío directo sigue llegando al backend (que
    * aplica la regla canónica como `422 period_invalid`).
@@ -149,7 +161,9 @@ export class TeacherCountsBySectorComponent implements OnInit {
     if (start.length === 0 || end.length === 0) {
       return false;
     }
-    return end < start;
+    const startTimestamp = Date.parse(start);
+    const endTimestamp = Date.parse(end);
+    return endTimestamp < startTimestamp;
   }
 
   /**
@@ -163,7 +177,9 @@ export class TeacherCountsBySectorComponent implements OnInit {
       if (this.oneDateFilled("start")) {
         ids.push("sector-period-start-error");
       }
-    } else if (this.oneDateFilled("end") || this.hasDateRangeError()) {
+      return ids.join(" ");
+    }
+    if (this.oneDateFilled("end") || this.hasDateRangeError()) {
       ids.push("sector-period-end-error");
     }
     return ids.join(" ");
@@ -171,12 +187,18 @@ export class TeacherCountsBySectorComponent implements OnInit {
 
   readonly successData = computed<TeacherCountsBySectorVm | null>(() => {
     const state = this.result();
-    return state.status === "success" ? state.data : null;
+    if (state.status === "success") {
+      return state.data;
+    }
+    return null;
   });
 
   readonly errorProblem = computed(() => {
     const state = this.result();
-    return state.status === "error" ? state.problem : null;
+    if (state.status === "error") {
+      return state.problem;
+    }
+    return null;
   });
 
   readonly errorFields = computed(() => {
@@ -244,11 +266,12 @@ export class TeacherCountsBySectorComponent implements OnInit {
 
   // -- Helpers -----------------------------------------------------------
 
-  private toFiltersVm(): TeacherCountsBySectorFiltersVm {
-    const raw = this.form.getRawValue();
+  private toFiltersVm(
+    raw: SectorFiltersRawValue = this.form.getRawValue(),
+  ): TeacherCountsBySectorFiltersVm {
     return {
-      periodStart: raw.periodStart.length === 0 ? null : raw.periodStart,
-      periodEnd: raw.periodEnd.length === 0 ? null : raw.periodEnd,
+      periodStart: emptyDateToNull(raw.periodStart),
+      periodEnd: emptyDateToNull(raw.periodEnd),
     };
   }
 }

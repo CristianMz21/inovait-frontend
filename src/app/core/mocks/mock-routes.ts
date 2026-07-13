@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 import type { AgeDistributionResponseDto } from "../api/dtos/age-distribution.dto";
 import type { CreateEnrollmentRequest } from "../api/dtos/create-enrollment-request.dto";
 import type { CreateEnrollmentResponse } from "../api/dtos/create-enrollment-response.dto";
@@ -36,7 +37,11 @@ import {
 } from "../../../testing/fixtures/top-schools.fixture";
 import { mockOk, mockProblem } from "./mock-response";
 import type { MockRoute } from "./mock-types";
-import { calculateCompletedYears, isValidDateOnly } from "./date-only";
+import {
+  calculateCompletedYears,
+  compareDateOnly,
+  isValidDateOnly,
+} from "./date-only";
 import {
   validateEnrollmentBody,
   validateTeacherContractBody,
@@ -45,6 +50,15 @@ import {
   currentLocalDateOnly,
   evaluateTeacherContract,
 } from "./teacher-contract-date";
+
+const BAD_REQUEST_STATUS = 400;
+const CREATED_STATUS = 201;
+const NOT_FOUND_STATUS = 404;
+const CONFLICT_STATUS = 409;
+const UNPROCESSABLE_CONTENT_STATUS = 422;
+const TEACHER_NOT_FOUND_ID = 9999;
+const CONTRACT_ID_BASE = 900;
+const INVALID_AS_OF_DATE_TITLE = "asOfDate inválido";
 
 /**
  * Filter helpers: take a list and apply simple predicate-based filters.
@@ -56,34 +70,94 @@ import {
 const filterBySchool = <T extends { schoolId: number }>(
   list: readonly T[],
   schoolId: string | undefined,
-): readonly T[] =>
-  schoolId === undefined
-    ? list
-    : list.filter((x) => x.schoolId === Number(schoolId));
+): readonly T[] => {
+  if (schoolId === undefined) {
+    return list;
+  }
+  return list.filter(item => item.schoolId === Number(schoolId));
+};
 
 const filterByGrade = <T extends { gradeId: number }>(
   list: readonly T[],
   gradeId: string | undefined,
-): readonly T[] =>
-  gradeId === undefined
-    ? list
-    : list.filter((x) => x.gradeId === Number(gradeId));
+): readonly T[] => {
+  if (gradeId === undefined) {
+    return list;
+  }
+  return list.filter(item => item.gradeId === Number(gradeId));
+};
 
 const filterByAcademicYear = <T extends { academicYearId: number }>(
   list: readonly T[],
   academicYearId: string | undefined,
-): readonly T[] =>
-  academicYearId === undefined
-    ? list
-    : list.filter((x) => x.academicYearId === Number(academicYearId));
+): readonly T[] => {
+  if (academicYearId === undefined) {
+    return list;
+  }
+  return list.filter(item => item.academicYearId === Number(academicYearId));
+};
 
-const isPositiveInteger = (value: unknown): boolean =>
-  typeof value === "number"
-    ? Number.isInteger(value) && value > 0
-    : typeof value === "string" && /^[1-9]\d*$/.test(value);
+const isPositiveInteger = (value: unknown): boolean => {
+  if (typeof value === "number") {
+    return Number.isInteger(value) && value > 0;
+  }
+  return typeof value === "string" && /^[1-9]\d*$/.test(value);
+};
 
 const optionalIdIsValid = (value: string | undefined): boolean =>
   value === undefined || isPositiveInteger(value);
+
+const matchesOptionalId = (
+  expected: string | undefined,
+  actual: number,
+): boolean => {
+  if (expected === undefined) {
+    return true;
+  }
+  return actual === Number(expected);
+};
+
+const validAgeDistributionFilters = (
+  params: Readonly<Record<string, string>>,
+): boolean =>
+  isPositiveInteger(params["academicYearId"]) &&
+  optionalIdIsValid(params["schoolId"]) &&
+  optionalIdIsValid(params["gradeId"]);
+
+const filterAgeDistributionEnrollments = (
+  params: Readonly<Record<string, string>>,
+): readonly EnrollmentListItem[] =>
+  enrollmentListResponseFixture.filter(
+    row =>
+      row.academicYear.id === Number(params["academicYearId"]) &&
+      matchesOptionalId(params["schoolId"], row.school.id) &&
+      matchesOptionalId(params["gradeId"], row.grade.id),
+  );
+
+const withAsOfDate = (
+  response: AgeDistributionResponseDto,
+  asOfDate: string | undefined,
+): AgeDistributionResponseDto => {
+  if (asOfDate === undefined) {
+    return response;
+  }
+  return { ...response, asOfDate };
+};
+
+const hasInvalidPeriodDate = (
+  periodStart: string | undefined,
+  periodEnd: string | undefined,
+): boolean => {
+  const startIsInvalid =
+    periodStart !== undefined && !isValidDateOnly(periodStart);
+  const endIsInvalid = periodEnd !== undefined && !isValidDateOnly(periodEnd);
+  return startIsInvalid || endIsInvalid;
+};
+
+const hasIncompletePeriod = (
+  periodStart: string | undefined,
+  periodEnd: string | undefined,
+): boolean => Boolean(periodStart) !== Boolean(periodEnd);
 
 /**
  * Mock route table for the Inovait API.
@@ -143,7 +217,11 @@ export const MOCK_ROUTES: readonly MockRoute[] = [
         !optionalIdIsValid(params["gradeId"]) ||
         !optionalIdIsValid(params["academicYearId"])
       ) {
-        return mockProblem(400, "invalid_request", "Identificador inválido");
+        return mockProblem(
+          BAD_REQUEST_STATUS,
+          "invalid_request",
+          "Identificador inválido",
+        );
       }
       const filtered = filterByAcademicYear(
         filterByGrade(
@@ -165,26 +243,34 @@ export const MOCK_ROUTES: readonly MockRoute[] = [
       // requested id is 1, otherwise return an empty list.
       const schoolId = Number(pathParams["id"]);
       if (!isPositiveInteger(schoolId)) {
-        return mockProblem(400, "invalid_request", "schoolId inválido");
+        return mockProblem(
+          BAD_REQUEST_STATUS,
+          "invalid_request",
+          "schoolId inválido",
+        );
       }
       if (
         params["asOfDate"] !== undefined &&
         !isValidDateOnly(params["asOfDate"])
       ) {
-        return mockProblem(400, "invalid_request", "asOfDate inválido");
+        return mockProblem(
+          BAD_REQUEST_STATUS,
+          "invalid_request",
+          INVALID_AS_OF_DATE_TITLE,
+        );
       }
-      const teachersAtSchool =
-        schoolId === 1
-          ? teachersFixture.map((t, i) => ({
-              teacher: t,
-              contractId: 900 + i,
-              persistedStatus: "Confirmed" as const,
-              effectiveStatus: "Effective" as const,
-              evaluatedAt: "2026-07-10",
-              startDate: "2026-03-01",
-              endDate: null,
-            }))
-          : [];
+      if (schoolId !== 1) {
+        return mockOk([]);
+      }
+      const teachersAtSchool = teachersFixture.map((teacher, index) => ({
+        teacher,
+        contractId: CONTRACT_ID_BASE + index,
+        persistedStatus: "Confirmed" as const,
+        effectiveStatus: "Effective" as const,
+        evaluatedAt: "2026-07-10",
+        startDate: "2026-03-01",
+        endDate: null,
+      }));
       return mockOk(teachersAtSchool);
     },
   },
@@ -205,24 +291,44 @@ export const MOCK_ROUTES: readonly MockRoute[] = [
         !isPositiveInteger(gradeId) ||
         !isPositiveInteger(academicYearId)
       ) {
-        return mockProblem(400, "invalid_request", "Filtros inválidos");
+        return mockProblem(
+          BAD_REQUEST_STATUS,
+          "invalid_request",
+          "Filtros inválidos",
+        );
       }
       if (asOfDate !== undefined && !isValidDateOnly(asOfDate)) {
-        return mockProblem(400, "invalid_request", "asOfDate inválido");
+        return mockProblem(
+          BAD_REQUEST_STATUS,
+          "invalid_request",
+          INVALID_AS_OF_DATE_TITLE,
+        );
       }
       const filtered = enrollmentListResponseFixture
         .filter((row: EnrollmentListItem) => {
-          if (schoolId && row.school.id !== Number(schoolId)) return false;
-          if (gradeId && row.grade.id !== Number(gradeId)) return false;
-          if (academicYearId && row.academicYear.id !== Number(academicYearId))
+          if (schoolId && row.school.id !== Number(schoolId)) {
             return false;
+          }
+          if (gradeId && row.grade.id !== Number(gradeId)) {
+            return false;
+          }
+          if (
+            academicYearId &&
+            row.academicYear.id !== Number(academicYearId)
+          ) {
+            return false;
+          }
           return true;
         })
-        .map((row) =>
-          asOfDate
-            ? { ...row, age: calculateCompletedYears(row.birthDate, asOfDate) }
-            : row,
-        );
+        .map(row => {
+          if (asOfDate === undefined) {
+            return row;
+          }
+          return {
+            ...row,
+            age: calculateCompletedYears(row.birthDate, asOfDate),
+          };
+        });
       return mockOk(filtered);
     },
   },
@@ -233,14 +339,17 @@ export const MOCK_ROUTES: readonly MockRoute[] = [
     handler: ({ body }) => {
       const validationErrors = validateEnrollmentBody(body);
       if (validationErrors !== null) {
-        return mockProblem(400, "invalid_request", "Solicitud inválida", {
-          errors: validationErrors,
-        });
+        return mockProblem(
+          BAD_REQUEST_STATUS,
+          "invalid_request",
+          "Solicitud inválida",
+          { errors: validationErrors },
+        );
       }
       const req = body as CreateEnrollmentRequest;
-      if (req.student.birthDate > currentLocalDateOnly()) {
+      if (compareDateOnly(req.student.birthDate, currentLocalDateOnly()) > 0) {
         return mockProblem(
-          422,
+          UNPROCESSABLE_CONTENT_STATUS,
           "business_rule_violation",
           "La fecha de nacimiento no puede ser futura",
           { errors: { "student.birthDate": ["No puede ser futura."] } },
@@ -249,7 +358,7 @@ export const MOCK_ROUTES: readonly MockRoute[] = [
       // Echo back the request id as a stable response. The fixture is the
       // canonical happy-path response from the OpenAPI example.
       return mockOk<CreateEnrollmentResponse>(createEnrollmentResponseFixture, {
-        status: 201,
+        status: CREATED_STATUS,
       });
     },
   },
@@ -267,7 +376,7 @@ export const MOCK_ROUTES: readonly MockRoute[] = [
       }
       if (documentNumber === "99.001.404") {
         return mockProblem(
-          404,
+          NOT_FOUND_STATUS,
           "student_not_found",
           "Estudiante no encontrado",
         );
@@ -288,17 +397,29 @@ export const MOCK_ROUTES: readonly MockRoute[] = [
       const teacherId = Number(pathParams["teacherId"]);
       const asOfDate = params["asOfDate"];
       if (!isPositiveInteger(teacherId)) {
-        return mockProblem(400, "invalid_request", "teacherId inválido");
+        return mockProblem(
+          BAD_REQUEST_STATUS,
+          "invalid_request",
+          "teacherId inválido",
+        );
       }
-      if (teacherId === 9999) {
-        return mockProblem(404, "resource_not_found", "Docente no encontrado");
+      if (teacherId === TEACHER_NOT_FOUND_ID) {
+        return mockProblem(
+          NOT_FOUND_STATUS,
+          "resource_not_found",
+          "Docente no encontrado",
+        );
       }
       if (asOfDate !== undefined && !isValidDateOnly(asOfDate)) {
-        return mockProblem(400, "invalid_request", "asOfDate inválido");
+        return mockProblem(
+          BAD_REQUEST_STATUS,
+          "invalid_request",
+          INVALID_AS_OF_DATE_TITLE,
+        );
       }
       const evaluatedAt = asOfDate ?? currentLocalDateOnly();
       return mockOk<readonly TeacherContractResponse[]>(
-        teacherContractsListedFixture.map((contract) =>
+        teacherContractsListedFixture.map(contract =>
           evaluateTeacherContract(contract, evaluatedAt),
         ),
       );
@@ -310,13 +431,20 @@ export const MOCK_ROUTES: readonly MockRoute[] = [
     description: "Create teacher contracts (atomic)",
     handler: ({ body, pathParams }) => {
       if (!isPositiveInteger(Number(pathParams["teacherId"]))) {
-        return mockProblem(400, "invalid_request", "teacherId inválido");
+        return mockProblem(
+          BAD_REQUEST_STATUS,
+          "invalid_request",
+          "teacherId inválido",
+        );
       }
       const validationErrors = validateTeacherContractBody(body);
       if (validationErrors !== null) {
-        return mockProblem(400, "invalid_request", "Solicitud inválida", {
-          errors: validationErrors,
-        });
+        return mockProblem(
+          BAD_REQUEST_STATUS,
+          "invalid_request",
+          "Solicitud inválida",
+          { errors: validationErrors },
+        );
       }
       const req = body as {
         readonly schoolIds: readonly number[];
@@ -325,7 +453,7 @@ export const MOCK_ROUTES: readonly MockRoute[] = [
       };
       if (new Set(req.schoolIds).size !== req.schoolIds.length) {
         return mockProblem(
-          409,
+          CONFLICT_STATUS,
           "teacher_contract_conflict",
           "Escuela repetida",
         );
@@ -333,22 +461,25 @@ export const MOCK_ROUTES: readonly MockRoute[] = [
       if (
         req.endDate !== undefined &&
         req.endDate !== null &&
-        req.endDate < req.startDate
+        compareDateOnly(req.endDate, req.startDate) < 0
       ) {
-        return mockProblem(422, "business_rule_violation", "Período inválido", {
-          errors: { endDate: ["Debe ser igual o posterior a startDate."] },
-        });
+        return mockProblem(
+          UNPROCESSABLE_CONTENT_STATUS,
+          "business_rule_violation",
+          "Período inválido",
+          { errors: { endDate: ["Debe ser igual o posterior a startDate."] } },
+        );
       }
       if (req.schoolIds.includes(1)) {
         return mockProblem(
-          409,
+          CONFLICT_STATUS,
           "teacher_contract_conflict",
           "Conflicto con contrato vigente",
         );
       }
       return mockOk<readonly TeacherContractResponse[]>(
         teacherContractsCreatedFixture,
-        { status: 201 },
+        { status: CREATED_STATUS },
       );
     },
   },
@@ -360,13 +491,9 @@ export const MOCK_ROUTES: readonly MockRoute[] = [
     pattern: "/api/reports/age-distribution",
     description: "Age distribution report",
     handler: ({ params }) => {
-      if (
-        !isPositiveInteger(params["academicYearId"]) ||
-        !optionalIdIsValid(params["schoolId"]) ||
-        !optionalIdIsValid(params["gradeId"])
-      ) {
+      if (!validAgeDistributionFilters(params)) {
         return mockProblem(
-          400,
+          BAD_REQUEST_STATUS,
           "invalid_request",
           "academicYearId es requerido",
           {
@@ -374,39 +501,39 @@ export const MOCK_ROUTES: readonly MockRoute[] = [
           },
         );
       }
-      const includedEnrollments = enrollmentListResponseFixture.filter(
-        (row) =>
-          row.academicYear.id === Number(params["academicYearId"]) &&
-          (params["schoolId"] === undefined ||
-            row.school.id === Number(params["schoolId"])) &&
-          (params["gradeId"] === undefined ||
-            row.grade.id === Number(params["gradeId"])),
-      );
+      const includedEnrollments = filterAgeDistributionEnrollments(params);
       const asOfDate = params["asOfDate"];
       if (asOfDate !== undefined && !isValidDateOnly(asOfDate)) {
-        return mockProblem(400, "invalid_request", "asOfDate inválido");
+        return mockProblem(
+          BAD_REQUEST_STATUS,
+          "invalid_request",
+          INVALID_AS_OF_DATE_TITLE,
+        );
       }
       if (
         asOfDate !== undefined &&
-        includedEnrollments.some((row) => asOfDate < row.birthDate)
+        includedEnrollments.some(
+          row => compareDateOnly(asOfDate, row.birthDate) < 0,
+        )
       ) {
         return mockProblem(
-          422,
+          UNPROCESSABLE_CONTENT_STATUS,
           "as_of_date_invalid",
           "La fecha de referencia no es válida",
         );
       }
       if (params["academicYearId"] === "1") {
-        return mockOk<AgeDistributionResponseDto>({
+        const emptyResponse = {
           ...emptyAgeDistributionFixture,
           academicYearId: 1,
-          ...(asOfDate ? { asOfDate } : {}),
-        });
+        };
+        return mockOk<AgeDistributionResponseDto>(
+          withAsOfDate(emptyResponse, asOfDate),
+        );
       }
-      return mockOk<AgeDistributionResponseDto>({
-        ...ageDistributionFixture,
-        ...(asOfDate ? { asOfDate } : {}),
-      });
+      return mockOk<AgeDistributionResponseDto>(
+        withAsOfDate(ageDistributionFixture, asOfDate),
+      );
     },
   },
   {
@@ -416,7 +543,7 @@ export const MOCK_ROUTES: readonly MockRoute[] = [
     handler: ({ params }) => {
       if (!isPositiveInteger(params["academicYearId"])) {
         return mockProblem(
-          400,
+          BAD_REQUEST_STATUS,
           "invalid_request",
           "academicYearId es requerido",
         );
@@ -434,29 +561,46 @@ export const MOCK_ROUTES: readonly MockRoute[] = [
     handler: ({ params }) => {
       const periodStart = params["periodStart"];
       const periodEnd = params["periodEnd"];
+      if (hasInvalidPeriodDate(periodStart, periodEnd)) {
+        return mockProblem(
+          BAD_REQUEST_STATUS,
+          "invalid_request",
+          "Período mal formado",
+        );
+      }
+      if (hasIncompletePeriod(periodStart, periodEnd)) {
+        return mockProblem(
+          UNPROCESSABLE_CONTENT_STATUS,
+          "period_invalid",
+          "El período no es válido",
+        );
+      }
       if (
-        (periodStart !== undefined && !isValidDateOnly(periodStart)) ||
-        (periodEnd !== undefined && !isValidDateOnly(periodEnd))
+        periodStart &&
+        periodEnd &&
+        compareDateOnly(periodEnd, periodStart) < 0
       ) {
-        return mockProblem(400, "invalid_request", "Período mal formado");
+        return mockProblem(
+          UNPROCESSABLE_CONTENT_STATUS,
+          "period_invalid",
+          "El período no es válido",
+          {
+            errors: {
+              periodEnd: ["Debe ser igual o posterior a periodStart."],
+            },
+          },
+        );
       }
-      if ((periodStart && !periodEnd) || (!periodStart && periodEnd)) {
-        return mockProblem(422, "period_invalid", "El período no es válido");
+      if (!periodStart) {
+        return mockOk<TeacherCountsBySectorResponseDto>(
+          emptyTeacherCountsBySectorFixture,
+        );
       }
-      if (periodStart && periodEnd && periodEnd < periodStart) {
-        return mockProblem(422, "period_invalid", "El período no es válido", {
-          errors: { periodEnd: ["Debe ser igual o posterior a periodStart."] },
-        });
-      }
-      return mockOk<TeacherCountsBySectorResponseDto>(
-        periodStart
-          ? {
-              ...teacherCountsBySectorFixture,
-              periodStart,
-              periodEnd: periodEnd ?? periodStart,
-            }
-          : emptyTeacherCountsBySectorFixture,
-      );
+      return mockOk<TeacherCountsBySectorResponseDto>({
+        ...teacherCountsBySectorFixture,
+        periodStart,
+        periodEnd: periodEnd ?? periodStart,
+      });
     },
   },
 ];

@@ -14,6 +14,7 @@ describe("toApiProblem", () => {
       headers,
     });
     const problem = toApiProblem(error);
+    expect(problem).toBe(apiProblemNotFoundFixture);
     expect(problem.code).toBe("resource_not_found");
     expect(problem.status).toBe(404);
     expect(problem.title).toBe(apiProblemNotFoundFixture.title);
@@ -33,13 +34,36 @@ describe("toApiProblem", () => {
     expect(toApiProblem(errorUnknown).code).toBe("unknown_error");
   });
 
-  it("preserva el detail cuando el cuerpo es un string", () => {
+  it("no expone un cuerpo string inesperado como detail", () => {
     const error = new HttpErrorResponse({
       status: 500,
-      error: "gateway timeout",
+      error: "<html>gateway timeout: internal-proxy-01</html>",
       statusText: "Gateway Timeout",
     });
     const problem = toApiProblem(error);
-    expect(problem.detail).toBe("gateway timeout");
+    expect(problem).toMatchObject({
+      status: 500,
+      code: "unknown_error",
+      title: "Error inesperado",
+      detail: null,
+    });
+  });
+
+  it("no confía en objetos parciales que imitan ProblemDetails", () => {
+    const error = new HttpErrorResponse({
+      status: 500,
+      error: {
+        status: 500,
+        code: "unknown_error",
+        detail: "database=internal;password=secret",
+      },
+    });
+
+    expect(toApiProblem(error)).toMatchObject({
+      status: 500,
+      code: "unknown_error",
+      title: "Error inesperado",
+      detail: null,
+    });
   });
 });

@@ -1,14 +1,16 @@
-import type { HttpEvent, HttpRequest } from "@angular/common/http";
-import { HttpErrorResponse } from "@angular/common/http";
+/* Copyright (c) 2026. All rights reserved. */
 import {
+  HttpErrorResponse,
+  type HttpEvent,
   type HttpHandlerFn,
   type HttpInterceptorFn,
+  type HttpRequest,
 } from "@angular/common/http";
 import { inject, isDevMode } from "@angular/core";
 import { Observable, throwError } from "rxjs";
+import { environment } from "../../../environments/environment";
 import { API_CONFIG } from "../api/api-config";
 import { normalizeApiError } from "../api/problem-details.interceptor";
-import { environment } from "../../../environments/environment";
 import { extractPathParams, matchRoute } from "./mock-route-matcher";
 import { MOCK_ROUTES } from "./mock-routes";
 import type {
@@ -38,6 +40,8 @@ interface MockInterceptorOptions {
   readonly logger?: Pick<Console, "info" | "warn">;
 }
 
+const INTERNAL_SERVER_ERROR_STATUS = 500;
+
 export const createMockBackendInterceptor =
   (options: MockInterceptorOptions): HttpInterceptorFn =>
   (
@@ -52,7 +56,7 @@ export const createMockBackendInterceptor =
     const apiBase = stripTrailingSlash(config.apiBaseUrl);
     const path = stripApiBase(req.url, apiBase);
     const loggingEnabled = options.loggingEnabled ?? isDevMode();
-    const logger = options.logger ?? Reflect.get(globalThis, "console");
+    const logger = options.logger ?? globalThis.console;
 
     // Only intercept `/api/*` requests, leave everything else (assets, etc.)
     // alone.
@@ -89,13 +93,11 @@ export const createMockBackendInterceptor =
     }
 
     const ctx = buildContext(req, path, route);
-    const start =
-      typeof performance !== "undefined" ? performance.now() : Date.now();
-    return new Observable<HttpEvent<unknown>>((subscriber) => {
+    const start = currentTimestamp();
+    return new Observable<HttpEvent<unknown>>(subscriber => {
       const sub = route.handler(ctx).subscribe({
-        next: (response) => {
-          const end =
-            typeof performance !== "undefined" ? performance.now() : Date.now();
+        next: response => {
+          const end = currentTimestamp();
           if (loggingEnabled) {
             logMock(
               logger,
@@ -106,7 +108,7 @@ export const createMockBackendInterceptor =
           subscriber.next(response.clone({ url: req.url }));
           subscriber.complete();
         },
-        error: (err) => {
+        error: (err: unknown) => {
           // Handlers can return error observables (e.g. mockProblem). When
           // they do, propagate the error as an HttpErrorResponse.
           const wrapped = wrapAsHttpError(err, req.url);
@@ -114,7 +116,7 @@ export const createMockBackendInterceptor =
             logMock(
               logger,
               "info",
-              `[MOCK] ${req.method} ${route.pattern} → ${wrapped.status} ${wrapped.statusText}`,
+              `[MOCK] ${req.method} ${route.pattern} → ${wrapped.status} ${readErrorTitle(wrapped.error)}`,
             );
           }
           subscriber.error(normalizeApiError(wrapped));
@@ -170,7 +172,10 @@ function paramsToRecord(params: {
 }
 
 function stripTrailingSlash(s: string): string {
-  return s.endsWith("/") ? s.slice(0, -1) : s;
+  if (s.endsWith("/")) {
+    return s.slice(0, -1);
+  }
+  return s;
 }
 
 /**
@@ -178,12 +183,36 @@ function stripTrailingSlash(s: string): string {
  * raw URL when the base URL is empty (typical in dev with mocks).
  */
 function stripApiBase(url: string, apiBase: string): string {
-  if (!apiBase) return url;
+  if (!apiBase) {
+    return url;
+  }
   if (url.startsWith(apiBase)) {
     const remainder = url.slice(apiBase.length);
-    return remainder.startsWith("/") ? remainder : `/${remainder}`;
+    if (remainder.startsWith("/")) {
+      return remainder;
+    }
+    return `/${remainder}`;
   }
   return url;
+}
+
+function currentTimestamp(): number {
+  if (globalThis.performance === undefined) {
+    return Date.now();
+  }
+  return globalThis.performance.now();
+}
+
+function readErrorTitle(error: unknown): string {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "title" in error &&
+    typeof error.title === "string"
+  ) {
+    return error.title;
+  }
+  return "Request failed";
 }
 
 /**
@@ -192,20 +221,22 @@ function stripApiBase(url: string, apiBase: string): string {
  * the ProblemDetails shape produced by the real backend.
  */
 function wrapAsHttpError(err: unknown, url: string): HttpErrorResponse {
-  if (err instanceof HttpErrorResponse) return err;
+  if (err instanceof HttpErrorResponse) {
+    return err;
+  }
   // The mockProblem helper throws synthetic objects with `status`, `error`,
   // etc. Lift those into a proper HttpErrorResponse.
-  const anyErr = err as {
+  const candidate = err as {
     status?: number;
     statusText?: string;
     error?: unknown;
     message?: string;
   };
-  const status = anyErr.status ?? 500;
-  const statusText = anyErr.statusText ?? "Internal Server Error";
-  const errorBody = anyErr.error ?? {
+  const status = candidate.status ?? INTERNAL_SERVER_ERROR_STATUS;
+  const statusText = candidate.statusText ?? "Internal Server Error";
+  const errorBody = candidate.error ?? {
     code: "internal_error",
-    message: anyErr.message,
+    message: candidate.message,
   };
   return new HttpErrorResponse({
     status,

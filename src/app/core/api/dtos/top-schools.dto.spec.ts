@@ -82,12 +82,12 @@ describe("TopSchoolResponseDto (CT-TOP-CONTRACT)", () => {
     it("topSchoolsFixture preserva el orden estable del backend (school.name ASC)", () => {
       // El backend garantiza orden por school.name ASC y luego school.id;
       // la UI NO debe reordenar ni podar.
-      const names = topSchoolsFixture.map((entry) => entry.school.name);
+      const names = topSchoolsFixture.map(entry => entry.school.name);
       expect(names).toEqual(["Escuela Río Claro", "Instituto Horizonte"]);
     });
 
     it("topSchoolsFixture expone el caso de empate en count=12", () => {
-      const counts = topSchoolsFixture.map((entry) => entry.enrollmentCount);
+      const counts = topSchoolsFixture.map(entry => entry.enrollmentCount);
       expect(counts).toEqual([12, 12]);
       // Ambos líderes deben compartir el mismo `enrollmentCount`.
       expect(counts[0]).toBe(counts[1]);

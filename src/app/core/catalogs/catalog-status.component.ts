@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 import {
   ChangeDetectionStrategy,
   Component,
@@ -18,9 +19,12 @@ export class CatalogStatusComponent {
   readonly state = input.required<RemoteState<readonly unknown[]>>();
   readonly label = input.required<string>();
   readonly testId = input.required<string>();
-  readonly retry = output<void>();
+  readonly retry = output();
   readonly errorProblem = computed(() => {
     const current = this.state();
-    return current.status === "error" ? current.problem : null;
+    if (current.status === "error") {
+      return current.problem;
+    }
+    return null;
   });
 }

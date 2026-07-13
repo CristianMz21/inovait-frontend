@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 import type {
   HttpErrorResponse,
   HttpInterceptorFn,
@@ -16,9 +17,7 @@ import { toApiProblem } from "./to-api-problem";
  */
 export const problemDetailsInterceptor: HttpInterceptorFn = (req, next) =>
   next(req).pipe(
-    catchError((error: unknown) => {
-      return throwError(() => normalizeApiError(error));
-    }),
+    catchError((error: unknown) => throwError(() => normalizeApiError(error))),
   );
 
 export const normalizeApiError = (error: unknown): unknown => {

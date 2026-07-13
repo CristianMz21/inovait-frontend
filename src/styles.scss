@@ -313,10 +313,41 @@ fieldset.ec-card > legend {
 }
 
 .ec-table {
+  position: relative;
   overflow-x: auto;
   background: var(--app-header-bg);
   border: 1px solid var(--app-border);
   border-radius: var(--app-radius-card);
+}
+
+.ec-table__skip {
+  position: absolute;
+  inset-inline-start: -10000px;
+  top: 0;
+}
+
+.ec-table__skip:focus {
+  position: sticky;
+  inset-inline-start: 0.5rem;
+  display: inline-block;
+  margin: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--app-accent);
+  color: var(--app-primary-fg);
+  border-radius: var(--app-radius-control);
+  z-index: 2;
+}
+
+.ec-table__end:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0.5rem 0 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  color: var(--app-muted);
+  font-size: 0.85rem;
 }
 
 .ec-table table {

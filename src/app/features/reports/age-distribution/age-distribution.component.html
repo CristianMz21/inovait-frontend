@@ -87,7 +87,7 @@
         type="submit"
         class="age-submit ec-btn ec-btn--secondary"
         [disabled]="form.invalid || isLoading()"
-        [attr.aria-busy]="isLoading() ? 'true' : 'false'"
+        [attr.aria-busy]="isLoading()"
       >
         @if (isLoading()) {
           Consultando…
@@ -114,15 +114,14 @@
   }
 
   @if (isLoading()) {
-    <p
+    <output
       class="age-status ec-alert ec-alert--info"
-      role="status"
       aria-live="polite"
       data-testid="age-loading"
     >
       <app-icon name="update" />
       <span>Consultando distribución por edad…</span>
-    </p>
+    </output>
   }
 
   @if (hasError()) {
@@ -167,9 +166,8 @@
   }
 
   @if (successData(); as data) {
-    <div
+    <section
       class="age-results"
-      role="region"
       aria-labelledby="age-results-title"
       data-testid="age-results"
     >
@@ -193,14 +191,19 @@
         </div>
       </div>
 
-      <p class="age-context" role="status" aria-live="polite">
+      <output class="age-context" aria-live="polite">
         Año académico <strong>{{ data.academicYearId }}</strong> · Fecha de
-        referencia <strong>{{ data.asOfDate }}</strong> · Total
-        <strong>{{ data.totalCount }}</strong>
-        {{ data.totalCount === 1 ? "inscripción" : "inscripciones" }}
-      </p>
+        referencia <strong>{{ data.asOfDate }}</strong>
+      </output>
 
-      <div class="ec-table">
+      <section class="ec-table" aria-label="Tabla de distribución por edad">
+        <button
+          type="button"
+          class="ec-table__skip"
+          appTableSkip="age-results-table-end"
+        >
+          Omitir tabla de distribución por edad
+        </button>
         <table>
           <caption class="visually-hidden">
             Distribución por edad. Tres bandas canónicas con conteos exactos
@@ -223,7 +226,14 @@
             }
           </tbody>
         </table>
-      </div>
-    </div>
+      </section>
+      <span
+        id="age-results-table-end"
+        class="ec-table__end visually-hidden"
+        tabindex="-1"
+      >
+        Fin de la tabla de distribución por edad
+      </span>
+    </section>
   }
 </section>

@@ -49,7 +49,7 @@ describe("StudentHistoryResponseDto (CT-HIST-CONTRACT)", () => {
         subject: { id: 3, code: "MATH", name: "Matemática" },
         weekdays: [1, 3, 5],
       };
-      expect(entry.weekdays.every((day) => day >= 1 && day <= 7)).toBe(true);
+      expect(entry.weekdays.every(day => day >= 1 && day <= 7)).toBe(true);
       expect(entry.weekdays).toEqual([1, 3, 5]);
     });
 

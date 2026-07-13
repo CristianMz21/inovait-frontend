@@ -38,7 +38,7 @@ describe("MOCK_ROUTES", () => {
   });
   it("keeps the complete typed route table centralized", () => {
     expect(
-      MOCK_ROUTES.map((route) => `${route.method} ${route.pattern}`),
+      MOCK_ROUTES.map(route => `${route.method} ${route.pattern}`),
     ).toEqual(expectedRoutes);
   });
 
@@ -70,9 +70,9 @@ describe("MOCK_ROUTES", () => {
     }[];
 
     expect(groups.length).toBeGreaterThan(0);
-    expect(groups.every((group) => group.schoolId === 1)).toBe(true);
-    expect(groups.every((group) => group.gradeId === 1)).toBe(true);
-    expect(groups.every((group) => group.academicYearId === 2)).toBe(true);
+    expect(groups.every(group => group.schoolId === 1)).toBe(true);
+    expect(groups.every(group => group.gradeId === 1)).toBe(true);
+    expect(groups.every(group => group.academicYearId === 2)).toBe(true);
   });
 
   it("extracts decoded path parameters and returns school teachers", async () => {
@@ -387,7 +387,7 @@ function findRoute(
   path: string,
 ): MockRoute | undefined {
   return MOCK_ROUTES.find(
-    (route) => route.method === method && matchPath(route.pattern, path),
+    route => route.method === method && matchPath(route.pattern, path),
   );
 }
 

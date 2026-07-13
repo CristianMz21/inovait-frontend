@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 import type { TeacherSummary } from "./teacher-summary.dto";
 
 export type TeacherContractPersistedStatus = "Confirmed" | "Cancelled";

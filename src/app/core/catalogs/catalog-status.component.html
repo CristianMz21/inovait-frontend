@@ -1,13 +1,12 @@
 @if (state().status === "loading") {
-  <p
+  <output
     class="catalog-status catalog-status--loading ec-alert ec-alert--info"
-    role="status"
     aria-live="polite"
     [attr.data-testid]="'catalog-' + testId() + '-loading'"
   >
     <app-icon name="update" />
     <span>Cargando {{ label() }}…</span>
-  </p>
+  </output>
 } @else if (errorProblem(); as problem) {
   <div
     class="catalog-status catalog-status--error ec-alert ec-alert--error"
@@ -28,12 +27,11 @@
     </div>
   </div>
 } @else if (state().status === "empty") {
-  <p
+  <output
     class="catalog-status catalog-status--empty ec-alert ec-alert--info"
-    role="status"
     [attr.data-testid]="'catalog-' + testId() + '-empty'"
   >
     <app-icon name="inbox" />
     <span>No hay {{ label() }} disponibles.</span>
-  </p>
+  </output>
 }

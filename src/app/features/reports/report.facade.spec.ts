@@ -107,7 +107,7 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
   it("loadAge() con VM inválida es no-op y conserva el estado idle", () => {
     facade.loadAge(invalidFilters);
     expect(facade.ageState().status).toBe("idle");
-    http.expectNone((r) => r.url === ageUrl);
+    http.expectNone(r => r.url === ageUrl);
   });
 
   // -- loadAge: success --------------------------------------------------
@@ -116,7 +116,7 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
     facade.loadAge(validFilters);
     expect(facade.ageState().status).toBe("loading");
 
-    const req = http.expectOne((r) => r.url === ageUrl && r.method === "GET");
+    const req = http.expectOne(r => r.url === ageUrl && r.method === "GET");
     expect(req.request.params.get("academicYearId")).toBe("2");
     req.flush(ageDistributionFixture);
 
@@ -125,26 +125,27 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
     if (state.status === "success") {
       expect(state.data.academicYearId).toBe(2);
       expect(state.data.bands).toHaveLength(3);
-      expect(state.data.bands.map((b) => b.id)).toEqual([
+      expect(state.data.bands.map(b => b.id)).toEqual([
         "age3To7",
         "age8To12",
         "ageOver12",
       ]);
-      expect(state.data.totalCount).toBe(12);
+      expect(state.data.bands.map(b => b.count)).toEqual([4, 6, 2]);
+      expect(state.data).not.toHaveProperty("totalCount");
     }
   });
 
   it("loadAge() mapea 200 con ceros a success (no error)", () => {
     facade.loadAge(validFilters);
     http
-      .expectOne((r) => r.url === ageUrl && r.method === "GET")
+      .expectOne(r => r.url === ageUrl && r.method === "GET")
       .flush(emptyAgeDistributionFixture);
 
     const state = facade.ageState();
     expect(state.status).toBe("success");
     if (state.status === "success") {
-      expect(state.data.totalCount).toBe(0);
-      expect(state.data.bands.every((b) => b.count === 0)).toBe(true);
+      expect(state.data.bands.every(b => b.count === 0)).toBe(true);
+      expect(state.data).not.toHaveProperty("totalCount");
     }
   });
 
@@ -152,7 +153,7 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
 
   it("loadAge() mapea 400 con ProblemDetails a error", () => {
     facade.loadAge({ ...validFilters, academicYearId: 0 });
-    const req = http.expectOne((r) => r.url === ageUrl && r.method === "GET");
+    const req = http.expectOne(r => r.url === ageUrl && r.method === "GET");
     req.flush(apiProblemBadRequestFixture, {
       status: 400,
       statusText: "Bad Request",
@@ -172,7 +173,7 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
   it("loadAge() mapea 404 con ProblemDetails a error", () => {
     facade.loadAge({ ...validFilters, academicYearId: 9999 });
     http
-      .expectOne((r) => r.url === ageUrl && r.method === "GET")
+      .expectOne(r => r.url === ageUrl && r.method === "GET")
       .flush(apiProblemNotFoundFixture, {
         status: 404,
         statusText: "Not Found",
@@ -191,7 +192,7 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
 
   it("loadAge() mapea 422 as_of_date_invalid a error conservando los filtros", () => {
     facade.loadAge({ ...validFilters, asOfDate: "2010-01-01" });
-    const req = http.expectOne((r) => r.url === ageUrl && r.method === "GET");
+    const req = http.expectOne(r => r.url === ageUrl && r.method === "GET");
     expect(req.request.params.get("asOfDate")).toBe("2010-01-01");
     req.flush(apiProblemAsOfDateInvalidFixture, {
       status: 422,
@@ -214,7 +215,7 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
   it("loadAge() cancela el envío previo cuando cambia academicYearId", () => {
     facade.loadAge({ ...validFilters, academicYearId: 1 });
     const first = http.expectOne(
-      (r) =>
+      r =>
         r.url === ageUrl &&
         r.method === "GET" &&
         r.params.get("academicYearId") === "1",
@@ -223,7 +224,7 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
 
     facade.loadAge({ ...validFilters, academicYearId: 2 });
     const second = http.expectOne(
-      (r) =>
+      r =>
         r.url === ageUrl &&
         r.method === "GET" &&
         r.params.get("academicYearId") === "2",
@@ -244,7 +245,7 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
 
   it("resetAge() cancela el envío en curso y vuelve a idle", () => {
     facade.loadAge(validFilters);
-    const req = http.expectOne((r) => r.url === ageUrl && r.method === "GET");
+    const req = http.expectOne(r => r.url === ageUrl && r.method === "GET");
     expect(facade.ageState().status).toBe("loading");
 
     facade.resetAge();
@@ -257,7 +258,7 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
   it("retryAge() reenvía tras un error con los filtros previos", () => {
     facade.loadAge(validFilters);
     http
-      .expectOne((r) => r.url === ageUrl && r.method === "GET")
+      .expectOne(r => r.url === ageUrl && r.method === "GET")
       .flush(apiProblemAsOfDateInvalidFixture, {
         status: 422,
         statusText: "Unprocessable Entity",
@@ -269,7 +270,7 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
 
     facade.retryAge();
     const retryReq = http.expectOne(
-      (r) => r.url === ageUrl && r.method === "GET",
+      r => r.url === ageUrl && r.method === "GET",
     );
     expect(retryReq.request.params.get("academicYearId")).toBe("2");
     retryReq.flush(ageDistributionFixture);
@@ -280,12 +281,12 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
 
   it("retryAge() no hace nada si el estado vigente no es error", () => {
     facade.loadAge(validFilters);
-    http.expectOne((r) => r.url === ageUrl && r.method === "GET");
+    http.expectOne(r => r.url === ageUrl && r.method === "GET");
 
     facade.retryAge();
     // No se crea un nuevo request: el state sigue en `loading`.
     expect(facade.ageState().status).toBe("loading");
-    http.expectNone((r) => r.url === ageUrl);
+    http.expectNone(r => r.url === ageUrl);
   });
 
   it("retryAge() no hace nada si los filtros previos son inválidos", () => {
@@ -293,7 +294,7 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
     // disparar un GET sin filtros válidos.
     facade.retryAge();
     expect(facade.ageState().status).toBe("idle");
-    http.expectNone((r) => r.url === ageUrl);
+    http.expectNone(r => r.url === ageUrl);
   });
 
   // -- canLoadSector -----------------------------------------------------
@@ -311,7 +312,7 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
   it("loadSector() con VM asimétrica es no-op y conserva el estado idle", () => {
     facade.loadSector(asymmetricSectorFilters);
     expect(facade.sectorState().status).toBe("idle");
-    http.expectNone((r) => r.url === sectorUrl);
+    http.expectNone(r => r.url === sectorUrl);
   });
 
   // -- loadSector: success ----------------------------------------------
@@ -320,9 +321,7 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
     facade.loadSector(validSectorFilters);
     expect(facade.sectorState().status).toBe("loading");
 
-    const req = http.expectOne(
-      (r) => r.url === sectorUrl && r.method === "GET",
-    );
+    const req = http.expectOne(r => r.url === sectorUrl && r.method === "GET");
     expect(req.request.params.get("periodStart")).toBe("2026-07-01");
     expect(req.request.params.get("periodEnd")).toBe("2026-07-10");
     req.flush(teacherCountsBySectorFixture);
@@ -333,21 +332,16 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
       expect(state.data.periodStart).toBe("2026-07-10");
       expect(state.data.periodEnd).toBe("2026-07-10");
       expect(state.data.sectors).toHaveLength(2);
-      expect(state.data.sectors.map((s) => s.id)).toEqual([
-        "public",
-        "private",
-      ]);
+      expect(state.data.sectors.map(s => s.id)).toEqual(["public", "private"]);
       expect(state.data.sectors[0]?.distinctTeacherCount).toBe(3);
       expect(state.data.sectors[1]?.distinctTeacherCount).toBe(2);
-      expect(state.data.totalDistinctTeacherCount).toBe(5);
+      expect(state.data).not.toHaveProperty("totalDistinctTeacherCount");
     }
   });
 
   it("loadSector() con filtros vacíos envía GET sin query string", () => {
     facade.loadSector(emptySectorFilters);
-    const req = http.expectOne(
-      (r) => r.url === sectorUrl && r.method === "GET",
-    );
+    const req = http.expectOne(r => r.url === sectorUrl && r.method === "GET");
     expect(req.request.params.has("periodStart")).toBe(false);
     expect(req.request.params.has("periodEnd")).toBe(false);
     req.flush(teacherCountsBySectorFixture);
@@ -358,16 +352,16 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
   it("loadSector() mapea 200 con conteos en 0 a success (no error)", () => {
     facade.loadSector(validSectorFilters);
     http
-      .expectOne((r) => r.url === sectorUrl && r.method === "GET")
+      .expectOne(r => r.url === sectorUrl && r.method === "GET")
       .flush(emptyTeacherCountsBySectorFixture);
 
     const state = facade.sectorState();
     expect(state.status).toBe("success");
     if (state.status === "success") {
-      expect(state.data.totalDistinctTeacherCount).toBe(0);
-      expect(
-        state.data.sectors.every((s) => s.distinctTeacherCount === 0),
-      ).toBe(true);
+      expect(state.data.sectors.every(s => s.distinctTeacherCount === 0)).toBe(
+        true,
+      );
+      expect(state.data).not.toHaveProperty("totalDistinctTeacherCount");
     }
   });
 
@@ -378,9 +372,7 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
       periodStart: "2026-07-10",
       periodEnd: "2026-07-10",
     });
-    const req = http.expectOne(
-      (r) => r.url === sectorUrl && r.method === "GET",
-    );
+    const req = http.expectOne(r => r.url === sectorUrl && r.method === "GET");
     req.flush(apiProblemBadRequestFixture, {
       status: 400,
       statusText: "Bad Request",
@@ -402,9 +394,7 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
       periodStart: "2026-07-10",
       periodEnd: "2026-07-01",
     });
-    const req = http.expectOne(
-      (r) => r.url === sectorUrl && r.method === "GET",
-    );
+    const req = http.expectOne(r => r.url === sectorUrl && r.method === "GET");
     req.flush(apiProblemPeriodInvalidFixture, {
       status: 422,
       statusText: "Unprocessable Entity",
@@ -429,7 +419,7 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
       periodEnd: "2026-07-10",
     });
     const first = http.expectOne(
-      (r) =>
+      r =>
         r.url === sectorUrl &&
         r.method === "GET" &&
         r.params.get("periodStart") === "2026-07-01",
@@ -441,7 +431,7 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
       periodEnd: "2026-08-10",
     });
     const second = http.expectOne(
-      (r) =>
+      r =>
         r.url === sectorUrl &&
         r.method === "GET" &&
         r.params.get("periodStart") === "2026-08-01",
@@ -462,9 +452,7 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
 
   it("resetSector() cancela el envío en curso y vuelve a idle", () => {
     facade.loadSector(validSectorFilters);
-    const req = http.expectOne(
-      (r) => r.url === sectorUrl && r.method === "GET",
-    );
+    const req = http.expectOne(r => r.url === sectorUrl && r.method === "GET");
     expect(facade.sectorState().status).toBe("loading");
 
     facade.resetSector();
@@ -477,7 +465,7 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
   it("retrySector() reenvía tras un error con los filtros previos", () => {
     facade.loadSector(validSectorFilters);
     http
-      .expectOne((r) => r.url === sectorUrl && r.method === "GET")
+      .expectOne(r => r.url === sectorUrl && r.method === "GET")
       .flush(apiProblemPeriodInvalidFixture, {
         status: 422,
         statusText: "Unprocessable Entity",
@@ -489,7 +477,7 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
 
     facade.retrySector();
     const retryReq = http.expectOne(
-      (r) => r.url === sectorUrl && r.method === "GET",
+      r => r.url === sectorUrl && r.method === "GET",
     );
     expect(retryReq.request.params.get("periodStart")).toBe("2026-07-01");
     retryReq.flush(teacherCountsBySectorFixture);
@@ -500,17 +488,17 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
 
   it("retrySector() no hace nada si el estado vigente no es error", () => {
     facade.loadSector(validSectorFilters);
-    http.expectOne((r) => r.url === sectorUrl && r.method === "GET");
+    http.expectOne(r => r.url === sectorUrl && r.method === "GET");
 
     facade.retrySector();
     expect(facade.sectorState().status).toBe("loading");
-    http.expectNone((r) => r.url === sectorUrl);
+    http.expectNone(r => r.url === sectorUrl);
   });
 
   it("retrySector() no hace nada si los filtros previos son inválidos", () => {
     facade.retrySector();
     expect(facade.sectorState().status).toBe("idle");
-    http.expectNone((r) => r.url === sectorUrl);
+    http.expectNone(r => r.url === sectorUrl);
   });
 
   // -- Independencia entre slots --------------------------------------
@@ -521,7 +509,7 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
     expect(facade.ageState().status).toBe("idle");
 
     http
-      .expectOne((r) => r.url === sectorUrl && r.method === "GET")
+      .expectOne(r => r.url === sectorUrl && r.method === "GET")
       .flush(teacherCountsBySectorFixture);
 
     facade.loadAge(validFilters);
@@ -529,7 +517,7 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
     expect(facade.sectorState().status).toBe("success");
 
     http
-      .expectOne((r) => r.url === ageUrl && r.method === "GET")
+      .expectOne(r => r.url === ageUrl && r.method === "GET")
       .flush(ageDistributionFixture);
 
     expect(facade.ageState().status).toBe("success");
@@ -547,14 +535,14 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
     it("loadTop() con VM inválida es no-op y conserva el estado idle", () => {
       facade.loadTop(invalidTopFilters);
       expect(facade.topState().status).toBe("idle");
-      http.expectNone((r) => r.url === topUrl);
+      http.expectNone(r => r.url === topUrl);
     });
 
     it("loadTop() expone loading y luego success con la VM aplanada y empates preservados", () => {
       facade.loadTop(validTopFilters);
       expect(facade.topState().status).toBe("loading");
 
-      const req = http.expectOne((r) => r.url === topUrl && r.method === "GET");
+      const req = http.expectOne(r => r.url === topUrl && r.method === "GET");
       expect(req.request.params.get("academicYearId")).toBe("2");
       req.flush(topSchoolsFixture);
 
@@ -564,12 +552,12 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
         expect(state.data.academicYearId).toBe(2);
         expect(state.data.schools).toHaveLength(2);
         // Orden estable preservado.
-        expect(state.data.schools.map((s) => s.schoolName)).toEqual([
+        expect(state.data.schools.map(s => s.schoolName)).toEqual([
           "Escuela Río Claro",
           "Instituto Horizonte",
         ]);
         // Empates conservados.
-        expect(state.data.schools.map((s) => s.enrollmentCount)).toEqual([
+        expect(state.data.schools.map(s => s.enrollmentCount)).toEqual([
           12, 12,
         ]);
       }
@@ -578,7 +566,7 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
     it("loadTop() mapea 200 [] a empty (no error)", () => {
       facade.loadTop(validTopFilters);
       http
-        .expectOne((r) => r.url === topUrl && r.method === "GET")
+        .expectOne(r => r.url === topUrl && r.method === "GET")
         .flush(emptyTopSchoolsFixture);
 
       const state = facade.topState();
@@ -590,7 +578,7 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
 
     it("loadTop() mapea 400 con ProblemDetails a error", () => {
       facade.loadTop({ ...validTopFilters, academicYearId: 0 });
-      const req = http.expectOne((r) => r.url === topUrl && r.method === "GET");
+      const req = http.expectOne(r => r.url === topUrl && r.method === "GET");
       req.flush(apiProblemBadRequestFixture, {
         status: 400,
         statusText: "Bad Request",
@@ -610,7 +598,7 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
     it("loadTop() mapea 404 con ProblemDetails a error", () => {
       facade.loadTop({ ...validTopFilters, academicYearId: 9999 });
       http
-        .expectOne((r) => r.url === topUrl && r.method === "GET")
+        .expectOne(r => r.url === topUrl && r.method === "GET")
         .flush(apiProblemNotFoundFixture, {
           status: 404,
           statusText: "Not Found",
@@ -630,7 +618,7 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
     it("loadTop() cancela el envío previo cuando cambia academicYearId", () => {
       facade.loadTop({ ...validTopFilters, academicYearId: 1 });
       const first = http.expectOne(
-        (r) =>
+        r =>
           r.url === topUrl &&
           r.method === "GET" &&
           r.params.get("academicYearId") === "1",
@@ -639,7 +627,7 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
 
       facade.loadTop({ ...validTopFilters, academicYearId: 2 });
       const second = http.expectOne(
-        (r) =>
+        r =>
           r.url === topUrl &&
           r.method === "GET" &&
           r.params.get("academicYearId") === "2",
@@ -657,7 +645,7 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
 
     it("resetTop() cancela el envío en curso y vuelve a idle", () => {
       facade.loadTop(validTopFilters);
-      const req = http.expectOne((r) => r.url === topUrl && r.method === "GET");
+      const req = http.expectOne(r => r.url === topUrl && r.method === "GET");
       expect(facade.topState().status).toBe("loading");
 
       facade.resetTop();
@@ -668,7 +656,7 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
     it("retryTop() reenvía tras un error con los filtros previos", () => {
       facade.loadTop(validTopFilters);
       http
-        .expectOne((r) => r.url === topUrl && r.method === "GET")
+        .expectOne(r => r.url === topUrl && r.method === "GET")
         .flush(apiProblemBadRequestFixture, {
           status: 400,
           statusText: "Bad Request",
@@ -680,7 +668,7 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
 
       facade.retryTop();
       const retryReq = http.expectOne(
-        (r) => r.url === topUrl && r.method === "GET",
+        r => r.url === topUrl && r.method === "GET",
       );
       expect(retryReq.request.params.get("academicYearId")).toBe("2");
       retryReq.flush(topSchoolsFixture);
@@ -691,13 +679,13 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
     it("retryTop() reenvía desde empty (200 []) con los mismos filtros", () => {
       facade.loadTop(validTopFilters);
       http
-        .expectOne((r) => r.url === topUrl && r.method === "GET")
+        .expectOne(r => r.url === topUrl && r.method === "GET")
         .flush(emptyTopSchoolsFixture);
       expect(facade.topState().status).toBe("empty");
 
       facade.retryTop();
       const retryReq = http.expectOne(
-        (r) => r.url === topUrl && r.method === "GET",
+        r => r.url === topUrl && r.method === "GET",
       );
       retryReq.flush(topSchoolsFixture);
 
@@ -706,17 +694,17 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
 
     it("retryTop() no hace nada si el estado vigente no es error ni empty", () => {
       facade.loadTop(validTopFilters);
-      http.expectOne((r) => r.url === topUrl && r.method === "GET");
+      http.expectOne(r => r.url === topUrl && r.method === "GET");
 
       facade.retryTop();
       expect(facade.topState().status).toBe("loading");
-      http.expectNone((r) => r.url === topUrl);
+      http.expectNone(r => r.url === topUrl);
     });
 
     it("retryTop() no hace nada si los filtros previos son inválidos", () => {
       facade.retryTop();
       expect(facade.topState().status).toBe("idle");
-      http.expectNone((r) => r.url === topUrl);
+      http.expectNone(r => r.url === topUrl);
     });
 
     it("descarte stale: el requestKey se incrementa entre envíos consecutivos", () => {
@@ -728,26 +716,31 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
       // respuesta del segundo envío es la que persiste.
       facade.loadTop({ ...validTopFilters, academicYearId: 1 });
       const first = http.expectOne(
-        (r) =>
+        r =>
           r.url === topUrl &&
           r.method === "GET" &&
           r.params.get("academicYearId") === "1",
       );
       const firstState = facade.topState();
       expect(firstState.status).toBe("loading");
-      const firstKey =
-        firstState.status === "loading" ? firstState.requestKey : "";
+      if (firstState.status !== "loading") {
+        throw new Error("The first top-schools request should be loading");
+      }
+      const firstKey = firstState.requestKey;
       facade.loadTop({ ...validTopFilters, academicYearId: 2 });
       const second = http.expectOne(
-        (r) =>
+        r =>
           r.url === topUrl &&
           r.method === "GET" &&
           r.params.get("academicYearId") === "2",
       );
       expect(first.cancelled).toBe(true);
       const secondState = facade.topState();
-      const secondKey =
-        secondState.status === "loading" ? secondState.requestKey : "";
+      expect(secondState.status).toBe("loading");
+      if (secondState.status !== "loading") {
+        throw new Error("The second top-schools request should be loading");
+      }
+      const secondKey = secondState.requestKey;
       expect(secondKey).not.toBe(firstKey);
       expect(secondKey.startsWith("report-top#")).toBe(true);
 
@@ -791,11 +784,11 @@ describe("ReportFacade (CT-AGE-AGE)", () => {
     facade.loadAge(validFilters);
     facade.loadSector(validSectorFilters);
     facade.loadTop(validTopFilters);
-    const ageRequest = http.expectOne((candidate) => candidate.url === ageUrl);
+    const ageRequest = http.expectOne(candidate => candidate.url === ageUrl);
     const sectorRequest = http.expectOne(
-      (candidate) => candidate.url === sectorUrl,
+      candidate => candidate.url === sectorUrl,
     );
-    const topRequest = http.expectOne((candidate) => candidate.url === topUrl);
+    const topRequest = http.expectOne(candidate => candidate.url === topUrl);
 
     TestBed.resetTestingModule();
 

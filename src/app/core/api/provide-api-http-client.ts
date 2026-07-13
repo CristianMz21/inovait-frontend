@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 import type { EnvironmentProviders } from "@angular/core";
 import {
   type HttpInterceptorFn,
@@ -33,4 +34,4 @@ export const provideApiHttpClient = (): EnvironmentProviders => {
   return provideHttpClient(withInterceptors(interceptors));
 };
 
-export type { HttpInterceptorFn };
+export type { HttpInterceptorFn } from "@angular/common/http";

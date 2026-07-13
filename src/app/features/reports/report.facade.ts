@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 import { DestroyRef, Injectable, inject, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import type { Subscription } from "rxjs";
@@ -292,7 +293,7 @@ export class ReportFacade {
       .getAgeDistribution(params)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (dto) => {
+        next: dto => {
           if (this.isStale(this.age(), requestKey)) {
             return;
           }
@@ -321,7 +322,7 @@ export class ReportFacade {
       .getDistinctTeacherCountsBySector(params)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (dto) => {
+        next: dto => {
           if (this.isStale(this.sector(), requestKey)) {
             return;
           }
@@ -352,7 +353,7 @@ export class ReportFacade {
       .getTopSchoolsByEnrollment(params)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (dto) => {
+        next: dto => {
           if (this.isStale(this.top(), requestKey)) {
             return;
           }

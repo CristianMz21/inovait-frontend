@@ -74,7 +74,7 @@ describe("TeacherContractsFacade", () => {
   it("submit() con VM inválida es no-op y conserva el estado idle", () => {
     facade.submit(invalidForm);
     expect(facade.createResult().status).toBe("idle");
-    http.expectNone((r) =>
+    http.expectNone(r =>
       r.url.startsWith(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/teachers/`),
     );
   });
@@ -83,7 +83,7 @@ describe("TeacherContractsFacade", () => {
     facade.submit(validForm);
     expect(facade.createResult().status).toBe("loading");
 
-    const req = http.expectOne((r) => r.url === url(5) && r.method === "POST");
+    const req = http.expectOne(r => r.url === url(5) && r.method === "POST");
     expect(req.request.body).toEqual({
       schoolIds: [1, 2],
       startDate: "2026-03-01",
@@ -100,11 +100,86 @@ describe("TeacherContractsFacade", () => {
       expect(state.data[0].effectiveStatus).toBe("Effective");
       expect(state.data[1].schoolName).toBe("Instituto Horizonte");
     }
+    http
+      .expectOne(request => request.url === url(5) && request.method === "GET")
+      .flush(teacherContractsListedFixture);
   });
 
-  it("submit() mapea 409 conflict a error sin mutar el estado", () => {
+  it("submit() espera el 201 y reemplaza la lista con el GET canónico completo", () => {
     facade.submit(validForm);
-    const req = http.expectOne((r) => r.url === url(5) && r.method === "POST");
+
+    const createRequest = http.expectOne(
+      request => request.url === url(5) && request.method === "POST",
+    );
+    http.expectNone(
+      request => request.url === url(5) && request.method === "GET",
+    );
+
+    createRequest.flush(teacherContractsCreatedFixture, {
+      status: 201,
+      statusText: "Created",
+    });
+
+    expect(facade.createResult().status).toBe("success");
+    expect(facade.listResult().status).toBe("loading");
+    const listRequest = http.expectOne(
+      request => request.url === url(5) && request.method === "GET",
+    );
+    expect(listRequest.request.params.has("asOfDate")).toBe(false);
+
+    listRequest.flush(teacherContractsListedFixture);
+
+    const listState = facade.listResult();
+    expect(listState.status).toBe("success");
+    if (listState.status === "success") {
+      expect(listState.data).toHaveLength(teacherContractsListedFixture.length);
+      expect(listState.data[0]).toMatchObject({
+        id: teacherContractsListedFixture[0].id,
+        startDate: teacherContractsListedFixture[0].startDate,
+        persistedStatus: teacherContractsListedFixture[0].persistedStatus,
+      });
+      expect(listState.data[1]).toMatchObject({
+        id: teacherContractsListedFixture[1].id,
+        startDate: teacherContractsListedFixture[1].startDate,
+        persistedStatus: teacherContractsListedFixture[1].persistedStatus,
+      });
+    }
+    expect(facade.createResult().status).toBe("success");
+  });
+
+  it("el refresh posterior al 201 cancela una lista obsoleta en curso", () => {
+    facade.searchByTeacher(6);
+    const staleListRequest = http.expectOne(
+      request => request.url === url(6) && request.method === "GET",
+    );
+    facade.submit(validForm);
+
+    http
+      .expectOne(request => request.url === url(5) && request.method === "POST")
+      .flush(teacherContractsCreatedFixture, {
+        status: 201,
+        statusText: "Created",
+      });
+
+    expect(staleListRequest.cancelled).toBe(true);
+    const canonicalListRequest = http.expectOne(
+      request => request.url === url(5) && request.method === "GET",
+    );
+    canonicalListRequest.flush(teacherContractsListedFixture);
+
+    const state = facade.listResult();
+    expect(state.status).toBe("success");
+    if (state.status === "success") {
+      expect(state.data[0].teacherId).toBe(5);
+      expect(state.data[0].startDate).toBe(
+        teacherContractsListedFixture[0].startDate,
+      );
+    }
+  });
+
+  it("submit() mapea 409 a error y no consulta la lista", () => {
+    facade.submit(validForm);
+    const req = http.expectOne(r => r.url === url(5) && r.method === "POST");
     req.flush(apiProblemTeacherContractConflictFixture, {
       status: 409,
       statusText: "Conflict",
@@ -117,11 +192,14 @@ describe("TeacherContractsFacade", () => {
       expect(state.problem.status).toBe(409);
       expect(state.problem.code).toBe("teacher_contract_conflict");
     }
+    http.expectNone(
+      request => request.url === url(5) && request.method === "GET",
+    );
   });
 
   it("submit() mapea 422 business_rule_violation a error", () => {
     facade.submit(validForm);
-    const req = http.expectOne((r) => r.url === url(5) && r.method === "POST");
+    const req = http.expectOne(r => r.url === url(5) && r.method === "POST");
     req.flush(apiProblemBadRequestFixture, {
       status: 400,
       statusText: "Bad Request",
@@ -138,9 +216,7 @@ describe("TeacherContractsFacade", () => {
 
   it("submit() mantiene single-flight y no cancela ni duplica un POST en curso", () => {
     facade.submit(validForm);
-    const first = http.expectOne(
-      (r) => r.url === url(5) && r.method === "POST",
-    );
+    const first = http.expectOne(r => r.url === url(5) && r.method === "POST");
     expect(facade.createResult().status).toBe("loading");
 
     facade.submit({
@@ -148,7 +224,7 @@ describe("TeacherContractsFacade", () => {
       schoolIds: [3],
     });
     http.expectNone(
-      (request) =>
+      request =>
         request !== first.request &&
         request.url === url(5) &&
         request.method === "POST",
@@ -161,11 +237,14 @@ describe("TeacherContractsFacade", () => {
     if (state.status === "success") {
       expect(state.data).toHaveLength(2);
     }
+    http
+      .expectOne(request => request.url === url(5) && request.method === "GET")
+      .flush(teacherContractsListedFixture);
   });
 
   it("resetCreate() cancela el envío en curso y vuelve a idle", () => {
     facade.submit(validForm);
-    const req = http.expectOne((r) => r.url === url(5) && r.method === "POST");
+    const req = http.expectOne(r => r.url === url(5) && r.method === "POST");
     expect(facade.createResult().status).toBe("loading");
 
     facade.resetCreate();
@@ -176,7 +255,7 @@ describe("TeacherContractsFacade", () => {
   it("retrySubmit() reenvía tras un error", () => {
     facade.submit(validForm);
     http
-      .expectOne((r) => r.url === url(5) && r.method === "POST")
+      .expectOne(r => r.url === url(5) && r.method === "POST")
       .flush(apiProblemTeacherContractConflictFixture, {
         status: 409,
         statusText: "Conflict",
@@ -189,7 +268,7 @@ describe("TeacherContractsFacade", () => {
 
     facade.retrySubmit(validForm);
     const retryReq = http.expectOne(
-      (r) => r.url === url(5) && r.method === "POST",
+      r => r.url === url(5) && r.method === "POST",
     );
     retryReq.flush(teacherContractsCreatedFixture);
 
@@ -198,11 +277,14 @@ describe("TeacherContractsFacade", () => {
     if (state.status === "success") {
       expect(state.data).toHaveLength(2);
     }
+    http
+      .expectOne(request => request.url === url(5) && request.method === "GET")
+      .flush(teacherContractsListedFixture);
   });
 
   it("retrySubmit() no hace nada si el estado vigente no es error", () => {
     facade.submit(validForm);
-    http.expectOne((r) => r.url === url(5) && r.method === "POST");
+    http.expectOne(r => r.url === url(5) && r.method === "POST");
 
     facade.retrySubmit(validForm);
     expect(facade.createResult().status).toBe("loading");
@@ -214,7 +296,7 @@ describe("TeacherContractsFacade", () => {
     facade.searchByTeacher(5);
     expect(facade.listResult().status).toBe("loading");
 
-    const req = http.expectOne((r) => r.url === url(5) && r.method === "GET");
+    const req = http.expectOne(r => r.url === url(5) && r.method === "GET");
     expect(req.request.params.has("asOfDate")).toBe(false);
     req.flush(teacherContractsListedFixture);
 
@@ -229,7 +311,7 @@ describe("TeacherContractsFacade", () => {
 
   it("searchByTeacher() envía asOfDate cuando se indica", () => {
     facade.searchByTeacher(5, "2026-07-10");
-    const req = http.expectOne((r) => r.url === url(5) && r.method === "GET");
+    const req = http.expectOne(r => r.url === url(5) && r.method === "GET");
     expect(req.request.params.get("asOfDate")).toBe("2026-07-10");
     req.flush(teacherContractsListedFixture);
     expect(facade.listResult().status).toBe("success");
@@ -238,7 +320,7 @@ describe("TeacherContractsFacade", () => {
   it("searchByTeacher() mapea 200 [] a empty/noContracts", () => {
     facade.searchByTeacher(5);
     http
-      .expectOne((r) => r.url === url(5) && r.method === "GET")
+      .expectOne(r => r.url === url(5) && r.method === "GET")
       .flush(emptyTeacherContractsListedFixture);
 
     const state = facade.listResult();
@@ -251,7 +333,7 @@ describe("TeacherContractsFacade", () => {
   it("searchByTeacher() mapea 404 a error con ProblemDetails", () => {
     facade.searchByTeacher(9999);
     http
-      .expectOne((r) => r.url === url(9999) && r.method === "GET")
+      .expectOne(r => r.url === url(9999) && r.method === "GET")
       .flush(apiProblemNotFoundFixture, {
         status: 404,
         statusText: "Not Found",
@@ -272,19 +354,17 @@ describe("TeacherContractsFacade", () => {
     facade.searchByTeacher(-1);
     facade.searchByTeacher(Number.NaN);
     expect(facade.listResult().status).toBe("idle");
-    http.expectNone((r) =>
+    http.expectNone(r =>
       r.url.startsWith(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/teachers/`),
     );
   });
 
   it("searchByTeacher() cancela la consulta previa cuando cambia el docente", () => {
     facade.searchByTeacher(5);
-    const first = http.expectOne((r) => r.url === url(5) && r.method === "GET");
+    const first = http.expectOne(r => r.url === url(5) && r.method === "GET");
 
     facade.searchByTeacher(6);
-    const second = http.expectOne(
-      (r) => r.url === url(6) && r.method === "GET",
-    );
+    const second = http.expectOne(r => r.url === url(6) && r.method === "GET");
     expect(first.cancelled).toBe(true);
 
     second.flush(teacherContractsListedFixture);
@@ -293,7 +373,7 @@ describe("TeacherContractsFacade", () => {
 
   it("resetList() cancela la consulta en curso y vuelve a idle", () => {
     facade.searchByTeacher(5);
-    const req = http.expectOne((r) => r.url === url(5) && r.method === "GET");
+    const req = http.expectOne(r => r.url === url(5) && r.method === "GET");
     expect(facade.listResult().status).toBe("loading");
 
     facade.resetList();
@@ -304,7 +384,7 @@ describe("TeacherContractsFacade", () => {
   it("retryList() reenvía tras un error", () => {
     facade.searchByTeacher(5);
     http
-      .expectOne((r) => r.url === url(5) && r.method === "GET")
+      .expectOne(r => r.url === url(5) && r.method === "GET")
       .flush(apiProblemNotFoundFixture, {
         status: 404,
         statusText: "Not Found",
@@ -316,7 +396,7 @@ describe("TeacherContractsFacade", () => {
 
     facade.retryList();
     const retryReq = http.expectOne(
-      (r) => r.url === url(5) && r.method === "GET",
+      r => r.url === url(5) && r.method === "GET",
     );
     retryReq.flush(teacherContractsListedFixture);
     expect(facade.listResult().status).toBe("success");
@@ -324,7 +404,7 @@ describe("TeacherContractsFacade", () => {
 
   it("retryList() no hace nada si el estado vigente no es error", () => {
     facade.searchByTeacher(5);
-    http.expectOne((r) => r.url === url(5) && r.method === "GET");
+    http.expectOne(r => r.url === url(5) && r.method === "GET");
 
     facade.retryList();
     expect(facade.listResult().status).toBe("loading");
@@ -356,10 +436,10 @@ describe("TeacherContractsFacade", () => {
     facade.submit(validForm);
     facade.searchByTeacher(5);
     const createRequest = http.expectOne(
-      (candidate) => candidate.url === url(5) && candidate.method === "POST",
+      candidate => candidate.url === url(5) && candidate.method === "POST",
     );
     const listRequest = http.expectOne(
-      (candidate) => candidate.url === url(5) && candidate.method === "GET",
+      candidate => candidate.url === url(5) && candidate.method === "GET",
     );
 
     TestBed.resetTestingModule();

@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 /**
  * Tipos de la capa de vista del recorrido de **Reportes municipales**
  * (P1). Mantiene paridad con el contrato canónico
@@ -46,7 +47,6 @@ export interface AgeDistributionVm {
   readonly gradeId: number | null;
   readonly asOfDate: string;
   readonly bands: readonly AgeBandVm[];
-  readonly totalCount: number;
 }
 
 /**
@@ -114,7 +114,6 @@ export interface TeacherCountsBySectorVm {
   readonly periodStart: string;
   readonly periodEnd: string;
   readonly sectors: readonly SectorCountVm[];
-  readonly totalDistinctTeacherCount: number;
 }
 
 /**

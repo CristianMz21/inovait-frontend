@@ -101,7 +101,7 @@ describe("AgeDistributionComponent (CT-AGE-RPT)", () => {
     expect(host.textContent).toContain(
       "No se pudieron cargar años académicos para distribución",
     );
-    const retry = Array.from(host.querySelectorAll("button")).find((button) =>
+    const retry = Array.from(host.querySelectorAll("button")).find(button =>
       button.textContent?.includes(
         "Reintentar años académicos para distribución",
       ),
@@ -135,22 +135,26 @@ describe("AgeDistributionComponent (CT-AGE-RPT)", () => {
     const buttons = Array.from(
       (fixture.nativeElement as HTMLElement).querySelectorAll("button"),
     );
-    buttons
-      .find((button) =>
-        button.textContent?.includes("Reintentar escuelas para distribución"),
-      )
-      ?.click();
+    const retrySchools = buttons.find(button =>
+      button.textContent?.includes("Reintentar escuelas para distribución"),
+    );
+    const retryGrades = buttons.find(button =>
+      button.textContent?.includes("Reintentar grados para distribución"),
+    );
+    expect(retrySchools).toBeDefined();
+    expect(retryGrades).toBeDefined();
+
+    retrySchools?.click();
     http
       .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/schools`)
       .flush(schoolsFixture);
-    buttons
-      .find((button) =>
-        button.textContent?.includes("Reintentar grados para distribución"),
-      )
-      ?.click();
+    retryGrades?.click();
     http
       .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/grades`)
       .flush(gradesFixture);
+
+    expect(component.schoolOptions()).toHaveLength(schoolsFixture.length);
+    expect(component.gradeOptions()).toHaveLength(gradesFixture.length);
   });
 
   // -- Accesibilidad -----------------------------------------------------
@@ -208,7 +212,7 @@ describe("AgeDistributionComponent (CT-AGE-RPT)", () => {
 
     expect(compiled.querySelector('[data-testid="age-idle"]')).toBeNull();
 
-    http.expectOne((r) => r.url === ageUrl).flush(ageDistributionFixture);
+    http.expectOne(r => r.url === ageUrl).flush(ageDistributionFixture);
   });
 
   // -- Estado del formulario --------------------------------------------
@@ -231,8 +235,14 @@ describe("AgeDistributionComponent (CT-AGE-RPT)", () => {
     component.form.patchValue({ academicYearId: 2 });
     component.onSubmit();
     expect(component.isLoading()).toBe(true);
+    fixture.detectChanges();
 
-    const req = http.expectOne((r) => r.url === ageUrl && r.method === "GET");
+    const loadingStatus = (fixture.nativeElement as HTMLElement).querySelector(
+      "output[data-testid='age-loading']",
+    );
+    expect(loadingStatus?.getAttribute("aria-live")).toBe("polite");
+
+    const req = http.expectOne(r => r.url === ageUrl && r.method === "GET");
     expect(req.request.params.get("academicYearId")).toBe("2");
     req.flush(ageDistributionFixture);
     fixture.detectChanges();
@@ -241,17 +251,25 @@ describe("AgeDistributionComponent (CT-AGE-RPT)", () => {
     const data = component.successData();
     expect(data).not.toBeNull();
     expect(data?.bands).toHaveLength(3);
-    expect(data?.bands.map((b) => b.id)).toEqual([
+    expect(data?.bands.map(b => b.id)).toEqual([
       "age3To7",
       "age8To12",
       "ageOver12",
     ]);
-    expect(data?.totalCount).toBe(12);
+    expect(data?.bands.map(b => b.count)).toEqual([4, 6, 2]);
+    expect(data).not.toHaveProperty("totalCount");
 
     // Tabla accesible
     const compiled = fixture.nativeElement as HTMLElement;
     const results = compiled.querySelector('[data-testid="age-results"]');
     expect(results).toBeTruthy();
+    expect(results?.tagName).toBe("SECTION");
+    const liveContext = results?.querySelector("output.age-context");
+    expect(liveContext?.getAttribute("aria-live")).toBe("polite");
+    expect(liveContext?.textContent?.replace(/\s+/g, " ").trim()).toBe(
+      "Año académico 2 · Fecha de referencia 2026-07-10",
+    );
+    expect(results?.textContent).not.toMatch(/\btotal\b/i);
     const caption = compiled.querySelector("caption.visually-hidden");
     expect(caption?.textContent?.trim().length ?? 0).toBeGreaterThan(0);
     const headers = compiled.querySelectorAll('th[scope="col"]');
@@ -264,7 +282,7 @@ describe("AgeDistributionComponent (CT-AGE-RPT)", () => {
     flushCatalogs(http);
     component.form.patchValue({ academicYearId: 2 });
     component.onSubmit();
-    http.expectOne((r) => r.url === ageUrl).flush(ageDistributionFixture);
+    http.expectOne(r => r.url === ageUrl).flush(ageDistributionFixture);
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
@@ -302,12 +320,12 @@ describe("AgeDistributionComponent (CT-AGE-RPT)", () => {
     component.form.patchValue({ academicYearId: 2 });
     component.onSubmit();
 
-    http.expectOne((r) => r.url === ageUrl).flush(emptyAgeDistributionFixture);
+    http.expectOne(r => r.url === ageUrl).flush(emptyAgeDistributionFixture);
 
     const data = component.successData();
     expect(data).not.toBeNull();
-    expect(data?.totalCount).toBe(0);
-    expect(data?.bands.every((b) => b.count === 0)).toBe(true);
+    expect(data?.bands.every(b => b.count === 0)).toBe(true);
+    expect(data).not.toHaveProperty("totalCount");
     expect(component.hasError()).toBe(false);
   });
 
@@ -318,7 +336,7 @@ describe("AgeDistributionComponent (CT-AGE-RPT)", () => {
     component.form.patchValue({ academicYearId: 0 });
     component.onSubmit();
 
-    const req = http.expectOne((r) => r.url === ageUrl && r.method === "GET");
+    const req = http.expectOne(r => r.url === ageUrl && r.method === "GET");
     req.flush(apiProblemBadRequestFixture, {
       status: 400,
       statusText: "Bad Request",
@@ -343,7 +361,7 @@ describe("AgeDistributionComponent (CT-AGE-RPT)", () => {
     });
     component.onSubmit();
 
-    const req = http.expectOne((r) => r.url === ageUrl && r.method === "GET");
+    const req = http.expectOne(r => r.url === ageUrl && r.method === "GET");
     expect(req.request.params.get("asOfDate")).toBe("2010-01-01");
     req.flush(apiProblemAsOfDateInvalidFixture, {
       status: 422,
@@ -372,7 +390,7 @@ describe("AgeDistributionComponent (CT-AGE-RPT)", () => {
     component.onSubmit();
 
     http
-      .expectOne((r) => r.url === ageUrl)
+      .expectOne(r => r.url === ageUrl)
       .flush(apiProblemAsOfDateInvalidFixture, {
         status: 422,
         statusText: "Unprocessable Entity",
@@ -383,7 +401,7 @@ describe("AgeDistributionComponent (CT-AGE-RPT)", () => {
     expect(component.hasError()).toBe(true);
 
     component.onRetry();
-    const retryReq = http.expectOne((r) => r.url === ageUrl);
+    const retryReq = http.expectOne(r => r.url === ageUrl);
     retryReq.flush(ageDistributionFixture);
     expect(component.isSuccess()).toBe(true);
   });
@@ -393,7 +411,7 @@ describe("AgeDistributionComponent (CT-AGE-RPT)", () => {
     component.form.patchValue({ academicYearId: 2 });
     component.onSubmit();
 
-    const req = http.expectOne((r) => r.url === ageUrl && r.method === "GET");
+    const req = http.expectOne(r => r.url === ageUrl && r.method === "GET");
     expect(component.isLoading()).toBe(true);
 
     component.onReset();
@@ -409,13 +427,13 @@ describe("AgeDistributionComponent (CT-AGE-RPT)", () => {
     component.form.patchValue({ academicYearId: 1 });
     component.onSubmit();
     const first = http.expectOne(
-      (r) => r.url === ageUrl && r.params.get("academicYearId") === "1",
+      r => r.url === ageUrl && r.params.get("academicYearId") === "1",
     );
 
     component.form.patchValue({ academicYearId: 2 });
     component.onSubmit();
     const second = http.expectOne(
-      (r) => r.url === ageUrl && r.params.get("academicYearId") === "2",
+      r => r.url === ageUrl && r.params.get("academicYearId") === "2",
     );
     expect(first.cancelled).toBe(true);
 

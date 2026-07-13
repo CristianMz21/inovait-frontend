@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 import {
   ChangeDetectionStrategy,
   Component,
@@ -20,16 +21,22 @@ import {
 import { map } from "rxjs";
 import { CatalogFacade } from "../../core/catalogs/catalog.facade";
 import { CatalogStatusComponent } from "../../core/catalogs/catalog-status.component";
+import { isCalendarDateOnly } from "../../core/dates/calendar-date";
 import { AppIconComponent } from "../../layout/educore-shell/app-icon.component";
+import { TableSkipDirective } from "../../layout/educore-shell/table-skip.directive";
 import type { RemoteState } from "../../core/api/remote-state";
 import { StudentSearchFacade } from "./student-search.facade";
 import {
-  isCalendarDateOnly,
   studentSearchFiltersFromQueryValues,
   studentSearchFiltersToQueryParams,
 } from "./student-search.navigation";
 import { studentSearchFiltersEqual } from "./student-search.mappers";
 import { StudentHistoryNavigationHandoff } from "../student-history/student-history.navigation";
+import {
+  STUDENT_SEARCH_NO_GROUPS_REASON,
+  STUDENT_SEARCH_NO_RESULTS_REASON,
+  STUDENT_SEARCH_REMOTE_STATUS,
+} from "./student-search.constants";
 import type {
   StudentSearchFieldVm,
   StudentSearchFiltersVm,
@@ -42,12 +49,29 @@ const calendarDateValidator: ValidatorFn = (
   control: AbstractControl<unknown>,
 ) => {
   const value = control.value;
-  return typeof value !== "string" ||
+  if (
+    typeof value !== "string" ||
     value.length === 0 ||
     isCalendarDateOnly(value)
-    ? null
-    : { calendarDate: true };
+  ) {
+    return null;
+  }
+  return { calendarDate: true };
 };
+
+function schoolSectorLabel(sector: "Public" | "Private"): string {
+  if (sector === "Public") {
+    return "Público";
+  }
+  return "Privado";
+}
+
+function academicYearLabel(name: string, isCurrent: boolean): string {
+  if (isCurrent) {
+    return `${name} (actual)`;
+  }
+  return name;
+}
 
 interface StudentSearchFormShape {
   schoolId: FormControl<number | null>;
@@ -87,7 +111,12 @@ type StudentSearchFormGroup = FormGroup<StudentSearchFormShape>;
 @Component({
   selector: "app-student-search",
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, CatalogStatusComponent, AppIconComponent],
+  imports: [
+    ReactiveFormsModule,
+    CatalogStatusComponent,
+    AppIconComponent,
+    TableSkipDirective,
+  ],
   providers: [StudentSearchFacade],
   templateUrl: "./student-search.component.html",
   styleUrl: "./student-search.component.scss",
@@ -129,35 +158,60 @@ export class StudentSearchComponent implements OnInit {
   );
 
   readonly schoolOptions = computed(() =>
-    this.mapOptions(this.catalog.schoolsState(), (school) => ({
+    this.mapOptions(this.catalog.schoolsState(), school => ({
       value: school.id,
-      label: `${school.name} · ${school.sector === "Public" ? "Público" : "Privado"}`,
+      label: `${school.name} · ${schoolSectorLabel(school.sector)}`,
     })),
   );
   readonly gradeOptions = computed(() =>
-    this.mapOptions(this.catalog.gradesState(), (grade) => ({
+    this.mapOptions(this.catalog.gradesState(), grade => ({
       value: grade.id,
       label: grade.name,
     })),
   );
   readonly academicYearOptions = computed(() =>
-    this.mapOptions(this.catalog.academicYearsState(), (year) => ({
+    this.mapOptions(this.catalog.academicYearsState(), year => ({
       value: year.id,
-      label: year.isCurrent ? `${year.name} (actual)` : year.name,
+      label: academicYearLabel(year.name, year.isCurrent),
     })),
   );
 
   readonly successData = computed<readonly StudentSearchResultVm[] | null>(
     () => {
       const state = this.result();
-      return state.status === "success" ? state.data : null;
+      if (state.status === STUDENT_SEARCH_REMOTE_STATUS.success) {
+        return state.data;
+      }
+      return null;
     },
   );
 
-  readonly isLoading = computed(() => this.result().status === "loading");
-  readonly isSuccess = computed(() => this.result().status === "success");
-  readonly isEmpty = computed(() => this.result().status === "empty");
-  readonly hasError = computed(() => this.result().status === "error");
+  readonly isLoading = computed(
+    () => this.result().status === STUDENT_SEARCH_REMOTE_STATUS.loading,
+  );
+  readonly isSuccess = computed(
+    () => this.result().status === STUDENT_SEARCH_REMOTE_STATUS.success,
+  );
+  readonly isEmpty = computed(
+    () => this.result().status === STUDENT_SEARCH_REMOTE_STATUS.empty,
+  );
+  readonly hasNoGroups = computed(() => {
+    const state = this.result();
+    return (
+      state.status === STUDENT_SEARCH_REMOTE_STATUS.empty &&
+      state.reason === STUDENT_SEARCH_NO_GROUPS_REASON
+    );
+  });
+  readonly hasNoResults = computed(() => {
+    const state = this.result();
+    return (
+      state.status === STUDENT_SEARCH_REMOTE_STATUS.empty &&
+      state.reason === STUDENT_SEARCH_NO_RESULTS_REASON
+    );
+  });
+  readonly hasError = computed(
+    () => this.result().status === STUDENT_SEARCH_REMOTE_STATUS.error,
+  );
 
   /**
    * True cuando hay resultados visibles (`result().status === "success"`)
@@ -168,7 +222,7 @@ export class StudentSearchComponent implements OnInit {
    * falta una bandera "dirty" separada.
    */
   readonly isStale = computed(() => {
-    if (this.result().status !== "success") {
+    if (this.result().status !== STUDENT_SEARCH_REMOTE_STATUS.success) {
       return false;
     }
     return !studentSearchFiltersEqual(
@@ -179,7 +233,10 @@ export class StudentSearchComponent implements OnInit {
 
   readonly errorProblem = computed(() => {
     const state = this.result();
-    return state.status === "error" ? state.problem : null;
+    if (state.status === STUDENT_SEARCH_REMOTE_STATUS.error) {
+      return state.problem;
+    }
+    return null;
   });
 
   readonly errorFields = computed(() => {
@@ -201,7 +258,7 @@ export class StudentSearchComponent implements OnInit {
     this.catalog.loadAcademicYears();
     this.route.queryParamMap
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((params) => {
+      .subscribe(params => {
         const filters = studentSearchFiltersFromQueryValues({
           schoolId: params.get("schoolId"),
           gradeId: params.get("gradeId"),
@@ -230,8 +287,8 @@ export class StudentSearchComponent implements OnInit {
       return;
     }
     await this.router.navigate([], {
-      relativeTo: this.route,
       queryParams,
+      relativeTo: this.route,
       replaceUrl: true,
     });
   }
@@ -250,6 +307,13 @@ export class StudentSearchComponent implements OnInit {
 
   retryAcademicYears(): void {
     this.catalog.loadAcademicYears();
+  }
+
+  resultCountLabel(count: number): string {
+    if (count === 1) {
+      return `${count} inscripción`;
+    }
+    return `${count} inscripciones`;
   }
 
   async onReset(): Promise<void> {
@@ -282,11 +346,15 @@ export class StudentSearchComponent implements OnInit {
 
   private toVm(): StudentSearchFiltersVm {
     const raw = this.form.getRawValue();
+    let asOfDate: string | null = null;
+    if (raw.asOfDate.length > 0) {
+      asOfDate = raw.asOfDate;
+    }
     return {
       schoolId: raw.schoolId,
       gradeId: raw.gradeId,
       academicYearId: raw.academicYearId,
-      asOfDate: raw.asOfDate.length === 0 ? null : raw.asOfDate,
+      asOfDate,
     };
   }
 
@@ -314,7 +382,7 @@ export class StudentSearchComponent implements OnInit {
     state: RemoteState<readonly T[]>,
     project: (item: T) => StudentSearchFieldVm<TValue>,
   ): readonly StudentSearchFieldVm<TValue>[] {
-    if (state.status === "success") {
+    if (state.status === STUDENT_SEARCH_REMOTE_STATUS.success) {
       return state.data.map(project);
     }
     return [];

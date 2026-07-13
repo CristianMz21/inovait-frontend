@@ -1,8 +1,14 @@
+/* Copyright (c) 2026. All rights reserved. */
 import type { EnrollmentListItem } from "../../core/api/dtos/enrollment-list-item.dto";
 import type {
   StudentSearchFiltersVm,
   StudentSearchResultVm,
 } from "./student-search.vm";
+
+const SCHOOL_SECTOR_LABELS = {
+  Private: "Privado",
+  Public: "Público",
+} as const;
 
 /**
  * Determina si los filtros académicos están completos y la consulta puede
@@ -91,12 +97,12 @@ export function enrollmentListItemToResult(
     documentType: item.documentType,
     documentNumber: item.documentNumber,
     fullName: `${item.firstNames} ${item.lastNames}`
-      .replace(/\s+/g, " ")
+      .replaceAll(/\s+/g, " ")
       .trim(),
     birthDate: item.birthDate,
     age: item.age,
     schoolName: item.school.name,
-    schoolSector: item.school.sector === "Public" ? "Público" : "Privado",
+    schoolSector: SCHOOL_SECTOR_LABELS[item.school.sector],
     academicYearName: item.academicYear.name,
     gradeName: item.grade.name,
     classGroupCode: item.classGroup.code,

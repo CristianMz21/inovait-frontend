@@ -16,6 +16,7 @@ import {
 import {
   academicYearsFixture,
   apiProblemNotFoundFixture,
+  classGroupsFixture,
   enrollmentListResponseFixture,
   gradesFixture,
   schoolsFixture,
@@ -24,6 +25,7 @@ import {
 import { StudentHistoryComponent } from "../student-history/student-history.component";
 import { StudentHistoryNavigationHandoff } from "../student-history/student-history.navigation";
 import { StudentSearchComponent } from "./student-search.component";
+import { STUDENT_SEARCH_REMOTE_STATUS } from "./student-search.constants";
 
 @Component({
   imports: [RouterOutlet],
@@ -32,7 +34,12 @@ import { StudentSearchComponent } from "./student-search.component";
 class SearchNavigationHostComponent {}
 
 const enrollmentsUrl = `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`;
+const classGroupsUrl = `${DEFAULT_API_CONFIG.apiBaseUrl}/api/class-groups`;
 const historyUrl = `${DEFAULT_API_CONFIG.apiBaseUrl}/api/students/DNI/99.001.101/history`;
+const HTTP_NOT_FOUND_STATUS = 404;
+const HTTP_NOT_FOUND_STATUS_TEXT = "Not Found";
+const LEAP_DAY = "2024-02-29";
+const REFERENCE_DATE = "2026-07-10";
 
 describe("Student search routed integration", () => {
   let fixture: ComponentFixture<SearchNavigationHostComponent>;
@@ -69,23 +76,25 @@ describe("Student search routed integration", () => {
     await router.navigateByUrl("/student-search");
     fixture.detectChanges();
     flushCatalogs();
-    http.expectNone((request) => request.url === enrollmentsUrl);
+    http.expectNone(request => request.url === classGroupsUrl);
+    http.expectNone(request => request.url === enrollmentsUrl);
 
     const initialSearch = searchComponent();
     initialSearch.form.setValue({
       schoolId: 1,
       gradeId: 1,
       academicYearId: 2,
-      asOfDate: "2026-07-10",
+      asOfDate: REFERENCE_DATE,
     });
     await initialSearch.onSubmit();
     fixture.detectChanges();
 
     expect(router.url).toBe(
-      "/student-search?schoolId=1&gradeId=1&academicYearId=2&asOfDate=2026-07-10",
+      `/student-search?schoolId=1&gradeId=1&academicYearId=2&asOfDate=${REFERENCE_DATE}`,
     );
+    flushSearchClassGroups();
     const firstSearchRequests = http.match(
-      (request) => request.url === enrollmentsUrl,
+      request => request.url === enrollmentsUrl,
     );
     expect(firstSearchRequests).toHaveLength(1);
     const firstSearch = firstSearchRequests[0];
@@ -102,11 +111,11 @@ describe("Student search routed integration", () => {
     });
     fixture.detectChanges();
     http
-      .expectOne((request) => request.url === historyUrl)
+      .expectOne(request => request.url === historyUrl)
       .flush(studentHistoryFixture);
 
     await router.navigateByUrl(
-      "/student-search?schoolId=1&gradeId=1&academicYearId=2&asOfDate=2026-07-10",
+      `/student-search?schoolId=1&gradeId=1&academicYearId=2&asOfDate=${REFERENCE_DATE}`,
     );
     fixture.detectChanges();
     flushCatalogs();
@@ -116,10 +125,11 @@ describe("Student search routed integration", () => {
       schoolId: 1,
       gradeId: 1,
       academicYearId: 2,
-      asOfDate: "2026-07-10",
+      asOfDate: REFERENCE_DATE,
     });
+    flushSearchClassGroups();
     const restoredRequests = http.match(
-      (request) => request.url === enrollmentsUrl,
+      request => request.url === enrollmentsUrl,
     );
     expect(restoredRequests).toHaveLength(1);
     const restoredRequest = restoredRequests[0];
@@ -130,13 +140,13 @@ describe("Student search routed integration", () => {
     }
     restoredRequest.flush(enrollmentListResponseFixture);
     fixture.detectChanges();
-    http.expectNone((request) => request.url === enrollmentsUrl);
+    http.expectNone(request => request.url === enrollmentsUrl);
     expect(restoredSearch.successData()).toHaveLength(2);
   });
 
   it.each(["2026-02-31", "2023-02-29"])(
     "keeps an impossible initial date idle with an empty form",
-    async (asOfDate) => {
+    async asOfDate => {
       await router.navigate(["/student-search"], {
         queryParams: {
           schoolId: 1,
@@ -155,8 +165,9 @@ describe("Student search routed integration", () => {
         academicYearId: null,
         asOfDate: "",
       });
-      expect(component.result().status).toBe("idle");
-      http.expectNone((request) => request.url === enrollmentsUrl);
+      expect(component.result().status).toBe(STUDENT_SEARCH_REMOTE_STATUS.idle);
+      http.expectNone(request => request.url === classGroupsUrl);
+      http.expectNone(request => request.url === enrollmentsUrl);
     },
   );
 
@@ -166,32 +177,34 @@ describe("Student search routed integration", () => {
         schoolId: 1,
         gradeId: 1,
         academicYearId: 2,
-        asOfDate: "2024-02-29",
+        asOfDate: LEAP_DAY,
       },
     });
     fixture.detectChanges();
     flushCatalogs();
 
     const component = searchComponent();
-    expect(component.form.controls.asOfDate.value).toBe("2024-02-29");
-    expect(router.url).toContain("asOfDate=2024-02-29");
+    expect(component.form.controls.asOfDate.value).toBe(LEAP_DAY);
+    expect(router.url).toContain(`asOfDate=${LEAP_DAY}`);
+    flushSearchClassGroups();
     const firstRequest = http.expectOne(
-      (request) => request.url === enrollmentsUrl,
+      request => request.url === enrollmentsUrl,
     );
-    expect(firstRequest.request.params.get("asOfDate")).toBe("2024-02-29");
+    expect(firstRequest.request.params.get("asOfDate")).toBe(LEAP_DAY);
     firstRequest.flush(apiProblemNotFoundFixture, {
-      status: 404,
-      statusText: "Not Found",
+      status: HTTP_NOT_FOUND_STATUS,
+      statusText: HTTP_NOT_FOUND_STATUS_TEXT,
       headers: new HttpHeaders({
         "Content-Type": "application/problem+json",
       }),
     });
 
     component.onRetry();
+    flushSearchClassGroups();
     const retryRequest = http.expectOne(
-      (request) => request.url === enrollmentsUrl,
+      request => request.url === enrollmentsUrl,
     );
-    expect(retryRequest.request.params.get("asOfDate")).toBe("2024-02-29");
+    expect(retryRequest.request.params.get("asOfDate")).toBe(LEAP_DAY);
     retryRequest.flush(enrollmentListResponseFixture);
   });
 
@@ -205,6 +218,16 @@ describe("Student search routed integration", () => {
     http
       .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/academic-years`)
       .flush(academicYearsFixture);
+  }
+
+  function flushSearchClassGroups(): void {
+    const request = http.expectOne(
+      candidate => candidate.url === classGroupsUrl,
+    );
+    expect(request.request.params.get("schoolId")).toBe("1");
+    expect(request.request.params.get("gradeId")).toBe("1");
+    expect(request.request.params.get("academicYearId")).toBe("2");
+    request.flush(classGroupsFixture);
   }
 
   function searchComponent(): StudentSearchComponent {

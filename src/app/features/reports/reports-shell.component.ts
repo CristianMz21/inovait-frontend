@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 import {
   ChangeDetectionStrategy,
   Component,
@@ -28,7 +29,7 @@ const REPORT_SECTIONS: readonly ReportSection[] = [
 ];
 
 function isReportSectionId(value: string | null): value is ReportSectionId {
-  return REPORT_SECTIONS.some((section) => section.id === value);
+  return REPORT_SECTIONS.some(section => section.id === value);
 }
 
 /**
@@ -72,7 +73,7 @@ export class ReportsShellComponent implements OnInit {
   ngOnInit(): void {
     this.route.fragment
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((fragment) => {
+      .subscribe(fragment => {
         if (isReportSectionId(fragment)) {
           this.active.set(fragment);
         }
@@ -84,7 +85,10 @@ export class ReportsShellComponent implements OnInit {
   }
 
   tabIndexFor(sectionId: ReportSectionId): number {
-    return this.isActive(sectionId) ? 0 : -1;
+    if (this.isActive(sectionId)) {
+      return 0;
+    }
+    return -1;
   }
 
   activate(sectionId: ReportSectionId): void {
@@ -105,7 +109,7 @@ export class ReportsShellComponent implements OnInit {
   onTablistKeydown(event: KeyboardEvent, currentId: ReportSectionId): void {
     const sections = this.sections();
     const currentIndex = sections.findIndex(
-      (section) => section.id === currentId,
+      section => section.id === currentId,
     );
 
     switch (event.key) {

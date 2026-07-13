@@ -80,7 +80,7 @@ describe("App", () => {
     const nav = compiled.querySelector(NAV_SELECTOR);
     expect(nav).toBeTruthy();
     const links = nav?.querySelectorAll("a") ?? [];
-    const labels = Array.from(links).map((a) => a.textContent?.trim() ?? "");
+    const labels = Array.from(links).map(a => a.textContent?.trim() ?? "");
     expect(labels).toEqual([
       "Matrículas",
       "Consulta de estudiantes",
@@ -95,12 +95,8 @@ describe("App", () => {
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
     const links = Array.from(compiled.querySelectorAll("nav a"));
-    const reports = links.find(
-      (link) => link.textContent?.trim() === "Reportes",
-    );
-    const history = links.find(
-      (link) => link.textContent?.trim() === "Historia",
-    );
+    const reports = links.find(link => link.textContent?.trim() === "Reportes");
+    const history = links.find(link => link.textContent?.trim() === "Historia");
 
     expect(reports?.getAttribute("href")).toBe("/reports");
     expect(history?.getAttribute("href")).toBe("/student-history");
@@ -124,7 +120,7 @@ describe("App", () => {
     expect(compiled.textContent).not.toContain("P0");
     expect(
       Array.from(compiled.querySelectorAll("nav a"))
-        .find((link) => link.textContent?.trim() === "Matrículas")
+        .find(link => link.textContent?.trim() === "Matrículas")
         ?.getAttribute("aria-current"),
     ).toBe("page");
   });
@@ -183,7 +179,7 @@ describe("App", () => {
     const main = compiled.querySelector("main#main")!;
     const headingsOutsideMain = Array.from(
       compiled.querySelectorAll("h1"),
-    ).filter((h1) => !main.contains(h1));
+    ).filter(h1 => !main.contains(h1));
     expect(headingsOutsideMain).toHaveLength(0);
   });
 
@@ -273,8 +269,12 @@ describe("App", () => {
       fixture.detectChanges();
       await fixture.whenStable();
 
-      const scrim = compiled.querySelector<HTMLElement>(".ec-scrim");
+      const scrim = compiled.querySelector<HTMLButtonElement>(".ec-scrim");
       expect(scrim).toBeTruthy();
+      expect(scrim?.type).toBe("button");
+      expect(scrim?.getAttribute("aria-label")).toBe(
+        "Cerrar menú de navegación",
+      );
       scrim!.click();
       fixture.detectChanges();
       await fixture.whenStable();
@@ -296,7 +296,7 @@ describe("App", () => {
       expect(hamburger.getAttribute("aria-expanded")).toBe("true");
 
       const link = Array.from(compiled.querySelectorAll("nav a")).find(
-        (a) => a.textContent?.trim() === "Consulta de estudiantes",
+        a => a.textContent?.trim() === "Consulta de estudiantes",
       ) as HTMLAnchorElement;
       link.click();
       fixture.detectChanges();
@@ -323,7 +323,7 @@ describe("App", () => {
       expect(hamburger.getAttribute("aria-expanded")).toBe("true");
 
       const activeLink = Array.from(compiled.querySelectorAll("nav a")).find(
-        (a) => a.textContent?.trim() === "Matrículas",
+        a => a.textContent?.trim() === "Matrículas",
       ) as HTMLAnchorElement;
       expect(activeLink.getAttribute("aria-current")).toBe("page");
 
@@ -372,7 +372,7 @@ describe("App", () => {
       expect(hamburger.getAttribute("aria-expanded")).toBe("true");
 
       const link = Array.from(compiled.querySelectorAll("nav a")).find(
-        (a) => a.textContent?.trim() === "Consulta de estudiantes",
+        a => a.textContent?.trim() === "Consulta de estudiantes",
       ) as HTMLAnchorElement;
       link.click();
       fixture.detectChanges();

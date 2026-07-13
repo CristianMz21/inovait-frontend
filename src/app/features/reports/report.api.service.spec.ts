@@ -58,11 +58,9 @@ describe("ReportApiService (ST-RPT-AGE)", () => {
     it("invoca GET /api/reports/age-distribution con academicYearId obligatorio", () => {
       let received: unknown;
       const params: GetAgeDistributionParams = { academicYearId: 2 };
-      service
-        .getAgeDistribution(params)
-        .subscribe((value) => (received = value));
+      service.getAgeDistribution(params).subscribe(value => (received = value));
 
-      const req = http.expectOne((r) => r.url === ageUrl && r.method === "GET");
+      const req = http.expectOne(r => r.url === ageUrl && r.method === "GET");
       expect(req.request.method).toBe("GET");
       expect(req.request.params.get("academicYearId")).toBe("2");
       // Los filtros opcionales no viajan cuando la operadora los omite.
@@ -78,9 +76,9 @@ describe("ReportApiService (ST-RPT-AGE)", () => {
       let received: unknown;
       service
         .getAgeDistribution({ academicYearId: 2, asOfDate: "2026-07-10" })
-        .subscribe((value) => (received = value));
+        .subscribe(value => (received = value));
 
-      const req = http.expectOne((r) => r.url === ageUrl && r.method === "GET");
+      const req = http.expectOne(r => r.url === ageUrl && r.method === "GET");
       expect(req.request.params.get("academicYearId")).toBe("2");
       expect(req.request.params.get("asOfDate")).toBe("2026-07-10");
       req.flush(ageDistributionFixture);
@@ -97,9 +95,9 @@ describe("ReportApiService (ST-RPT-AGE)", () => {
           gradeId: 3,
           asOfDate: "2026-07-10",
         })
-        .subscribe((value) => (received = value));
+        .subscribe(value => (received = value));
 
-      const req = http.expectOne((r) => r.url === ageUrl && r.method === "GET");
+      const req = http.expectOne(r => r.url === ageUrl && r.method === "GET");
       expect(req.request.params.get("academicYearId")).toBe("2");
       expect(req.request.params.get("schoolId")).toBe("1");
       expect(req.request.params.get("gradeId")).toBe("3");
@@ -113,10 +111,10 @@ describe("ReportApiService (ST-RPT-AGE)", () => {
       let received: unknown;
       service
         .getAgeDistribution({ academicYearId: 2 })
-        .subscribe((value) => (received = value));
+        .subscribe(value => (received = value));
 
       http
-        .expectOne((r) => r.url === ageUrl && r.method === "GET")
+        .expectOne(r => r.url === ageUrl && r.method === "GET")
         .flush(emptyAgeDistributionFixture);
 
       expect(received).toEqual(emptyAgeDistributionFixture);
@@ -132,12 +130,12 @@ describe("ReportApiService (ST-RPT-AGE)", () => {
       let error: unknown;
       service.getAgeDistribution({ academicYearId: 0 }).subscribe({
         next: () => undefined,
-        error: (err) => {
+        error: err => {
           error = err;
         },
       });
 
-      const req = http.expectOne((r) => r.url === ageUrl && r.method === "GET");
+      const req = http.expectOne(r => r.url === ageUrl && r.method === "GET");
       req.flush(apiProblemBadRequestFixture, {
         status: 400,
         statusText: "Bad Request",
@@ -156,12 +154,12 @@ describe("ReportApiService (ST-RPT-AGE)", () => {
       let error: unknown;
       service.getAgeDistribution({ academicYearId: 9999 }).subscribe({
         next: () => undefined,
-        error: (err) => {
+        error: err => {
           error = err;
         },
       });
 
-      const req = http.expectOne((r) => r.url === ageUrl && r.method === "GET");
+      const req = http.expectOne(r => r.url === ageUrl && r.method === "GET");
       req.flush(apiProblemNotFoundFixture, {
         status: 404,
         statusText: "Not Found",
@@ -182,12 +180,12 @@ describe("ReportApiService (ST-RPT-AGE)", () => {
         .getAgeDistribution({ academicYearId: 2, asOfDate: "2010-01-01" })
         .subscribe({
           next: () => undefined,
-          error: (err) => {
+          error: err => {
             error = err;
           },
         });
 
-      const req = http.expectOne((r) => r.url === ageUrl && r.method === "GET");
+      const req = http.expectOne(r => r.url === ageUrl && r.method === "GET");
       req.flush(apiProblemAsOfDateInvalidFixture, {
         status: 422,
         statusText: "Unprocessable Entity",
@@ -208,10 +206,10 @@ describe("ReportApiService (ST-RPT-AGE)", () => {
       let received: unknown;
       service
         .getDistinctTeacherCountsBySector()
-        .subscribe((value) => (received = value));
+        .subscribe(value => (received = value));
 
       const req = http.expectOne(
-        (r) => r.url === sectorUrl && r.method === "GET",
+        r => r.url === sectorUrl && r.method === "GET",
       );
       expect(req.request.method).toBe("GET");
       expect(req.request.params.has("periodStart")).toBe(false);
@@ -228,10 +226,10 @@ describe("ReportApiService (ST-RPT-AGE)", () => {
           periodStart: "2026-07-01",
           periodEnd: "2026-07-10",
         })
-        .subscribe((value) => (received = value));
+        .subscribe(value => (received = value));
 
       const req = http.expectOne(
-        (r) => r.url === sectorUrl && r.method === "GET",
+        r => r.url === sectorUrl && r.method === "GET",
       );
       expect(req.request.params.get("periodStart")).toBe("2026-07-01");
       expect(req.request.params.get("periodEnd")).toBe("2026-07-10");
@@ -244,10 +242,10 @@ describe("ReportApiService (ST-RPT-AGE)", () => {
       let received: unknown;
       service
         .getDistinctTeacherCountsBySector({ periodStart: "2026-07-01" })
-        .subscribe((value) => (received = value));
+        .subscribe(value => (received = value));
 
       const req = http.expectOne(
-        (r) => r.url === sectorUrl && r.method === "GET",
+        r => r.url === sectorUrl && r.method === "GET",
       );
       expect(req.request.params.get("periodStart")).toBe("2026-07-01");
       expect(req.request.params.has("periodEnd")).toBe(false);
@@ -263,10 +261,10 @@ describe("ReportApiService (ST-RPT-AGE)", () => {
           periodStart: "2026-07-10",
           periodEnd: "2026-07-10",
         })
-        .subscribe((value) => (received = value));
+        .subscribe(value => (received = value));
 
       const req = http.expectOne(
-        (r) => r.url === sectorUrl && r.method === "GET",
+        r => r.url === sectorUrl && r.method === "GET",
       );
       req.flush(emptyTeacherCountsBySectorFixture);
 
@@ -288,13 +286,13 @@ describe("ReportApiService (ST-RPT-AGE)", () => {
         .getDistinctTeacherCountsBySector({ periodStart: "2026-07-10" })
         .subscribe({
           next: () => undefined,
-          error: (err) => {
+          error: err => {
             error = err;
           },
         });
 
       const req = http.expectOne(
-        (r) => r.url === sectorUrl && r.method === "GET",
+        r => r.url === sectorUrl && r.method === "GET",
       );
       req.flush(apiProblemBadRequestFixture, {
         status: 400,
@@ -319,13 +317,13 @@ describe("ReportApiService (ST-RPT-AGE)", () => {
         })
         .subscribe({
           next: () => undefined,
-          error: (err) => {
+          error: err => {
             error = err;
           },
         });
 
       const req = http.expectOne(
-        (r) => r.url === sectorUrl && r.method === "GET",
+        r => r.url === sectorUrl && r.method === "GET",
       );
       req.flush(apiProblemPeriodInvalidFixture, {
         status: 422,
@@ -348,9 +346,9 @@ describe("ReportApiService (ST-RPT-AGE)", () => {
       const params: GetTopSchoolsByEnrollmentParams = { academicYearId: 2 };
       service
         .getTopSchoolsByEnrollment(params)
-        .subscribe((value) => (received = value));
+        .subscribe(value => (received = value));
 
-      const req = http.expectOne((r) => r.url === topUrl && r.method === "GET");
+      const req = http.expectOne(r => r.url === topUrl && r.method === "GET");
       expect(req.request.method).toBe("GET");
       expect(req.request.params.get("academicYearId")).toBe("2");
       req.flush(topSchoolsFixture);
@@ -362,9 +360,9 @@ describe("ReportApiService (ST-RPT-AGE)", () => {
       let received: unknown;
       service
         .getTopSchoolsByEnrollment({ academicYearId: 2 })
-        .subscribe((value) => (received = value));
+        .subscribe(value => (received = value));
 
-      http.expectOne((r) => r.url === topUrl).flush(topSchoolsFixture);
+      http.expectOne(r => r.url === topUrl).flush(topSchoolsFixture);
 
       if (Array.isArray(received)) {
         expect(
@@ -386,9 +384,9 @@ describe("ReportApiService (ST-RPT-AGE)", () => {
       let received: unknown;
       service
         .getTopSchoolsByEnrollment({ academicYearId: 2 })
-        .subscribe((value) => (received = value));
+        .subscribe(value => (received = value));
 
-      http.expectOne((r) => r.url === topUrl).flush(emptyTopSchoolsFixture);
+      http.expectOne(r => r.url === topUrl).flush(emptyTopSchoolsFixture);
 
       expect(Array.isArray(received)).toBe(true);
       expect(received).toEqual([]);
@@ -399,12 +397,12 @@ describe("ReportApiService (ST-RPT-AGE)", () => {
       let error: unknown;
       service.getTopSchoolsByEnrollment({ academicYearId: 0 }).subscribe({
         next: () => undefined,
-        error: (err) => {
+        error: err => {
           error = err;
         },
       });
 
-      const req = http.expectOne((r) => r.url === topUrl && r.method === "GET");
+      const req = http.expectOne(r => r.url === topUrl && r.method === "GET");
       req.flush(apiProblemBadRequestFixture, {
         status: 400,
         statusText: "Bad Request",
@@ -423,12 +421,12 @@ describe("ReportApiService (ST-RPT-AGE)", () => {
       let error: unknown;
       service.getTopSchoolsByEnrollment({ academicYearId: 9999 }).subscribe({
         next: () => undefined,
-        error: (err) => {
+        error: err => {
           error = err;
         },
       });
 
-      const req = http.expectOne((r) => r.url === topUrl && r.method === "GET");
+      const req = http.expectOne(r => r.url === topUrl && r.method === "GET");
       req.flush(apiProblemNotFoundFixture, {
         status: 404,
         statusText: "Not Found",

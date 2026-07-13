@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 /**
  * Tipos de la capa de vista del recorrido de **Consulta de estudiantes**
  * (US2). Mantiene paridad con el contrato canónico pero aplana los datos

@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 /**
  * Environment configuration for the Inovait frontend.
  *

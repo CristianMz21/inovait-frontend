@@ -85,7 +85,7 @@ describe("CatalogFacade", () => {
   it("loadClassGroups() con filtros omite los undefined", () => {
     facade.loadClassGroups({ schoolId: 1 });
     const req = http.expectOne(
-      (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/class-groups`,
+      r => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/class-groups`,
     );
     expect(req.request.params.has("schoolId")).toBe(true);
     expect(req.request.params.has("gradeId")).toBe(false);
@@ -96,7 +96,7 @@ describe("CatalogFacade", () => {
   it("loadClassGroups() cancela la suscripción anterior (stale descartado)", () => {
     facade.loadClassGroups({ schoolId: 1 });
     const first = http.expectOne(
-      (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/class-groups`,
+      r => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/class-groups`,
     );
     // El estado debe estar en loading.
     expect(facade.classGroupsState().status).toBe("loading");
@@ -104,7 +104,7 @@ describe("CatalogFacade", () => {
     // Llega una segunda llamada antes de que la primera responda.
     facade.loadClassGroups({ schoolId: 2 });
     const second = http.expectOne(
-      (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/class-groups`,
+      r => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/class-groups`,
     );
     expect(second.request.params.get("schoolId")).toBe("2");
     // `HttpTestingController` marca el request como cancelado cuando la
@@ -166,6 +166,6 @@ describe("CatalogFacade", () => {
 
     TestBed.resetTestingModule();
 
-    expect(requests.every((request) => request.cancelled)).toBe(true);
+    expect(requests.every(request => request.cancelled)).toBe(true);
   });
 });

@@ -1,6 +1,15 @@
+/* Copyright (c) 2026. All rights reserved. */
 import { DestroyRef, Injectable, inject, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import type { Subscription } from "rxjs";
+import {
+  EMPTY,
+  Subject,
+  catchError,
+  map,
+  of,
+  switchMap,
+  type Observable,
+} from "rxjs";
 import { toSafeApiProblem } from "../../core/api/to-safe-api-problem";
 import {
   empty as emptyState,
@@ -10,10 +19,17 @@ import {
   success,
   type RemoteState,
 } from "../../core/api/remote-state";
+import type { EnrollmentListItem } from "../../core/api/dtos/enrollment-list-item.dto";
 import {
   enrollmentListItemToResult,
   studentSearchFiltersToParams,
 } from "./student-search.mappers";
+import {
+  STUDENT_SEARCH_NO_GROUPS_REASON,
+  STUDENT_SEARCH_NO_RESULTS_REASON,
+  STUDENT_SEARCH_REMOTE_STATUS,
+} from "./student-search.constants";
+import { CatalogApiService } from "../../core/catalogs/catalog-api.service";
 import {
   StudentSearchApiService,
   type ListEnrollmentsParams,
@@ -30,11 +46,9 @@ import type {
  * - Mantener `RemoteState<readonly StudentSearchResultVm[]>` exclusivo
  *   del recorrido (`idle` / `loading` / `success` / `empty` / `error`).
  * - Cancelar el `GET` en curso cuando la operadora cambia los filtros o
- *   dispara otra búsqueda. Esto descarta la respuesta tardía si llegara
- *   después de la cancelación.
- * - Descartar respuestas obsoletas comparando la `requestKey` actual con
- *   la emitida al iniciar la solicitud. Si la operadora cambia los filtros
- *   rápidamente, sólo la última respuesta muta el estado.
+ *   dispara otra búsqueda. Un único `switchMap` gobierna la consulta de
+ *   grupos y la consulta condicional de inscripciones, por lo que reemplazar
+ *   la búsqueda cancela la cadena completa y descarta respuestas tardías.
  * - Exponer `search`, `retry` y `reset` como puntos de entrada
  *   deterministas para la UI. `search` es no-op cuando los filtros
  *   académicos no están completos.
@@ -46,10 +60,11 @@ import type {
 @Injectable()
 export class StudentSearchFacade {
   private readonly api = inject(StudentSearchApiService);
+  private readonly catalogApi = inject(CatalogApiService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly state =
     signal<RemoteState<readonly StudentSearchResultVm[]>>(idle());
-  private subscription: Subscription | null = null;
+  private readonly requests = new Subject<ListEnrollmentsParams | null>();
   private sequence = 0;
 
   /** Estado remoto expuesto a la vista. Sólo lectura. */
@@ -62,6 +77,20 @@ export class StudentSearchFacade {
     academicYearId: null,
     asOfDate: null,
   });
+
+  constructor() {
+    this.requests
+      .pipe(
+        switchMap(params => {
+          if (params === null) {
+            return EMPTY;
+          }
+          return this.execute(params);
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(nextState => this.state.set(nextState));
+  }
 
   /**
    * Ejecuta una consulta con los filtros indicados. Si ya hay una búsqueda
@@ -83,7 +112,7 @@ export class StudentSearchFacade {
    */
   retry(): void {
     const current = this.state();
-    if (current.status !== "error") {
+    if (current.status !== STUDENT_SEARCH_REMOTE_STATUS.error) {
       return;
     }
     const params = studentSearchFiltersToParams(this.filters());
@@ -99,8 +128,7 @@ export class StudentSearchFacade {
    * cancelación y la limpieza ocurran en orden.
    */
   reset(): void {
-    this.subscription?.unsubscribe();
-    this.subscription = null;
+    this.requests.next(null);
     this.state.set(idle());
     this.filters.set({
       schoolId: null,
@@ -111,47 +139,51 @@ export class StudentSearchFacade {
   }
 
   private dispatch(params: ListEnrollmentsParams): void {
-    this.subscription?.unsubscribe();
+    this.requests.next(params);
+  }
+
+  private execute(
+    params: ListEnrollmentsParams,
+  ): Observable<RemoteState<readonly StudentSearchResultVm[]>> {
     this.sequence += 1;
     const requestKey = `student-search#${this.sequence}`;
     this.state.set(loading<readonly StudentSearchResultVm[]>(requestKey));
 
-    this.subscription = this.api
-      .list(params)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (items) => {
-          if (this.isStale(requestKey)) {
-            return;
+    return this.catalogApi
+      .listClassGroups({
+        schoolId: params.schoolId,
+        gradeId: params.gradeId,
+        academicYearId: params.academicYearId,
+      })
+      .pipe(
+        switchMap(groups => {
+          if (groups.length === 0) {
+            return of(
+              emptyState<readonly StudentSearchResultVm[]>(
+                STUDENT_SEARCH_NO_GROUPS_REASON,
+              ),
+            );
           }
-          if (items.length === 0) {
-            this.state.set(emptyState("noResults"));
-            return;
-          }
-          this.state.set(success(items.map(enrollmentListItemToResult)));
-        },
-        error: (err: unknown) => {
-          if (this.isStale(requestKey)) {
-            return;
-          }
-          this.state.set(
-            errorState<readonly StudentSearchResultVm[]>(toSafeApiProblem(err)),
-          );
-        },
-        complete: () => {
-          // El backend cierra el observable tras la respuesta única; no
-          // se requiere lógica adicional aquí.
-        },
-      });
+          return this.api
+            .list(params)
+            .pipe(map(items => this.toResultState(items)));
+        }),
+        catchError((error: unknown) =>
+          of(
+            errorState<readonly StudentSearchResultVm[]>(
+              toSafeApiProblem(error),
+            ),
+          ),
+        ),
+      );
   }
 
-  /**
-   * Determina si la respuesta pertenece todavía a la búsqueda vigente.
-   * Sólo durante `loading` la `requestKey` está vigente; cualquier otro
-   * estado implica que la respuesta debe descartarse.
-   */
-  private isStale(requestKey: string): boolean {
-    const current = this.state();
-    return current.status !== "loading" || current.requestKey !== requestKey;
+  private toResultState(
+    items: readonly EnrollmentListItem[],
+  ): RemoteState<readonly StudentSearchResultVm[]> {
+    if (items.length === 0) {
+      return emptyState(STUDENT_SEARCH_NO_RESULTS_REASON);
+    }
+    return success(items.map(enrollmentListItemToResult));
   }
 }

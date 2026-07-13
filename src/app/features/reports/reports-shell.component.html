@@ -19,7 +19,7 @@
         id="tab-{{ section.id }}"
         role="tab"
         class="reports-shell-tab"
-        [attr.aria-selected]="isActive(section.id) ? 'true' : 'false'"
+        [attr.aria-selected]="isActive(section.id)"
         [attr.aria-controls]="section.id"
         [tabIndex]="tabIndexFor(section.id)"
         (click)="activate(section.id)"

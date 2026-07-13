@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 import type {
   AgeBandResponse,
   AgeDistributionResponseDto,
@@ -21,6 +22,8 @@ import {
   type TopSchoolsFiltersVm,
   type TopSchoolsVm,
 } from "./report.vm";
+
+const EMPTY_ACADEMIC_YEAR_ID = 0;
 
 /**
  * Determina si los filtros académicos permiten invocar
@@ -102,10 +105,7 @@ function toBandVm(id: AgeBandId, band: AgeBandResponse): AgeBandVm {
  * - Las tres bandas del DTO (`age3To7`, `age8To12`, `ageOver12`) se
  *   conservan como una lista ordenada `bands`, cada una con su `id`
  *   canónico y la etiqueta legible para el template.
- * - `totalCount` se calcula como la suma de las tres bandas. La UI no
- *   recalcula totales derivados — sólo agrega lo que el backend ya
- *   agrupó. Si en el futuro el backend expone un campo `total`, el
- *   mapper debe cambiar para usarlo.
+ * - No agrega las bandas en un total: el backend no expone uno canónico.
  *
  * El orden de las bandas es fijo y coincide con el contrato canónico;
  * la UI las recorre por `bands[0..2]` sin reordenar.
@@ -118,13 +118,18 @@ export function ageDistributionResponseToVm(
     toBandVm("age8To12", dto.age8To12),
     toBandVm("ageOver12", dto.ageOver12),
   ];
+  const {
+    academicYearId,
+    schoolId,
+    gradeId,
+    asOfDate,
+  }: AgeDistributionResponseDto = dto;
   return {
-    academicYearId: dto.academicYearId,
-    schoolId: dto.schoolId,
-    gradeId: dto.gradeId,
-    asOfDate: dto.asOfDate,
+    academicYearId,
+    schoolId,
+    gradeId,
+    asOfDate,
     bands,
-    totalCount: bands.reduce((sum, band) => sum + band.count, 0),
   };
 }
 
@@ -194,10 +199,8 @@ export function teacherCountsBySectorFiltersToParams(
  *   `privateDistinctTeacherCount`) en una lista ordenada por sector,
  *   respetando el orden fijo declarado en el contrato (público,
  *   privado).
- * - `totalDistinctTeacherCount` se calcula como la suma de los dos
- *   sectores. No es recálculo del backend — es sólo la agregación de
- *   los dos conteos que el DTO ya expone. El backend **no** devuelve un
- *   `total` canónico; la UI lo deriva de los dos campos disponibles.
+ * - No suma los sectores en un total global: un mismo docente puede
+ *   aparecer en ambos y el backend no expone un total deduplicado.
  *
  * El mapper **no** deduplica por `teacherId`: la deduplicación está
  * delegada al backend (per `proposal.md`).
@@ -209,17 +212,16 @@ export function teacherCountsBySectorResponseToVm(
     public: dto.publicDistinctTeacherCount,
     private: dto.privateDistinctTeacherCount,
   };
-  const sectors: readonly SectorCountVm[] = SECTOR_ORDER.map((id) => ({
+  const sectors: readonly SectorCountVm[] = SECTOR_ORDER.map(id => ({
     id,
     label: SECTOR_LABELS[id],
     distinctTeacherCount: sectorCounts[id],
   }));
+  const { periodStart, periodEnd }: TeacherCountsBySectorResponseDto = dto;
   return {
-    periodStart: dto.periodStart,
-    periodEnd: dto.periodEnd,
+    periodStart,
+    periodEnd,
     sectors,
-    totalDistinctTeacherCount:
-      dto.publicDistinctTeacherCount + dto.privateDistinctTeacherCount,
   };
 }
 
@@ -303,8 +305,12 @@ export function topSchoolsResponseToVm(
   dto: readonly TopSchoolResponseDto[],
 ): TopSchoolsVm {
   const firstEntry = dto[0];
+  let academicYearId = EMPTY_ACADEMIC_YEAR_ID;
+  if (firstEntry) {
+    academicYearId = firstEntry.academicYearId;
+  }
   return {
-    academicYearId: firstEntry ? firstEntry.academicYearId : 0,
+    academicYearId,
     schools: dto.map(toTopSchoolVm),
   };
 }

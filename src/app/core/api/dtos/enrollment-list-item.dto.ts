@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 import type { AcademicYearSummary } from "./academic-year-summary.dto";
 import type { ClassGroupSummary } from "./class-group-summary.dto";
 import type { GradeSummary } from "./grade-summary.dto";

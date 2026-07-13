@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 interface DateOnly {
   readonly year: number;
   readonly month: number;
@@ -9,9 +10,10 @@ const parseDateOnly = (value: string): DateOnly => {
   if (!match) {
     throw new Error(`Invalid date-only value: ${value}`);
   }
-  const year = Number(match[1]);
-  const month = Number(match[2]);
-  const day = Number(match[3]);
+  const [, yearPart, monthPart, dayPart] = match;
+  const year = Number(yearPart);
+  const month = Number(monthPart);
+  const day = Number(dayPart);
   const utc = new Date(Date.UTC(year, month - 1, day));
   if (
     utc.getUTCFullYear() !== year ||
@@ -22,6 +24,9 @@ const parseDateOnly = (value: string): DateOnly => {
   }
   return { year, month, day };
 };
+
+const toUtcTimestamp = (date: DateOnly): number =>
+  Date.UTC(date.year, date.month - 1, date.day);
 
 export const isValidDateOnly = (value: unknown): value is string => {
   if (typeof value !== "string") {
@@ -42,6 +47,9 @@ export const currentLocalDateOnly = (): string => {
   const day = String(now.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 };
+
+export const compareDateOnly = (left: string, right: string): number =>
+  toUtcTimestamp(parseDateOnly(left)) - toUtcTimestamp(parseDateOnly(right));
 
 export const calculateCompletedYears = (
   birthDate: string,

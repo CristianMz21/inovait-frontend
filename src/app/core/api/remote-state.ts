@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 import type { ApiProblem } from "./dtos/api-problem.dto";
 
 /**

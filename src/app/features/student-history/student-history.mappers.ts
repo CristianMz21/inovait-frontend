@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 /**
  * Mappers de **Historial académico-docente** (FR-RPT-004 / WU11-STU).
  *
@@ -28,11 +29,12 @@ import type {
   TeachingAssignmentVm,
 } from "./student-history.vm";
 import { SCHOOL_SECTOR_LABELS, WEEKDAY_LABELS } from "./student-history.vm";
-
-const DOCUMENT_TYPE_MIN = 1;
-const DOCUMENT_TYPE_MAX = 20;
-const DOCUMENT_NUMBER_MIN = 1;
-const DOCUMENT_NUMBER_MAX = 32;
+import {
+  STUDENT_HISTORY_DOCUMENT_NUMBER_MAX_LENGTH,
+  STUDENT_HISTORY_DOCUMENT_NUMBER_MIN_LENGTH,
+  STUDENT_HISTORY_DOCUMENT_TYPE_MAX_LENGTH,
+  STUDENT_HISTORY_DOCUMENT_TYPE_MIN_LENGTH,
+} from "./student-history.constants";
 
 /**
  * Determina si los filtros de identidad están completos y la consulta
@@ -47,14 +49,14 @@ export function studentHistoryFiltersAreValid(
   const docType = vm.documentType.trim();
   const docNumber = vm.documentNumber.trim();
   if (
-    docType.length < DOCUMENT_TYPE_MIN ||
-    docType.length > DOCUMENT_TYPE_MAX
+    docType.length < STUDENT_HISTORY_DOCUMENT_TYPE_MIN_LENGTH ||
+    docType.length > STUDENT_HISTORY_DOCUMENT_TYPE_MAX_LENGTH
   ) {
     return false;
   }
   if (
-    docNumber.length < DOCUMENT_NUMBER_MIN ||
-    docNumber.length > DOCUMENT_NUMBER_MAX
+    docNumber.length < STUDENT_HISTORY_DOCUMENT_NUMBER_MIN_LENGTH ||
+    docNumber.length > STUDENT_HISTORY_DOCUMENT_NUMBER_MAX_LENGTH
   ) {
     return false;
   }
@@ -88,7 +90,7 @@ export function studentHistoryFiltersToParams(vm: StudentHistoryFiltersVm): {
  * no ocultarlos al usuario.
  */
 export function weekdayListLabel(weekdays: readonly number[]): string {
-  return weekdays.map((day) => WEEKDAY_LABELS[day] ?? `Día ${day}`).join(", ");
+  return weekdays.map(day => WEEKDAY_LABELS[day] ?? `Día ${day}`).join(", ");
 }
 
 /**
@@ -106,19 +108,19 @@ function toTeachingAssignmentVm(
   dto: HistoryTeachingAssignmentDto,
 ): TeachingAssignmentVm {
   const teacherFullName = `${dto.teacher.firstNames} ${dto.teacher.lastNames}`
-    .replace(/\s+/g, " ")
+    .replaceAll(/\s+/g, " ")
     .trim();
   return {
     assignmentId: dto.assignmentId,
     teacherId: dto.teacher.id,
     teacherDocumentType: dto.teacher.documentType,
     teacherDocumentNumber: dto.teacher.documentNumber,
-    teacherFullName,
     subjectId: dto.subject.id,
     subjectCode: dto.subject.code,
     subjectName: dto.subject.name,
     weekdays: [...dto.weekdays],
     weekdaysLabel: weekdayListLabel(dto.weekdays),
+    teacherFullName,
   };
 }
 
@@ -181,7 +183,7 @@ export function studentHistoryResponseToVm(
   dto: StudentHistoryResponseDto,
 ): StudentHistoryVm {
   const fullName = `${dto.firstNames} ${dto.lastNames}`
-    .replace(/\s+/g, " ")
+    .replaceAll(/\s+/g, " ")
     .trim();
   const identity = {
     studentId: dto.studentId,

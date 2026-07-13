@@ -92,7 +92,7 @@
         type="submit"
         class="search-submit ec-btn ec-btn--secondary"
         [disabled]="form.invalid || isLoading()"
-        [attr.aria-busy]="isLoading() ? 'true' : 'false'"
+        [attr.aria-busy]="isLoading()"
       >
         @if (isLoading()) {
           Buscando…
@@ -112,15 +112,14 @@
   </form>
 
   @if (isLoading()) {
-    <p
+    <output
       class="search-status ec-alert ec-alert--info"
-      role="status"
       aria-live="polite"
       data-testid="search-loading"
     >
       <app-icon name="update" />
       <span>Consultando inscripciones…</span>
-    </p>
+    </output>
   }
 
   @if (hasError()) {
@@ -164,38 +163,48 @@
     </div>
   }
 
-  @if (isEmpty()) {
-    <div
+  @if (hasNoGroups()) {
+    <section
       class="search-empty ec-alert ec-alert--info"
-      role="status"
-      aria-live="polite"
-      data-testid="search-empty"
+      aria-labelledby="search-no-groups-title"
+      data-testid="search-empty-no-groups"
     >
       <app-icon name="inbox" />
       <div>
-        <h2>Sin coincidencias</h2>
-        <p>
-          La combinación seleccionada existe en los catálogos, pero no hay
-          inscripciones registradas. Verifique el año académico o los filtros.
-        </p>
+        <h2 id="search-no-groups-title">Sin grupos disponibles</h2>
+        <output aria-live="polite">
+          La combinación seleccionada es válida, pero no tiene grupos.
+        </output>
       </div>
-    </div>
+    </section>
+  } @else if (hasNoResults()) {
+    <section
+      class="search-empty ec-alert ec-alert--info"
+      aria-labelledby="search-no-results-title"
+      data-testid="search-empty-no-results"
+    >
+      <app-icon name="inbox" />
+      <div>
+        <h2 id="search-no-results-title">Sin inscripciones</h2>
+        <output aria-live="polite">
+          Hay grupos para la combinación seleccionada, pero no hay inscripciones
+          registradas. Verifique el año académico o los filtros.
+        </output>
+      </div>
+    </section>
   }
 
   @if (successData(); as rows) {
-    <div
+    <section
       class="search-results"
-      role="region"
       aria-labelledby="results-title"
-      tabindex="0"
       data-testid="search-results"
     >
       <h2 id="results-title">Inscripciones encontradas</h2>
 
       @if (isStale()) {
-        <div
+        <output
           class="search-stale ec-alert ec-alert--warning"
-          role="status"
           data-testid="search-stale"
         >
           <app-icon name="update" />
@@ -203,14 +212,23 @@
             Los filtros cambiaron desde la última búsqueda. Ejecute una nueva
             búsqueda para ver resultados actualizados.
           </span>
-        </div>
+        </output>
       }
 
       <p class="search-count" aria-live="polite">
-        {{ rows.length }}
-        {{ rows.length === 1 ? "inscripción" : "inscripciones" }}
+        {{ resultCountLabel(rows.length) }}
       </p>
-      <div class="ec-table">
+      <section
+        class="ec-table"
+        aria-label="Inscripciones resultantes de la búsqueda"
+      >
+        <button
+          type="button"
+          class="ec-table__skip"
+          appTableSkip="search-results-table-end"
+        >
+          Omitir tabla de inscripciones
+        </button>
         <table>
           <caption class="visually-hidden">
             Inscripciones resultantes de la búsqueda. El orden refleja el
@@ -259,7 +277,14 @@
             }
           </tbody>
         </table>
-      </div>
-    </div>
+      </section>
+      <span
+        id="search-results-table-end"
+        class="ec-table__end visually-hidden"
+        tabindex="-1"
+      >
+        Fin de la tabla de inscripciones
+      </span>
+    </section>
   }
 </section>

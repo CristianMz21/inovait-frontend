@@ -73,7 +73,7 @@ describe("CT-A11Y-RPT-HIST — Hardening accesibilidad ruta historial", () => {
       const compiled = fixture.nativeElement as HTMLElement;
       const navLinks = Array.from(compiled.querySelectorAll("nav a"));
       const history = navLinks.find(
-        (link) => link.textContent?.trim() === "Historia",
+        link => link.textContent?.trim() === "Historia",
       );
 
       expect(history).toBeTruthy();
@@ -101,6 +101,12 @@ describe("CT-A11Y-RPT-HIST — Hardening accesibilidad ruta historial", () => {
         provideRouter([]),
       ],
     });
+  }
+
+  function expectPoliteOutput(element: Element | null): void {
+    expect(element).toBeTruthy();
+    expect(element?.tagName).toBe("OUTPUT");
+    expect(element?.getAttribute("aria-live")).toBe("polite");
   }
 
   // Lee `src/styles.scss` directamente (vía `readGlobalStyles()`, mismo
@@ -138,8 +144,11 @@ describe("CT-A11Y-RPT-HIST — Hardening accesibilidad ruta historial", () => {
     });
 
     afterEach(() => {
-      http.verify();
-      TestBed.resetTestingModule();
+      try {
+        http.verify();
+      } finally {
+        TestBed.resetTestingModule();
+      }
     });
 
     it("expone h1 enfocable, fieldset+legend, 2 aria-required y submit con aria-busy=false", () => {
@@ -161,7 +170,7 @@ describe("CT-A11Y-RPT-HIST — Hardening accesibilidad ruta historial", () => {
       ).toBe("false");
     });
 
-    it("success expone <ol> semántica, <time>, role=status y sin role=alert", () => {
+    it("success expone <section>, <ol>, <time>, outputs accesibles y sin role=alert", () => {
       component.form.patchValue({
         documentType: "DNI",
         documentNumber: "99.001.101",
@@ -169,16 +178,22 @@ describe("CT-A11Y-RPT-HIST — Hardening accesibilidad ruta historial", () => {
       component.onSubmit();
       fixture.detectChanges();
 
-      expect(
-        (fixture.nativeElement as HTMLElement).querySelector(
-          '[data-testid="history-loading"][role="status"]',
-        ),
-      ).toBeTruthy();
+      const loading = (fixture.nativeElement as HTMLElement).querySelector(
+        '[data-testid="history-loading"]',
+      );
 
-      http.expectOne((r) => r.url === historyUrl).flush(studentHistoryFixture);
+      http.expectOne(r => r.url === historyUrl).flush(studentHistoryFixture);
       fixture.detectChanges();
 
+      expectPoliteOutput(loading);
       const compiled = fixture.nativeElement as HTMLElement;
+      const results = compiled.querySelector('[data-testid="history-results"]');
+      expect(results).toBeTruthy();
+      expect(results?.tagName).toBe("SECTION");
+      expect(results?.getAttribute("aria-labelledby")).toBe(
+        "history-results-title",
+      );
+      expect(results?.querySelector("#history-results-title")).toBeTruthy();
       const list = compiled.querySelector("ol.history-list");
       expect(list).toBeTruthy();
       const time = compiled.querySelector(
@@ -186,9 +201,7 @@ describe("CT-A11Y-RPT-HIST — Hardening accesibilidad ruta historial", () => {
       );
       expect(time).toBeTruthy();
       expect(time?.getAttribute("datetime")).toBe("2026-03-02");
-      expect(
-        compiled.querySelector('.history-context[role="status"]'),
-      ).toBeTruthy();
+      expectPoliteOutput(results?.querySelector(".history-context") ?? null);
       expect(compiled.querySelector('[role="alert"]')).toBeNull();
     });
 
@@ -200,7 +213,7 @@ describe("CT-A11Y-RPT-HIST — Hardening accesibilidad ruta historial", () => {
       component.onSubmit();
       fixture.detectChanges();
       http
-        .expectOne((r) => r.url === historyUrl)
+        .expectOne(r => r.url === historyUrl)
         .flush(studentHistorySecondYearFixture);
       fixture.detectChanges();
 
@@ -212,7 +225,7 @@ describe("CT-A11Y-RPT-HIST — Hardening accesibilidad ruta historial", () => {
       expect(times[1]?.getAttribute("datetime")).toBe("2025-03-03");
     });
 
-    it("200 enrollments [] expone empty role=status con botón Reintentar", () => {
+    it("200 enrollments [] expone <section> nombrada, <output> y botón Reintentar", () => {
       component.form.patchValue({
         documentType: "DNI",
         documentNumber: "88.200.300",
@@ -221,7 +234,7 @@ describe("CT-A11Y-RPT-HIST — Hardening accesibilidad ruta historial", () => {
       fixture.detectChanges();
       http
         .expectOne(
-          (r) =>
+          r =>
             r.url ===
             `${DEFAULT_API_CONFIG.apiBaseUrl}/api/students/DNI/88.200.300/history`,
         )
@@ -229,10 +242,13 @@ describe("CT-A11Y-RPT-HIST — Hardening accesibilidad ruta historial", () => {
       fixture.detectChanges();
 
       const compiled = fixture.nativeElement as HTMLElement;
-      const empty = compiled.querySelector(
-        '[data-testid="history-empty"][role="status"]',
-      );
+      const empty = compiled.querySelector('[data-testid="history-empty"]');
       expect(empty).toBeTruthy();
+      expect(empty?.tagName).toBe("SECTION");
+      expect(empty?.getAttribute("aria-label")).toBe(
+        "Resultado de la consulta",
+      );
+      expectPoliteOutput(empty?.querySelector("output") ?? null);
       expect(empty?.querySelector("button")?.textContent?.trim()).toBe(
         "Reintentar",
       );
@@ -247,7 +263,7 @@ describe("CT-A11Y-RPT-HIST — Hardening accesibilidad ruta historial", () => {
       component.onSubmit();
       fixture.detectChanges();
       http
-        .expectOne((r) => r.url === historyUrl)
+        .expectOne(r => r.url === historyUrl)
         .flush(apiProblemStudentNotFoundFixture, {
           status: 404,
           statusText: "Not Found",
@@ -275,7 +291,7 @@ describe("CT-A11Y-RPT-HIST — Hardening accesibilidad ruta historial", () => {
       component.onSubmit();
       fixture.detectChanges();
       http
-        .expectOne((r) => r.url === historyUrl)
+        .expectOne(r => r.url === historyUrl)
         .flush(apiProblemHistoryBadRequestFixture, {
           status: 400,
           statusText: "Bad Request",
@@ -300,7 +316,7 @@ describe("CT-A11Y-RPT-HIST — Hardening accesibilidad ruta historial", () => {
       component.onSubmit();
       fixture.detectChanges();
       http
-        .expectOne((r) => r.url === historyUrl)
+        .expectOne(r => r.url === historyUrl)
         .flush(apiProblemStudentNotFoundFixture, {
           status: 404,
           statusText: "Not Found",
@@ -313,7 +329,7 @@ describe("CT-A11Y-RPT-HIST — Hardening accesibilidad ruta historial", () => {
 
       component.onRetry();
       fixture.detectChanges();
-      http.expectOne((r) => r.url === historyUrl).flush(studentHistoryFixture);
+      http.expectOne(r => r.url === historyUrl).flush(studentHistoryFixture);
       fixture.detectChanges();
       expect(component.isSuccess()).toBe(true);
     });

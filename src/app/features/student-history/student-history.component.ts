@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 import {
   ChangeDetectionStrategy,
   Component,
@@ -21,6 +22,13 @@ import { AppIconComponent } from "../../layout/educore-shell/app-icon.component"
 import { StudentHistoryFacade } from "./student-history.facade";
 import { studentHistoryFiltersToParams } from "./student-history.mappers";
 import { StudentHistoryNavigationHandoff } from "./student-history.navigation";
+import {
+  STUDENT_HISTORY_DOCUMENT_NUMBER_MAX_LENGTH,
+  STUDENT_HISTORY_DOCUMENT_NUMBER_MIN_LENGTH,
+  STUDENT_HISTORY_DOCUMENT_TYPE_MAX_LENGTH,
+  STUDENT_HISTORY_DOCUMENT_TYPE_MIN_LENGTH,
+  STUDENT_HISTORY_REMOTE_STATUS,
+} from "./student-history.constants";
 import type {
   StudentHistoryFiltersVm,
   StudentHistoryVm,
@@ -85,29 +93,43 @@ export class StudentHistoryComponent {
   readonly form: StudentHistoryFormGroup = this.fb.group({
     documentType: this.fb.control("", [
       requiredValidator,
-      Validators.minLength(1),
-      Validators.maxLength(20),
+      Validators.minLength(STUDENT_HISTORY_DOCUMENT_TYPE_MIN_LENGTH),
+      Validators.maxLength(STUDENT_HISTORY_DOCUMENT_TYPE_MAX_LENGTH),
     ]),
     documentNumber: this.fb.control("", [
       requiredValidator,
-      Validators.minLength(1),
-      Validators.maxLength(32),
+      Validators.minLength(STUDENT_HISTORY_DOCUMENT_NUMBER_MIN_LENGTH),
+      Validators.maxLength(STUDENT_HISTORY_DOCUMENT_NUMBER_MAX_LENGTH),
     ]),
   });
 
-  readonly isLoading = computed(() => this.result().status === "loading");
-  readonly isSuccess = computed(() => this.result().status === "success");
-  readonly isEmpty = computed(() => this.result().status === "empty");
-  readonly hasError = computed(() => this.result().status === "error");
+  readonly isLoading = computed(
+    () => this.result().status === STUDENT_HISTORY_REMOTE_STATUS.loading,
+  );
+  readonly isSuccess = computed(
+    () => this.result().status === STUDENT_HISTORY_REMOTE_STATUS.success,
+  );
+  readonly isEmpty = computed(
+    () => this.result().status === STUDENT_HISTORY_REMOTE_STATUS.empty,
+  );
+  readonly hasError = computed(
+    () => this.result().status === STUDENT_HISTORY_REMOTE_STATUS.error,
+  );
 
   readonly successData = computed<StudentHistoryVm | null>(() => {
     const state = this.result();
-    return state.status === "success" ? state.data : null;
+    if (state.status === STUDENT_HISTORY_REMOTE_STATUS.success) {
+      return state.data;
+    }
+    return null;
   });
 
   readonly errorProblem = computed(() => {
     const state = this.result();
-    return state.status === "error" ? state.problem : null;
+    if (state.status === STUDENT_HISTORY_REMOTE_STATUS.error) {
+      return state.problem;
+    }
+    return null;
   });
 
   readonly errorFields = computed(() => {
@@ -124,11 +146,11 @@ export class StudentHistoryComponent {
   constructor() {
     this.route.queryParamMap
       .pipe(
-        map((params) => params.get("selection")),
+        map(params => params.get("selection")),
         distinctUntilChanged(),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe((selection) => this.applySelection(selection));
+      .subscribe(selection => this.applySelection(selection));
   }
 
   onSubmit(): void {

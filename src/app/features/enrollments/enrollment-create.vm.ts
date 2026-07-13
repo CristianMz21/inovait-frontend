@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 /**
  * Tipos de la capa de vista del recorrido de creación de matrícula.
  *

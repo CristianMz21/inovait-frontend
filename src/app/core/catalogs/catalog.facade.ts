@@ -1,7 +1,7 @@
+/* Copyright (c) 2026. All rights reserved. */
 import { DestroyRef, Injectable, inject, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import type { Observable } from "rxjs";
-import { Subscription } from "rxjs";
+import { Subscription, type Observable } from "rxjs";
 import { toSafeApiProblem } from "../api/to-safe-api-problem";
 import type { AcademicYearSummary } from "../api/dtos/academic-year-summary.dto";
 import type { ClassGroupSummary } from "../api/dtos/class-group-summary.dto";
@@ -9,8 +9,14 @@ import type { GradeSummary } from "../api/dtos/grade-summary.dto";
 import type { SchoolSummary } from "../api/dtos/school-summary.dto";
 import type { SubjectSummary } from "../api/dtos/subject-summary.dto";
 import type { TeacherSummary } from "../api/dtos/teacher-summary.dto";
-import type { RemoteState } from "../api/remote-state";
-import { empty, errorState, idle, loading, success } from "../api/remote-state";
+import {
+  empty,
+  errorState,
+  idle,
+  loading,
+  success,
+  type RemoteState,
+} from "../api/remote-state";
 import {
   CatalogApiService,
   type ListClassGroupsParams,
@@ -169,7 +175,7 @@ export class CatalogFacade {
     binding.subscription = source$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (data) => {
+        next: data => {
           // Descarte de respuesta obsoleta: si la secuencia cambió,
           // esta respuesta ya no corresponde al estado actual.
           const current = binding.state();

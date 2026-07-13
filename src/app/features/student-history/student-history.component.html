@@ -53,7 +53,7 @@
         type="submit"
         class="history-submit ec-btn ec-btn--secondary"
         [disabled]="form.invalid || isLoading()"
-        [attr.aria-busy]="isLoading() ? 'true' : 'false'"
+        [attr.aria-busy]="isLoading()"
       >
         @if (isLoading()) {
           Consultando…
@@ -73,15 +73,14 @@
   </form>
 
   @if (isLoading()) {
-    <p
+    <output
       class="history-status ec-alert ec-alert--info"
-      role="status"
       aria-live="polite"
       data-testid="history-loading"
     >
       <app-icon name="update" />
       <span>Consultando historial académico…</span>
-    </p>
+    </output>
   }
 
   @if (hasError()) {
@@ -128,18 +127,17 @@
   }
 
   @if (isEmpty()) {
-    <div
+    <section
       class="history-empty ec-alert ec-alert--info"
-      role="status"
-      aria-live="polite"
+      aria-label="Resultado de la consulta"
       data-testid="history-empty"
     >
       <app-icon name="badge" />
       <div>
-        <p>
+        <output aria-live="polite">
           La identidad consultada es válida pero no tiene inscripciones
           registradas.
-        </p>
+        </output>
         <button
           type="button"
           class="ec-btn ec-btn--outline"
@@ -148,7 +146,7 @@
           Reintentar
         </button>
       </div>
-    </div>
+    </section>
   }
 
   @if (successData(); as data) {
@@ -161,7 +159,7 @@
         <h2 id="history-results-title">
           Línea de tiempo de {{ data.identity.fullName }}
         </h2>
-        <p class="history-context" role="status" aria-live="polite">
+        <output class="history-context" aria-live="polite">
           {{ data.identity.documentType }} ·
           {{ data.identity.documentNumber }} ·
           {{ data.enrollments.length }}
@@ -170,7 +168,7 @@
           } @else {
             inscripciones
           }
-        </p>
+        </output>
         <dl class="history-identity-meta">
           <div>
             <dt>Documento</dt>

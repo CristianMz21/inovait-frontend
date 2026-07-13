@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 import { HttpClient, HttpParams } from "@angular/common/http";
 import { Injectable, inject } from "@angular/core";
 import type { Observable } from "rxjs";
@@ -53,6 +54,6 @@ export class StudentSearchApiService {
         `${this.config.apiBaseUrl}/api/enrollments`,
         { params: toHttpParams(params) },
       )
-      .pipe(map((data) => [...data]));
+      .pipe(map(data => [...data]));
   }
 }

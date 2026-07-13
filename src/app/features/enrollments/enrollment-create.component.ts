@@ -1,8 +1,14 @@
+/* Copyright (c) 2026. All rights reserved. */
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   DestroyRef,
+  ElementRef,
+  Injector,
   computed,
+  effect,
   inject,
   type OnInit,
 } from "@angular/core";
@@ -19,6 +25,10 @@ import {
 } from "@angular/forms";
 import { CatalogFacade } from "../../core/catalogs/catalog.facade";
 import { CatalogStatusComponent } from "../../core/catalogs/catalog-status.component";
+import {
+  CALENDAR_DATE_PATTERN,
+  calendarDateToTimestamp,
+} from "../../core/dates/calendar-date";
 import { AppIconComponent } from "../../layout/educore-shell/app-icon.component";
 import type { RemoteState } from "../../core/api/remote-state";
 import { EnrollmentCreateFacade } from "./enrollment-create.facade";
@@ -28,25 +38,36 @@ import type {
   EnrollmentFormVm,
 } from "./enrollment-create.vm";
 
+const DOCUMENT_TYPE_MAX_LENGTH = 20;
+const DOCUMENT_NUMBER_MAX_LENGTH = 32;
+const PERSON_NAME_MAX_LENGTH = 120;
+
 const requiredValidator: ValidatorFn = (control: AbstractControl<unknown>) =>
   Validators.required(control);
+
+function localTodayTimestamp(): number {
+  const now = new Date();
+  const today = new Date(0);
+  today.setUTCHours(0, 0, 0, 0);
+  today.setUTCFullYear(now.getFullYear(), now.getMonth(), now.getDate());
+  return today.getTime();
+}
 
 const notFutureDateValidator: ValidatorFn = (
   control: AbstractControl<unknown>,
 ) => {
-  if (
-    typeof control.value !== "string" ||
-    !/^\d{4}-\d{2}-\d{2}$/.test(control.value)
-  ) {
+  if (typeof control.value !== "string") {
     return null;
   }
-  const now = new Date();
-  const today = [
-    String(now.getFullYear()).padStart(4, "0"),
-    String(now.getMonth() + 1).padStart(2, "0"),
-    String(now.getDate()).padStart(2, "0"),
-  ].join("-");
-  return control.value > today ? { futureDate: true } : null;
+
+  const birthDateTimestamp = calendarDateToTimestamp(control.value);
+  if (birthDateTimestamp === null) {
+    return { invalidCalendarDate: true };
+  }
+  if (birthDateTimestamp > localTodayTimestamp()) {
+    return { futureDate: true };
+  }
+  return null;
 };
 
 interface EnrollmentFormShape {
@@ -62,6 +83,67 @@ interface EnrollmentFormShape {
 }
 
 type EnrollmentFormGroup = FormGroup<EnrollmentFormShape>;
+type EnrollmentControlName = keyof EnrollmentFormShape;
+
+const ENROLLMENT_CONTROL_ORDER: readonly EnrollmentControlName[] = [
+  "documentType",
+  "documentNumber",
+  "firstNames",
+  "lastNames",
+  "birthDate",
+  "schoolId",
+  "academicYearId",
+  "gradeId",
+  "classGroupId",
+];
+
+const SERVER_ERROR_KEY = "server";
+
+const ENROLLMENT_FIELD_ALIASES: Readonly<
+  Record<string, EnrollmentControlName>
+> = {
+  documenttype: "documentType",
+  studentdocumenttype: "documentType",
+  documentnumber: "documentNumber",
+  studentdocumentnumber: "documentNumber",
+  firstnames: "firstNames",
+  studentfirstnames: "firstNames",
+  lastnames: "lastNames",
+  studentlastnames: "lastNames",
+  birthdate: "birthDate",
+  studentbirthdate: "birthDate",
+  schoolid: "schoolId",
+  academicyearid: "academicYearId",
+  gradeid: "gradeId",
+  classgroupid: "classGroupId",
+};
+
+function enrollmentControlName(field: string): EnrollmentControlName | null {
+  const normalized = field
+    .trim()
+    .toLocaleLowerCase("en-US")
+    .replaceAll(/[^a-z0-9]/g, "");
+  return ENROLLMENT_FIELD_ALIASES[normalized] ?? null;
+}
+
+function isStringArray(value: unknown): value is readonly string[] {
+  return (
+    Array.isArray(value) &&
+    value.every((message: unknown) => typeof message === "string")
+  );
+}
+
+function withoutServerError(
+  errors: Readonly<Record<string, unknown>>,
+): Record<string, unknown> | null {
+  const remainingErrors = Object.fromEntries(
+    Object.entries(errors).filter(([key]) => key !== SERVER_ERROR_KEY),
+  );
+  if (Object.keys(remainingErrors).length === 0) {
+    return null;
+  }
+  return remainingErrors;
+}
 
 /**
  * Vista principal del recorrido de creación de matrícula (US1).
@@ -96,6 +178,9 @@ export class EnrollmentCreateComponent implements OnInit {
   private readonly catalog = inject(CatalogFacade);
   private readonly enrollment = inject(EnrollmentCreateFacade);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly changeDetectorRef = inject(ChangeDetectorRef);
+  private readonly injector = inject(Injector);
+  private readonly hostElement = inject<ElementRef<HTMLElement>>(ElementRef);
 
   readonly result = this.enrollment.result;
   readonly schoolsState = this.catalog.schoolsState;
@@ -112,23 +197,23 @@ export class EnrollmentCreateComponent implements OnInit {
   readonly form: EnrollmentFormGroup = this.fb.group({
     documentType: this.fb.control("", [
       requiredValidator,
-      Validators.maxLength(20),
+      Validators.maxLength(DOCUMENT_TYPE_MAX_LENGTH),
     ]),
     documentNumber: this.fb.control("", [
       requiredValidator,
-      Validators.maxLength(32),
+      Validators.maxLength(DOCUMENT_NUMBER_MAX_LENGTH),
     ]),
     firstNames: this.fb.control("", [
       requiredValidator,
-      Validators.maxLength(120),
+      Validators.maxLength(PERSON_NAME_MAX_LENGTH),
     ]),
     lastNames: this.fb.control("", [
       requiredValidator,
-      Validators.maxLength(120),
+      Validators.maxLength(PERSON_NAME_MAX_LENGTH),
     ]),
     birthDate: this.fb.control("", [
       requiredValidator,
-      Validators.pattern(/^\d{4}-\d{2}-\d{2}$/),
+      Validators.pattern(CALENDAR_DATE_PATTERN),
       notFutureDateValidator,
     ]),
     schoolId: this.fb.control<number | null>(null, [requiredValidator]),
@@ -154,23 +239,50 @@ export class EnrollmentCreateComponent implements OnInit {
   readonly isSuccess = computed(() => this.result().status === "success");
   readonly successData = computed(() => {
     const state = this.result();
-    return state.status === "success" ? state.data : null;
+    if (state.status === "success") {
+      return state.data;
+    }
+    return null;
   });
   readonly hasError = computed(() => this.result().status === "error");
   readonly errorProblem = computed(() => {
     const state = this.result();
-    return state.status === "error" ? state.problem : null;
+    if (state.status === "error") {
+      return state.problem;
+    }
+    return null;
   });
   readonly errorFields = computed(() => {
     const problem = this.errorProblem();
     if (!problem?.errors) {
       return [];
     }
-    return Object.entries(problem.errors).map(([field, messages]) => ({
-      field,
-      messages,
-    }));
+    return Object.entries(problem.errors)
+      .filter(([field]) => enrollmentControlName(field) === null)
+      .map(([field, messages]) => ({
+        field,
+        messages,
+      }));
   });
+
+  constructor() {
+    effect(() => {
+      const state = this.result();
+      if (state.status === "success") {
+        this.resetFormControls();
+        this.focusAfterRender("documentType");
+        return;
+      }
+      if (state.status === "error") {
+        const firstInvalidControl = this.applyServerErrors(
+          state.problem.errors,
+        );
+        if (firstInvalidControl !== null) {
+          this.focusAfterRender(firstInvalidControl);
+        }
+      }
+    });
+  }
 
   ngOnInit(): void {
     // classGroups belongs to this dependent route flow; unlike global cached
@@ -201,21 +313,26 @@ export class EnrollmentCreateComponent implements OnInit {
   // -- Acciones de UI -----------------------------------------------------
 
   onSubmit(): void {
+    this.clearServerErrors();
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.focusFirstInvalidControl();
       return;
     }
     const vm = this.toVm();
     if (enrollmentFormToRequest(vm) === null) {
       this.form.markAllAsTouched();
+      this.focusFirstInvalidControl();
       return;
     }
     this.enrollment.submit(vm);
   }
 
   onRetry(): void {
+    this.clearServerErrors();
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.focusFirstInvalidControl();
       return;
     }
     this.enrollment.retry(this.toVm());
@@ -242,6 +359,40 @@ export class EnrollmentCreateComponent implements OnInit {
 
   onReset(): void {
     this.enrollment.reset();
+    this.resetFormControls();
+  }
+
+  fieldErrorMessages(controlName: EnrollmentControlName): readonly string[] {
+    const control = this.form.controls[controlName];
+    if (!control.invalid || (!control.touched && !control.dirty)) {
+      return [];
+    }
+
+    const messages = [...this.serverErrorMessages(controlName)];
+    if (control.hasError("required")) {
+      messages.push("El campo es obligatorio.");
+    }
+    if (control.hasError("maxlength")) {
+      messages.push("El valor supera la longitud máxima permitida.");
+    }
+    if (
+      control.hasError("pattern") ||
+      control.hasError("invalidCalendarDate")
+    ) {
+      messages.push("Ingrese una fecha calendario válida.");
+    }
+    if (control.hasError("futureDate")) {
+      messages.push("La fecha no puede ser posterior a la fecha actual.");
+    }
+    return [...new Set(messages)];
+  }
+
+  isFieldInvalid(controlName: EnrollmentControlName): boolean {
+    return this.fieldErrorMessages(controlName).length > 0;
+  }
+
+  private resetFormControls(): void {
+    this.clearServerErrors();
     this.form.reset({
       documentType: "",
       documentNumber: "",
@@ -254,6 +405,87 @@ export class EnrollmentCreateComponent implements OnInit {
       classGroupId: null,
     });
     this.syncCascadeControls();
+  }
+
+  private applyServerErrors(
+    errors: Readonly<Record<string, readonly string[]>> | undefined,
+  ): EnrollmentControlName | null {
+    this.clearServerErrors();
+    if (!errors) {
+      return null;
+    }
+
+    const mappedErrors = new Map<EnrollmentControlName, string[]>();
+    for (const [field, messages] of Object.entries(errors)) {
+      const controlName = enrollmentControlName(field);
+      if (controlName !== null && messages.length > 0) {
+        const currentMessages = mappedErrors.get(controlName) ?? [];
+        currentMessages.push(...messages);
+        mappedErrors.set(controlName, currentMessages);
+      }
+    }
+
+    let firstInvalidControl: EnrollmentControlName | null = null;
+    for (const controlName of ENROLLMENT_CONTROL_ORDER) {
+      const messages = mappedErrors.get(controlName);
+      if (messages) {
+        const control = this.form.controls[controlName];
+        control.setErrors({
+          ...control.errors,
+          [SERVER_ERROR_KEY]: [...new Set(messages)],
+        });
+        control.markAsTouched();
+        firstInvalidControl ??= controlName;
+      }
+    }
+    this.changeDetectorRef.markForCheck();
+    return firstInvalidControl;
+  }
+
+  private serverErrorMessages(
+    controlName: EnrollmentControlName,
+  ): readonly string[] {
+    const serverErrors: unknown =
+      this.form.controls[controlName].errors?.[SERVER_ERROR_KEY];
+    if (isStringArray(serverErrors)) {
+      return serverErrors;
+    }
+    return [];
+  }
+
+  private clearServerErrors(): void {
+    for (const controlName of ENROLLMENT_CONTROL_ORDER) {
+      const control = this.form.controls[controlName];
+      const errors = control.errors;
+      if (errors && SERVER_ERROR_KEY in errors) {
+        control.setErrors(withoutServerError(errors));
+      }
+    }
+  }
+
+  private focusFirstInvalidControl(): void {
+    const firstInvalidControl = ENROLLMENT_CONTROL_ORDER.find(
+      controlName =>
+        this.form.controls[controlName].enabled &&
+        this.form.controls[controlName].invalid,
+    );
+    if (firstInvalidControl !== undefined) {
+      this.focusAfterRender(firstInvalidControl);
+    }
+  }
+
+  private focusAfterRender(controlName: EnrollmentControlName): void {
+    this.changeDetectorRef.markForCheck();
+    afterNextRender(
+      {
+        write: () => {
+          this.hostElement.nativeElement
+            .querySelector<HTMLElement>(`[formControlName="${controlName}"]`)
+            ?.focus();
+        },
+      },
+      { injector: this.injector },
+    );
   }
 
   // -- Helpers ------------------------------------------------------------
@@ -294,6 +526,13 @@ export class EnrollmentCreateComponent implements OnInit {
       return "No se pudieron cargar los grupos. Reintente cambiando la selección.";
     }
     return null;
+  }
+
+  studentReusedLabel(studentReused: boolean): string {
+    if (studentReused) {
+      return "Sí";
+    }
+    return "No";
   }
 
   private toVm(): EnrollmentFormVm {
@@ -350,24 +589,33 @@ export class EnrollmentCreateComponent implements OnInit {
   }
 
   private syncCascadeControls(): void {
-    this.setDisabled(
-      this.form.controls.academicYearId,
-      this.isAcademicYearDisabled(),
-    );
-    this.setDisabled(this.form.controls.gradeId, this.isGradeDisabled());
-    this.setDisabled(
-      this.form.controls.classGroupId,
-      this.isClassGroupDisabled(),
-    );
+    if (this.isAcademicYearDisabled()) {
+      this.disableControl(this.form.controls.academicYearId);
+    } else {
+      this.enableControl(this.form.controls.academicYearId);
+    }
+
+    if (this.isGradeDisabled()) {
+      this.disableControl(this.form.controls.gradeId);
+    } else {
+      this.enableControl(this.form.controls.gradeId);
+    }
+
+    if (this.isClassGroupDisabled()) {
+      this.disableControl(this.form.controls.classGroupId);
+    } else {
+      this.enableControl(this.form.controls.classGroupId);
+    }
   }
 
-  private setDisabled(
-    control: FormControl<number | null>,
-    disabled: boolean,
-  ): void {
-    if (disabled && control.enabled) {
+  private disableControl(control: FormControl<number | null>): void {
+    if (control.enabled) {
       control.disable({ emitEvent: false });
-    } else if (!disabled && control.disabled) {
+    }
+  }
+
+  private enableControl(control: FormControl<number | null>): void {
+    if (control.disabled) {
       control.enable({ emitEvent: false });
     }
   }
@@ -378,10 +626,16 @@ export class EnrollmentCreateComponent implements OnInit {
     typeof computed<readonly EnrollmentFieldVm<number>[]>
   > {
     return computed(() =>
-      mapOptions(this.catalog.schoolsState(), (school) => ({
-        value: school.id,
-        label: `${school.name} · ${school.sector === "Public" ? "Público" : "Privado"}`,
-      })),
+      mapOptions(this.catalog.schoolsState(), school => {
+        let sectorLabel = "Privado";
+        if (school.sector === "Public") {
+          sectorLabel = "Público";
+        }
+        return {
+          value: school.id,
+          label: `${school.name} · ${sectorLabel}`,
+        };
+      }),
     );
   }
 
@@ -389,10 +643,16 @@ export class EnrollmentCreateComponent implements OnInit {
     typeof computed<readonly EnrollmentFieldVm<number>[]>
   > {
     return computed(() =>
-      mapOptions(this.catalog.academicYearsState(), (year) => ({
-        value: year.id,
-        label: year.isCurrent ? `${year.name} (actual)` : year.name,
-      })),
+      mapOptions(this.catalog.academicYearsState(), year => {
+        let label = year.name;
+        if (year.isCurrent) {
+          label = `${year.name} (actual)`;
+        }
+        return {
+          value: year.id,
+          label,
+        };
+      }),
     );
   }
 
@@ -400,7 +660,7 @@ export class EnrollmentCreateComponent implements OnInit {
     typeof computed<readonly EnrollmentFieldVm<number>[]>
   > {
     return computed(() =>
-      mapOptions(this.catalog.gradesState(), (grade) => ({
+      mapOptions(this.catalog.gradesState(), grade => ({
         value: grade.id,
         label: grade.name,
       })),
@@ -411,7 +671,7 @@ export class EnrollmentCreateComponent implements OnInit {
     typeof computed<readonly EnrollmentFieldVm<number>[]>
   > {
     return computed(() =>
-      mapOptions(this.catalog.classGroupsState(), (group) => ({
+      mapOptions(this.catalog.classGroupsState(), group => ({
         value: group.id,
         label: `Grupo ${group.code}`,
       })),

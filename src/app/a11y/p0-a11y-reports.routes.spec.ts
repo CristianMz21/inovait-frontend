@@ -82,10 +82,10 @@ describe("CT-A11Y-RPT — Hardening accesibilidad rutas de reportes", () => {
       const compiled = fixture.nativeElement as HTMLElement;
       const navLinks = Array.from(compiled.querySelectorAll("nav a"));
       const reports = navLinks.find(
-        (link) => link.textContent?.trim() === "Reportes",
+        link => link.textContent?.trim() === "Reportes",
       );
       const history = navLinks.find(
-        (link) => link.textContent?.trim() === "Historia",
+        link => link.textContent?.trim() === "Historia",
       );
 
       expect(reports?.textContent?.trim()).toBe("Reportes");
@@ -130,6 +130,22 @@ describe("CT-A11Y-RPT — Hardening accesibilidad rutas de reportes", () => {
     }
   }
 
+  function expectNamedSection(
+    element: Element | null,
+    labelledBy: string,
+  ): void {
+    expect(element).toBeTruthy();
+    expect(element?.tagName).toBe("SECTION");
+    expect(element?.getAttribute("aria-labelledby")).toBe(labelledBy);
+    expect(element?.querySelector(`#${labelledBy}`)).toBeTruthy();
+  }
+
+  function expectPoliteOutput(element: Element | null): void {
+    expect(element).toBeTruthy();
+    expect(element?.tagName).toBe("OUTPUT");
+    expect(element?.getAttribute("aria-live")).toBe("polite");
+  }
+
   // Lee `src/styles.scss` directamente (vía `readGlobalStyles()`, mismo
   // mecanismo que `a11y/educore-tokens.spec.ts`) en lugar de grepear el
   // `<style>` compilado de CADA componente: la propiedad protegida es que
@@ -167,8 +183,11 @@ describe("CT-A11Y-RPT — Hardening accesibilidad rutas de reportes", () => {
     });
 
     afterEach(() => {
-      http.verify();
-      TestBed.resetTestingModule();
+      try {
+        http.verify();
+      } finally {
+        TestBed.resetTestingModule();
+      }
     });
 
     it("expone h1 enfocable, fieldset+legend, aria-required y aria-busy idle", () => {
@@ -190,24 +209,23 @@ describe("CT-A11Y-RPT — Hardening accesibilidad rutas de reportes", () => {
       ).toBe("false");
     });
 
-    it("success expone role=status y tabla con caption oculto + th scope=col", () => {
+    it("success expone outputs accesibles y tabla con caption oculto + th scope=col", () => {
       component.form.patchValue({ academicYearId: 2 });
       component.onSubmit();
       fixture.detectChanges();
 
-      expect(
-        (fixture.nativeElement as HTMLElement).querySelector(
-          '[data-testid="age-loading"][role="status"]',
-        ),
-      ).toBeTruthy();
+      const loading = (fixture.nativeElement as HTMLElement).querySelector(
+        '[data-testid="age-loading"]',
+      );
 
-      http.expectOne((r) => r.url === ageUrl).flush(ageDistributionFixture);
+      http.expectOne(r => r.url === ageUrl).flush(ageDistributionFixture);
       fixture.detectChanges();
 
+      expectPoliteOutput(loading);
       const compiled = fixture.nativeElement as HTMLElement;
-      expect(
-        compiled.querySelector('.age-context[role="status"]'),
-      ).toBeTruthy();
+      const results = compiled.querySelector('[data-testid="age-results"]');
+      expectNamedSection(results, "age-results-title");
+      expectPoliteOutput(results?.querySelector(".age-context") ?? null);
       expect(compiled.querySelector('[role="alert"]')).toBeNull();
       expect(compiled.querySelector("caption.visually-hidden")).toBeTruthy();
       expect(compiled.querySelectorAll('th[scope="col"]').length).toBe(3);
@@ -216,24 +234,24 @@ describe("CT-A11Y-RPT — Hardening accesibilidad rutas de reportes", () => {
     it("200 con ceros mantiene success accesible sin alert", () => {
       component.form.patchValue({ academicYearId: 2 });
       component.onSubmit();
-      http
-        .expectOne((r) => r.url === ageUrl)
-        .flush(emptyAgeDistributionFixture);
+      http.expectOne(r => r.url === ageUrl).flush(emptyAgeDistributionFixture);
       fixture.detectChanges();
 
       const compiled = fixture.nativeElement as HTMLElement;
-      expect(
-        compiled.querySelector('.age-context[role="status"]'),
-      ).toBeTruthy();
+      const results = compiled.querySelector('[data-testid="age-results"]');
+      expectNamedSection(results, "age-results-title");
+      expectPoliteOutput(results?.querySelector(".age-context") ?? null);
       expect(compiled.querySelector('[role="alert"]')).toBeNull();
-      expect(component.successData()?.totalCount).toBe(0);
+      const data = component.successData();
+      expect(data?.bands.map(band => band.count)).toEqual([0, 0, 0]);
+      expect(data).not.toHaveProperty("totalCount");
     });
 
     it("422 as_of_date_invalid expone role=alert y conserva filtros", () => {
       component.form.patchValue({ academicYearId: 2, asOfDate: "2010-01-01" });
       component.onSubmit();
       http
-        .expectOne((r) => r.url === ageUrl)
+        .expectOne(r => r.url === ageUrl)
         .flush(apiProblemAsOfDateInvalidFixture, {
           status: 422,
           statusText: "Unprocessable Entity",
@@ -274,8 +292,11 @@ describe("CT-A11Y-RPT — Hardening accesibilidad rutas de reportes", () => {
     });
 
     afterEach(() => {
-      http.verify();
-      TestBed.resetTestingModule();
+      try {
+        http.verify();
+      } finally {
+        TestBed.resetTestingModule();
+      }
     });
 
     it("expone h1 enfocable, fieldset+legend, sin aria-required y aria-busy idle", () => {
@@ -297,7 +318,7 @@ describe("CT-A11Y-RPT — Hardening accesibilidad rutas de reportes", () => {
       ).toBe("false");
     });
 
-    it("success expone role=status y tabla con caption oculto + th scope=col", () => {
+    it("success expone outputs accesibles y tabla con caption oculto + th scope=col", () => {
       component.form.patchValue({
         periodStart: "2026-07-01",
         periodEnd: "2026-07-10",
@@ -305,21 +326,20 @@ describe("CT-A11Y-RPT — Hardening accesibilidad rutas de reportes", () => {
       component.onSubmit();
       fixture.detectChanges();
 
-      expect(
-        (fixture.nativeElement as HTMLElement).querySelector(
-          '[data-testid="sector-loading"][role="status"]',
-        ),
-      ).toBeTruthy();
+      const loading = (fixture.nativeElement as HTMLElement).querySelector(
+        '[data-testid="sector-loading"]',
+      );
 
       http
-        .expectOne((r) => r.url === sectorUrl)
+        .expectOne(r => r.url === sectorUrl)
         .flush(teacherCountsBySectorFixture);
       fixture.detectChanges();
 
+      expectPoliteOutput(loading);
       const compiled = fixture.nativeElement as HTMLElement;
-      expect(
-        compiled.querySelector('.sector-context[role="status"]'),
-      ).toBeTruthy();
+      const results = compiled.querySelector('[data-testid="sector-results"]');
+      expectNamedSection(results, "sector-results-title");
+      expectPoliteOutput(results?.querySelector(".sector-context") ?? null);
       expect(compiled.querySelector('[role="alert"]')).toBeNull();
       expect(compiled.querySelector("caption.visually-hidden")).toBeTruthy();
       expect(compiled.querySelectorAll('th[scope="col"]').length).toBe(2);
@@ -332,7 +352,7 @@ describe("CT-A11Y-RPT — Hardening accesibilidad rutas de reportes", () => {
       });
       component.onSubmit();
       http
-        .expectOne((r) => r.url === sectorUrl)
+        .expectOne(r => r.url === sectorUrl)
         .flush(apiProblemPeriodInvalidFixture, {
           status: 422,
           statusText: "Unprocessable Entity",
@@ -377,8 +397,11 @@ describe("CT-A11Y-RPT — Hardening accesibilidad rutas de reportes", () => {
     });
 
     afterEach(() => {
-      http.verify();
-      TestBed.resetTestingModule();
+      try {
+        http.verify();
+      } finally {
+        TestBed.resetTestingModule();
+      }
     });
 
     it("expone h1 enfocable, fieldset+legend, aria-required y aria-busy idle", () => {
@@ -400,40 +423,38 @@ describe("CT-A11Y-RPT — Hardening accesibilidad rutas de reportes", () => {
       ).toBe("false");
     });
 
-    it("success expone role=status y tabla con caption oculto + th scope=col", () => {
+    it("success expone outputs accesibles y tabla con caption oculto + th scope=col", () => {
       component.form.patchValue({ academicYearId: 2 });
       component.onSubmit();
       fixture.detectChanges();
 
-      expect(
-        (fixture.nativeElement as HTMLElement).querySelector(
-          '[data-testid="top-loading"][role="status"]',
-        ),
-      ).toBeTruthy();
+      const loading = (fixture.nativeElement as HTMLElement).querySelector(
+        '[data-testid="top-loading"]',
+      );
 
-      http.expectOne((r) => r.url === topUrl).flush(topSchoolsFixture);
+      http.expectOne(r => r.url === topUrl).flush(topSchoolsFixture);
       fixture.detectChanges();
 
+      expectPoliteOutput(loading);
       const compiled = fixture.nativeElement as HTMLElement;
-      expect(
-        compiled.querySelector('.top-context[role="status"]'),
-      ).toBeTruthy();
+      const results = compiled.querySelector('[data-testid="top-results"]');
+      expectNamedSection(results, "top-results-title");
+      expectPoliteOutput(results?.querySelector(".top-context") ?? null);
       expect(compiled.querySelector('[role="alert"]')).toBeNull();
       expect(compiled.querySelector("caption.visually-hidden")).toBeTruthy();
       expect(compiled.querySelectorAll('th[scope="col"]').length).toBe(3);
     });
 
-    it("200 [] expone empty role=status con botón Reintentar", () => {
+    it("200 [] expone empty con anuncio <output> y botón Reintentar", () => {
       component.form.patchValue({ academicYearId: 2 });
       component.onSubmit();
-      http.expectOne((r) => r.url === topUrl).flush(emptyTopSchoolsFixture);
+      http.expectOne(r => r.url === topUrl).flush(emptyTopSchoolsFixture);
       fixture.detectChanges();
 
       const compiled = fixture.nativeElement as HTMLElement;
-      const empty = compiled.querySelector(
-        '[data-testid="top-empty"][role="status"]',
-      );
+      const empty = compiled.querySelector('[data-testid="top-empty"]');
       expect(empty).toBeTruthy();
+      expectPoliteOutput(empty?.querySelector("output") ?? null);
       expect(empty?.querySelector("button")?.textContent?.trim()).toBe(
         "Reintentar",
       );
@@ -444,7 +465,7 @@ describe("CT-A11Y-RPT — Hardening accesibilidad rutas de reportes", () => {
       component.form.patchValue({ academicYearId: 9999 });
       component.onSubmit();
       http
-        .expectOne((r) => r.url === topUrl)
+        .expectOne(r => r.url === topUrl)
         .flush(apiProblemNotFoundFixture, {
           status: 404,
           statusText: "Not Found",

@@ -18,12 +18,14 @@ import {
   apiProblemNotFoundFixture,
   classGroupsFixture,
   createEnrollmentResponseFixture,
+  emptyClassGroupsFixture,
   emptyEnrollmentListResponseFixture,
   emptyTeacherContractsListedFixture,
   enrollmentListResponseFixture,
   gradesFixture,
   schoolsFixture,
   teacherContractsCreatedFixture,
+  teacherContractsListedFixture,
   teachersFixture,
 } from "../../testing/fixtures";
 import { App } from "../app.component";
@@ -50,7 +52,8 @@ import { TeacherContractsComponent } from "../features/teacher-contracts/teacher
  *      - `<fieldset>` con `<legend>` por cada grupo de formulario
  *      - campos requeridos con `aria-required="true"`
  *      - botón submit expone `aria-busy` (idle: "false")
- *      - `role="status"` para loading / empty / success
+ *      - `<output aria-live="polite">` para loading / empty / success
+ *      - `<section>` con nombre accesible para grupos de resultados
  *      - `role="alert"` para error
  */
 describe("CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0", () => {
@@ -98,7 +101,7 @@ describe("CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0", () => {
       expect(nav).toBeTruthy();
 
       const labels = Array.from(nav?.querySelectorAll("a") ?? []).map(
-        (a) => a.textContent?.trim() ?? "",
+        a => a.textContent?.trim() ?? "",
       );
       expect(labels).toEqual(
         expect.arrayContaining([
@@ -172,8 +175,11 @@ describe("CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0", () => {
     });
 
     afterEach(() => {
-      http.verify();
-      TestBed.resetTestingModule();
+      try {
+        http.verify();
+      } finally {
+        TestBed.resetTestingModule();
+      }
     });
 
     it('renderiza exactamente un <h1> con tabindex="-1" enfocable programáticamente', () => {
@@ -216,7 +222,7 @@ describe("CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0", () => {
       expect(submit?.getAttribute("aria-busy")).toBe("false");
     });
 
-    it('success tras POST expone region role="status"', () => {
+    it("success tras POST conserva data-testid y anuncia mediante <output>", () => {
       flushCatalog(http);
       fixture.detectChanges();
 
@@ -236,14 +242,14 @@ describe("CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0", () => {
 
       http
         .expectOne(
-          (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/class-groups`,
+          r => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/class-groups`,
         )
         .flush(classGroupsFixture);
       comp.form.controls["classGroupId"].setValue(10);
       comp.onSubmit();
 
       const req = http.expectOne(
-        (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
+        r => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
       );
       expect(req.request.method).toBe("POST");
       req.flush(createEnrollmentResponseFixture);
@@ -252,7 +258,9 @@ describe("CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0", () => {
       const compiled = fixture.nativeElement as HTMLElement;
       const ok = compiled.querySelector('[data-testid="enrollment-success"]');
       expect(ok).toBeTruthy();
-      expect(ok?.getAttribute("role")).toBe("status");
+      const announcement = ok?.querySelector("output");
+      expect(announcement?.tagName).toBe("OUTPUT");
+      expect(announcement?.getAttribute("aria-live")).toBe("polite");
       expect(compiled.querySelector('[role="alert"]')).toBeNull();
     });
 
@@ -275,14 +283,14 @@ describe("CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0", () => {
       fixture.detectChanges();
       http
         .expectOne(
-          (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/class-groups`,
+          r => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/class-groups`,
         )
         .flush(classGroupsFixture);
       comp.form.controls["classGroupId"].setValue(10);
       comp.onSubmit();
 
       const req = http.expectOne(
-        (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
+        r => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
       );
       req.flush(apiProblemNotFoundFixture, {
         status: 404,
@@ -319,8 +327,11 @@ describe("CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0", () => {
     });
 
     afterEach(() => {
-      http.verify();
-      TestBed.resetTestingModule();
+      try {
+        http.verify();
+      } finally {
+        TestBed.resetTestingModule();
+      }
     });
 
     it('renderiza exactamente un <h1> con tabindex="-1"', () => {
@@ -367,38 +378,113 @@ describe("CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0", () => {
       comp.form.patchValue({ schoolId: 1, gradeId: 1, academicYearId: 2 });
       await comp.onSubmit();
 
-      http
-        .expectOne(
-          (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
-        )
-        .flush(enrollmentListResponseFixture);
+      http.expectNone(
+        r => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
+      );
+      const classGroupsRequest = http.expectOne(
+        r => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/class-groups`,
+      );
+      expect(classGroupsRequest.request.method).toBe("GET");
+      classGroupsRequest.flush(classGroupsFixture);
+
+      const enrollmentsRequest = http.expectOne(
+        r => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
+      );
+      expect(enrollmentsRequest.request.method).toBe("GET");
+      enrollmentsRequest.flush(enrollmentListResponseFixture);
       fixture.detectChanges();
 
       const compiled = fixture.nativeElement as HTMLElement;
       const results = compiled.querySelector('[data-testid="search-results"]');
       expect(results).toBeTruthy();
-      const counter = compiled.querySelector('[aria-live="polite"]');
+      expect(results?.tagName).toBe("SECTION");
+      expect(results?.getAttribute("aria-labelledby")).toBe("results-title");
+      expect(results?.querySelector("#results-title")).toBeTruthy();
+      const counter = results?.querySelector(
+        '.search-count[aria-live="polite"]',
+      );
       expect(counter).toBeTruthy();
       expect(compiled.querySelector('[role="alert"]')).toBeNull();
     });
 
-    it('empty (200 []) expone region role="status"', async () => {
+    it("empty (200 []) expone <section> nombrada con anuncio <output>", async () => {
       flushCatalog(http);
       const comp = fixture.componentInstance;
       comp.form.patchValue({ schoolId: 1, gradeId: 1, academicYearId: 2 });
       await comp.onSubmit();
 
+      http.expectNone(
+        r => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
+      );
       http
         .expectOne(
-          (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
+          r => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/class-groups`,
+        )
+        .flush(classGroupsFixture);
+      http
+        .expectOne(
+          r => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
         )
         .flush(emptyEnrollmentListResponseFixture);
       fixture.detectChanges();
 
       const compiled = fixture.nativeElement as HTMLElement;
-      const empty = compiled.querySelector('[data-testid="search-empty"]');
+      const empty = compiled.querySelector(
+        '[data-testid="search-empty-no-results"]',
+      );
       expect(empty).toBeTruthy();
-      expect(empty?.getAttribute("role")).toBe("status");
+      expect(empty?.tagName).toBe("SECTION");
+      expect(empty?.getAttribute("aria-labelledby")).toBe(
+        "search-no-results-title",
+      );
+      expect(empty?.querySelector("#search-no-results-title")).toBeTruthy();
+      const announcement = empty?.querySelector("output");
+      expect(announcement?.tagName).toBe("OUTPUT");
+      expect(announcement?.getAttribute("aria-live")).toBe("polite");
+      expect(
+        compiled.querySelector('[data-testid="search-empty-no-groups"]'),
+      ).toBeNull();
+      expect(compiled.querySelector('[role="alert"]')).toBeNull();
+    });
+
+    it("classGroups 200 [] expone noGroups accesible sin consultar inscripciones", async () => {
+      flushCatalog(http);
+      const comp = fixture.componentInstance;
+      comp.form.patchValue({ schoolId: 1, gradeId: 1, academicYearId: 2 });
+      await comp.onSubmit();
+
+      http.expectNone(
+        r => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
+      );
+      const classGroupsRequest = http.expectOne(
+        r => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/class-groups`,
+      );
+      expect(classGroupsRequest.request.method).toBe("GET");
+      classGroupsRequest.flush(emptyClassGroupsFixture);
+      http.expectNone(
+        r => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
+      );
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      const empty = compiled.querySelector(
+        '[data-testid="search-empty-no-groups"]',
+      );
+      expect(empty).toBeTruthy();
+      expect(empty?.tagName).toBe("SECTION");
+      expect(empty?.getAttribute("aria-labelledby")).toBe(
+        "search-no-groups-title",
+      );
+      expect(empty?.querySelector("#search-no-groups-title")).toBeTruthy();
+      const announcement = empty?.querySelector("output");
+      expect(announcement?.tagName).toBe("OUTPUT");
+      expect(announcement?.getAttribute("aria-live")).toBe("polite");
+      expect(announcement?.textContent?.trim()).toBe(
+        "La combinación seleccionada es válida, pero no tiene grupos.",
+      );
+      expect(
+        compiled.querySelector('[data-testid="search-empty-no-results"]'),
+      ).toBeNull();
       expect(compiled.querySelector('[role="alert"]')).toBeNull();
     });
 
@@ -408,9 +494,17 @@ describe("CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0", () => {
       comp.form.patchValue({ schoolId: 1, gradeId: 1, academicYearId: 2 });
       await comp.onSubmit();
 
+      http.expectNone(
+        r => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
+      );
       http
         .expectOne(
-          (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
+          r => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/class-groups`,
+        )
+        .flush(classGroupsFixture);
+      http
+        .expectOne(
+          r => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
         )
         .flush(apiProblemNotFoundFixture, {
           status: 404,
@@ -447,8 +541,11 @@ describe("CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0", () => {
     });
 
     afterEach(() => {
-      http.verify();
-      TestBed.resetTestingModule();
+      try {
+        http.verify();
+      } finally {
+        TestBed.resetTestingModule();
+      }
     });
 
     it('renderiza exactamente un <h1> con tabindex="-1"', () => {
@@ -492,28 +589,37 @@ describe("CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0", () => {
       }
     });
 
-    it('success en creación expone region role="status"', () => {
+    it("success en creación conserva data-testid y anuncia mediante <output>", () => {
       flushCatalog(http);
       const comp = fixture.componentInstance as unknown as {
         createForm: {
           controls: Record<string, { setValue(v: unknown): void }>;
         };
-        onToggleSchool(id: number, checked: boolean): void;
+        selectSchool(id: number): void;
         onSubmitCreate(): void;
       };
       comp.createForm.controls["teacherId"].setValue(5);
       comp.createForm.controls["startDate"].setValue("2026-03-01");
-      comp.onToggleSchool(1, true);
+      comp.selectSchool(1);
       comp.onSubmitCreate();
 
       http
         .expectOne(
-          (r) =>
+          r =>
             r.url ===
               `${DEFAULT_API_CONFIG.apiBaseUrl}/api/teachers/5/contracts` &&
             r.method === "POST",
         )
         .flush(teacherContractsCreatedFixture);
+
+      const listRequest = http.expectOne(
+        r =>
+          r.url ===
+            `${DEFAULT_API_CONFIG.apiBaseUrl}/api/teachers/5/contracts` &&
+          r.method === "GET",
+      );
+      expect(listRequest.request.params.has("asOfDate")).toBe(false);
+      listRequest.flush(teacherContractsListedFixture);
       fixture.detectChanges();
 
       const compiled = fixture.nativeElement as HTMLElement;
@@ -521,11 +627,25 @@ describe("CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0", () => {
         '[data-testid="contracts-create-success"]',
       );
       expect(ok).toBeTruthy();
-      expect(ok?.getAttribute("role")).toBe("status");
+      const announcement = ok?.querySelector("output");
+      expect(announcement?.tagName).toBe("OUTPUT");
+      expect(announcement?.getAttribute("aria-live")).toBe("polite");
+      const refreshed = compiled.querySelector(
+        '[data-testid="contracts-query-results"]',
+      );
+      expect(refreshed).toBeTruthy();
+      expect(refreshed?.tagName).toBe("SECTION");
+      expect(refreshed?.getAttribute("aria-labelledby")).toBe(
+        "query-results-title",
+      );
+      expect(refreshed?.querySelector("#query-results-title")).toBeTruthy();
+      expect(refreshed?.querySelectorAll("tbody tr")).toHaveLength(
+        teacherContractsListedFixture.length,
+      );
       expect(compiled.querySelector('[role="alert"]')).toBeNull();
     });
 
-    it('empty en consulta (200 []) expone region role="status"', () => {
+    it("empty en consulta conserva data-testid y anuncia mediante <output>", () => {
       flushCatalog(http);
       const comp = fixture.componentInstance as unknown as {
         queryForm: {
@@ -538,7 +658,7 @@ describe("CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0", () => {
 
       http
         .expectOne(
-          (r) =>
+          r =>
             r.url ===
               `${DEFAULT_API_CONFIG.apiBaseUrl}/api/teachers/5/contracts` &&
             r.method === "GET",
@@ -551,7 +671,9 @@ describe("CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0", () => {
         '[data-testid="contracts-query-empty"]',
       );
       expect(empty).toBeTruthy();
-      expect(empty?.getAttribute("role")).toBe("status");
+      const announcement = empty?.querySelector("output");
+      expect(announcement?.tagName).toBe("OUTPUT");
+      expect(announcement?.getAttribute("aria-live")).toBe("polite");
       expect(compiled.querySelector('[role="alert"]')).toBeNull();
     });
 
@@ -568,7 +690,7 @@ describe("CT-A11Y-P0 — Hardening accesibilidad shell + rutas P0", () => {
 
       http
         .expectOne(
-          (r) =>
+          r =>
             r.url ===
               `${DEFAULT_API_CONFIG.apiBaseUrl}/api/teachers/9999/contracts` &&
             r.method === "GET",

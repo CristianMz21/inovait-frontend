@@ -101,7 +101,7 @@ describe("TeacherCountsBySectorComponent (CT-SECTOR-RPT)", () => {
     expect(compiled.querySelector('[data-testid="sector-idle"]')).toBeNull();
 
     http
-      .expectOne((r) => r.url === sectorUrl)
+      .expectOne(r => r.url === sectorUrl)
       .flush(teacherCountsBySectorFixture);
   });
 
@@ -182,9 +182,7 @@ describe("TeacherCountsBySectorComponent (CT-SECTOR-RPT)", () => {
     expect(submit?.disabled).toBe(true);
 
     component.onSubmit();
-    const req = http.expectOne(
-      (r) => r.url === sectorUrl && r.method === "GET",
-    );
+    const req = http.expectOne(r => r.url === sectorUrl && r.method === "GET");
     expect(req.request.params.get("periodStart")).toBe("2026-07-10");
     expect(req.request.params.get("periodEnd")).toBe("2026-07-01");
     req.flush(apiProblemPeriodInvalidFixture, {
@@ -194,6 +192,17 @@ describe("TeacherCountsBySectorComponent (CT-SECTOR-RPT)", () => {
         "Content-Type": "application/problem+json",
       }),
     });
+  });
+
+  it("compara el rango como fechas y acepta extremos cronológicamente iguales", () => {
+    component.form.patchValue({
+      periodStart: "2026-07-10",
+      periodEnd: "2026-07-10",
+    });
+    fixture.detectChanges();
+
+    expect(component.hasDateRangeError()).toBe(false);
+    expect(component.canSubmit()).toBe(true);
   });
 
   // -- Estado del formulario --------------------------------------------
@@ -225,10 +234,14 @@ describe("TeacherCountsBySectorComponent (CT-SECTOR-RPT)", () => {
     });
     component.onSubmit();
     expect(component.isLoading()).toBe(true);
+    fixture.detectChanges();
 
-    const req = http.expectOne(
-      (r) => r.url === sectorUrl && r.method === "GET",
+    const loadingStatus = (fixture.nativeElement as HTMLElement).querySelector(
+      "output[data-testid='sector-loading']",
     );
+    expect(loadingStatus?.getAttribute("aria-live")).toBe("polite");
+
+    const req = http.expectOne(r => r.url === sectorUrl && r.method === "GET");
     expect(req.request.params.get("periodStart")).toBe("2026-07-01");
     expect(req.request.params.get("periodEnd")).toBe("2026-07-10");
     req.flush(teacherCountsBySectorFixture);
@@ -238,15 +251,22 @@ describe("TeacherCountsBySectorComponent (CT-SECTOR-RPT)", () => {
     const data = component.successData();
     expect(data).not.toBeNull();
     expect(data?.sectors).toHaveLength(2);
-    expect(data?.sectors.map((s) => s.id)).toEqual(["public", "private"]);
+    expect(data?.sectors.map(s => s.id)).toEqual(["public", "private"]);
     expect(data?.sectors[0]?.distinctTeacherCount).toBe(3);
     expect(data?.sectors[1]?.distinctTeacherCount).toBe(2);
-    expect(data?.totalDistinctTeacherCount).toBe(5);
+    expect(data).not.toHaveProperty("totalDistinctTeacherCount");
 
     // Tabla accesible
     const compiled = fixture.nativeElement as HTMLElement;
     const results = compiled.querySelector('[data-testid="sector-results"]');
     expect(results).toBeTruthy();
+    expect(results?.tagName).toBe("SECTION");
+    const liveContext = results?.querySelector("output.sector-context");
+    expect(liveContext?.getAttribute("aria-live")).toBe("polite");
+    expect(liveContext?.textContent?.replace(/\s+/g, " ").trim()).toBe(
+      "Período 2026-07-10 a 2026-07-10",
+    );
+    expect(compiled.textContent).not.toMatch(/\btotal\b/i);
     const caption = compiled.querySelector("caption.visually-hidden");
     expect(caption?.textContent?.trim().length ?? 0).toBeGreaterThan(0);
     const headers = compiled.querySelectorAll('th[scope="col"]');
@@ -262,7 +282,7 @@ describe("TeacherCountsBySectorComponent (CT-SECTOR-RPT)", () => {
     });
     component.onSubmit();
     http
-      .expectOne((r) => r.url === sectorUrl)
+      .expectOne(r => r.url === sectorUrl)
       .flush(teacherCountsBySectorFixture);
     fixture.detectChanges();
 
@@ -290,9 +310,7 @@ describe("TeacherCountsBySectorComponent (CT-SECTOR-RPT)", () => {
     component.form.patchValue({ periodStart: "", periodEnd: "" });
     component.onSubmit();
 
-    const req = http.expectOne(
-      (r) => r.url === sectorUrl && r.method === "GET",
-    );
+    const req = http.expectOne(r => r.url === sectorUrl && r.method === "GET");
     expect(req.request.params.has("periodStart")).toBe(false);
     expect(req.request.params.has("periodEnd")).toBe(false);
     req.flush(teacherCountsBySectorFixture);
@@ -308,13 +326,13 @@ describe("TeacherCountsBySectorComponent (CT-SECTOR-RPT)", () => {
     component.onSubmit();
 
     http
-      .expectOne((r) => r.url === sectorUrl && r.method === "GET")
+      .expectOne(r => r.url === sectorUrl && r.method === "GET")
       .flush(emptyTeacherCountsBySectorFixture);
 
     const data = component.successData();
     expect(data).not.toBeNull();
-    expect(data?.totalDistinctTeacherCount).toBe(0);
-    expect(data?.sectors.every((s) => s.distinctTeacherCount === 0)).toBe(true);
+    expect(data?.sectors.every(s => s.distinctTeacherCount === 0)).toBe(true);
+    expect(data).not.toHaveProperty("totalDistinctTeacherCount");
     expect(component.hasError()).toBe(false);
   });
 
@@ -324,7 +342,7 @@ describe("TeacherCountsBySectorComponent (CT-SECTOR-RPT)", () => {
     component.form.patchValue({ periodStart: "2026-07-01", periodEnd: "" });
     component.onSubmit();
 
-    http.expectNone((r) => r.url === sectorUrl);
+    http.expectNone(r => r.url === sectorUrl);
     expect(component.result().status).toBe("idle");
   });
 
@@ -335,9 +353,7 @@ describe("TeacherCountsBySectorComponent (CT-SECTOR-RPT)", () => {
     });
     component.onSubmit();
 
-    const req = http.expectOne(
-      (r) => r.url === sectorUrl && r.method === "GET",
-    );
+    const req = http.expectOne(r => r.url === sectorUrl && r.method === "GET");
     req.flush(apiProblemBadRequestFixture, {
       status: 400,
       statusText: "Bad Request",
@@ -361,9 +377,7 @@ describe("TeacherCountsBySectorComponent (CT-SECTOR-RPT)", () => {
     });
     component.onSubmit();
 
-    const req = http.expectOne(
-      (r) => r.url === sectorUrl && r.method === "GET",
-    );
+    const req = http.expectOne(r => r.url === sectorUrl && r.method === "GET");
     expect(req.request.params.get("periodStart")).toBe("2026-07-10");
     expect(req.request.params.get("periodEnd")).toBe("2026-07-01");
     req.flush(apiProblemPeriodInvalidFixture, {
@@ -395,7 +409,7 @@ describe("TeacherCountsBySectorComponent (CT-SECTOR-RPT)", () => {
     component.onSubmit();
 
     http
-      .expectOne((r) => r.url === sectorUrl)
+      .expectOne(r => r.url === sectorUrl)
       .flush(apiProblemPeriodInvalidFixture, {
         status: 422,
         statusText: "Unprocessable Entity",
@@ -406,7 +420,7 @@ describe("TeacherCountsBySectorComponent (CT-SECTOR-RPT)", () => {
     expect(component.hasError()).toBe(true);
 
     component.onRetry();
-    const retryReq = http.expectOne((r) => r.url === sectorUrl);
+    const retryReq = http.expectOne(r => r.url === sectorUrl);
     retryReq.flush(teacherCountsBySectorFixture);
     expect(component.isSuccess()).toBe(true);
   });
@@ -418,9 +432,7 @@ describe("TeacherCountsBySectorComponent (CT-SECTOR-RPT)", () => {
     });
     component.onSubmit();
 
-    const req = http.expectOne(
-      (r) => r.url === sectorUrl && r.method === "GET",
-    );
+    const req = http.expectOne(r => r.url === sectorUrl && r.method === "GET");
     expect(component.isLoading()).toBe(true);
 
     component.onReset();
@@ -439,8 +451,7 @@ describe("TeacherCountsBySectorComponent (CT-SECTOR-RPT)", () => {
     });
     component.onSubmit();
     const first = http.expectOne(
-      (r) =>
-        r.url === sectorUrl && r.params.get("periodStart") === "2026-07-01",
+      r => r.url === sectorUrl && r.params.get("periodStart") === "2026-07-01",
     );
 
     component.form.patchValue({
@@ -449,8 +460,7 @@ describe("TeacherCountsBySectorComponent (CT-SECTOR-RPT)", () => {
     });
     component.onSubmit();
     const second = http.expectOne(
-      (r) =>
-        r.url === sectorUrl && r.params.get("periodStart") === "2026-08-01",
+      r => r.url === sectorUrl && r.params.get("periodStart") === "2026-08-01",
     );
     expect(first.cancelled).toBe(true);
 

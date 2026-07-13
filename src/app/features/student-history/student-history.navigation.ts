@@ -1,10 +1,11 @@
+/* Copyright (c) 2026. All rights reserved. */
 import { Injectable, inject } from "@angular/core";
 import { Router } from "@angular/router";
 import { studentHistoryFiltersToParams } from "./student-history.mappers";
 import type { StudentHistoryFiltersVm } from "./student-history.vm";
+import { STUDENT_HISTORY_SELECTION_TTL_MS } from "./student-history.constants";
 
 const MAX_VOLATILE_SELECTIONS = 8;
-const SELECTION_TTL_MS = 5 * 60 * 1000;
 
 interface VolatileSelection {
   readonly filters: StudentHistoryFiltersVm;
@@ -70,7 +71,10 @@ export class StudentHistoryNavigationHandoff {
       return null;
     }
     const entry = this.selections.get(selection);
-    return entry ? { ...entry.filters } : null;
+    if (entry === undefined) {
+      return null;
+    }
+    return { ...entry.filters };
   }
 
   private createSelectionToken(): string {
@@ -91,7 +95,7 @@ export class StudentHistoryNavigationHandoff {
   }
 
   private purgeExpired(): void {
-    const expiresBefore = Date.now() - SELECTION_TTL_MS;
+    const expiresBefore = Date.now() - STUDENT_HISTORY_SELECTION_TTL_MS;
     for (const [selection, entry] of this.selections) {
       if (entry.createdAt <= expiresBefore) {
         this.selections.delete(selection);

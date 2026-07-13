@@ -8,15 +8,15 @@ const test = base.extend<{
   apiRequests: async ({}, use) => use([]),
   monitoredPage: async ({ page, apiRequests }, use) => {
     const runtimeFailures: string[] = [];
-    page.on("console", (message) => {
+    page.on("console", message => {
       if (message.type() === "error" || message.type() === "warning") {
         runtimeFailures.push(`console.${message.type()}: ${message.text()}`);
       }
     });
-    page.on("pageerror", (error) => {
+    page.on("pageerror", error => {
       runtimeFailures.push(`pageerror: ${error.message}`);
     });
-    await page.route("http://localhost:5000/api/**", async (route) => {
+    await page.route("http://localhost:5000/api/**", async route => {
       apiRequests.push(`${route.request().method()} ${route.request().url()}`);
       await route.fulfill({
         status: 200,
@@ -89,7 +89,7 @@ test("catalog failure renders an accessible retry state", async ({
 }) => {
   await monitoredPage.route(
     "http://localhost:5000/api/schools",
-    async (route) => {
+    async route => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -97,19 +97,16 @@ test("catalog failure renders an accessible retry state", async ({
       });
     },
   );
-  await monitoredPage.route(
-    "http://localhost:5000/api/grades",
-    async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: "[]",
-      });
-    },
-  );
+  await monitoredPage.route("http://localhost:5000/api/grades", async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: "[]",
+    });
+  });
   await monitoredPage.route(
     "http://localhost:5000/api/academic-years",
-    async (route) => {
+    async route => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",

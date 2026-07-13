@@ -29,17 +29,17 @@
  *   2 — configuración inválida (sin endpoint ni origen)
  */
 
-import { request } from 'node:http';
+import { request } from "node:http";
 
-const DEFAULT_HEALTH_URL = 'http://localhost:5000/health';
-const DEFAULT_PREFLIGHT_URL = 'http://localhost:5000/api/schools';
-const DEFAULT_ORIGIN = 'http://localhost:4200';
+const DEFAULT_HEALTH_URL = "http://localhost:5000/health";
+const DEFAULT_PREFLIGHT_URL = "http://localhost:5000/api/schools";
+const DEFAULT_ORIGIN = "http://localhost:4200";
 const DEFAULT_TIMEOUT_MS = 5000;
 
 /** @type {{ url: string, method?: string, headers?: Record<string,string>, body?: string, timeoutMs?: number }} */
 const options = {
   url: DEFAULT_HEALTH_URL,
-  method: 'GET',
+  method: "GET",
   headers: {},
   timeoutMs: DEFAULT_TIMEOUT_MS,
 };
@@ -49,8 +49,8 @@ const preflight = {
   url: DEFAULT_PREFLIGHT_URL,
   headers: {
     Origin: DEFAULT_ORIGIN,
-    'Access-Control-Request-Method': 'GET',
-    'Access-Control-Request-Headers': 'accept,content-type',
+    "Access-Control-Request-Method": "GET",
+    "Access-Control-Request-Headers": "accept,content-type",
   },
   timeoutMs: DEFAULT_TIMEOUT_MS,
 };
@@ -58,35 +58,32 @@ const preflight = {
 // Parseo mínimo de flags --url= / --preflight= / --origin= / --timeout=
 // (sin dependencias externas, argparse manual).
 for (const arg of process.argv.slice(2)) {
-  if (arg.startsWith('--url=')) {
-    options.url = arg.slice('--url='.length);
-  } else if (arg.startsWith('--preflight=')) {
-    preflight.url = arg.slice('--preflight='.length);
-  } else if (arg.startsWith('--origin=')) {
-    preflight.headers.Origin = arg.slice('--origin='.length);
-  } else if (arg.startsWith('--timeout=')) {
-    const parsed = Number.parseInt(
-      arg.slice('--timeout='.length),
-      10,
-    );
+  if (arg.startsWith("--url=")) {
+    options.url = arg.slice("--url=".length);
+  } else if (arg.startsWith("--preflight=")) {
+    preflight.url = arg.slice("--preflight=".length);
+  } else if (arg.startsWith("--origin=")) {
+    preflight.headers.Origin = arg.slice("--origin=".length);
+  } else if (arg.startsWith("--timeout=")) {
+    const parsed = Number.parseInt(arg.slice("--timeout=".length), 10);
     if (!Number.isNaN(parsed) && parsed > 0) {
       options.timeoutMs = parsed;
       preflight.timeoutMs = parsed;
     }
-  } else if (arg === '--help' || arg === '-h') {
+  } else if (arg === "--help" || arg === "-h") {
     process.stdout.write(
       [
-        'Uso: node scripts/dev-check-backend.mjs [opciones]',
-        '',
-        'Opciones:',
+        "Uso: node scripts/dev-check-backend.mjs [opciones]",
+        "",
+        "Opciones:",
         `  --url=<url>           Endpoint de health (default: ${DEFAULT_HEALTH_URL})`,
         `  --preflight=<url>     Endpoint para CORS preflight (default: ${DEFAULT_PREFLIGHT_URL})`,
         `  --origin=<url>        Origen del frontend (default: ${DEFAULT_ORIGIN})`,
-        '  --timeout=<ms>        Timeout por request (default: 5000)',
-        '',
-        'Códigos de salida: 0 PASS, 1 FAIL, 2 config inválida.',
-        '',
-      ].join('\n'),
+        "  --timeout=<ms>        Timeout por request (default: 5000)",
+        "",
+        "Códigos de salida: 0 PASS, 1 FAIL, 2 config inválida.",
+        "",
+      ].join("\n"),
     );
     process.exit(0);
   } else {
@@ -96,7 +93,7 @@ for (const arg of process.argv.slice(2)) {
 }
 
 if (!options.url) {
-  process.stderr.write('Config inválida: --url vacío\n');
+  process.stderr.write("Config inválida: --url vacío\n");
   process.exit(2);
 }
 
@@ -119,7 +116,7 @@ let exitCode = 0;
  * }>}
  */
 function probe(url, method, headers, timeoutMs) {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     let parsed;
     try {
       parsed = new URL(url);
@@ -127,8 +124,8 @@ function probe(url, method, headers, timeoutMs) {
       resolve({
         status: 0,
         headers: {},
-        body: '',
-        error: `URL inválida: ${err instanceof Error ? err.message : String(err)}`,
+        body: "",
+        error: `URL inválida: ${errorMessage(err)}`,
       });
       return;
     }
@@ -141,21 +138,21 @@ function probe(url, method, headers, timeoutMs) {
         path: `${parsed.pathname}${parsed.search}`,
         headers,
       },
-      (res) => {
+      res => {
         const chunks = [];
-        res.on('data', (chunk) => chunks.push(chunk));
-        res.on('end', () => {
+        res.on("data", chunk => chunks.push(chunk));
+        res.on("end", () => {
           resolve({
             status: res.statusCode ?? 0,
             headers: res.headers,
-            body: Buffer.concat(chunks).toString('utf8'),
+            body: Buffer.concat(chunks).toString("utf8"),
           });
         });
-        res.on('error', (err) => {
+        res.on("error", err => {
           resolve({
             status: res.statusCode ?? 0,
             headers: res.headers,
-            body: '',
+            body: "",
             error: err.message,
           });
         });
@@ -166,13 +163,13 @@ function probe(url, method, headers, timeoutMs) {
       req.destroy(new Error(`timeout después de ${timeoutMs}ms`));
     });
 
-    req.on('error', (err) => {
+    req.on("error", err => {
       resolve({
         status: 0,
         headers: {},
-        body: '',
+        body: "",
         error: err.message,
-        timedOut: err.message.includes('timeout'),
+        timedOut: err.message.includes("timeout"),
       });
     });
 
@@ -180,13 +177,27 @@ function probe(url, method, headers, timeoutMs) {
   });
 }
 
+function errorMessage(error) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
+}
+
+function probeFailureMessage(result) {
+  if (result.timedOut) {
+    return `Timeout: ${result.error}`;
+  }
+  return `Conexión rechazada o error: ${result.error}`;
+}
+
 /** Devuelve true si el header cubre el origen solicitado. */
 function allowsOrigin(headers, origin) {
-  const allow = headers['access-control-allow-origin'];
+  const allow = headers["access-control-allow-origin"];
   if (!allow) {
     return false;
   }
-  if (allow === '*' || allow === origin) {
+  if (allow === "*" || allow === origin) {
     return true;
   }
   // El backend puede devolver el origen exacto entre comillas.
@@ -210,21 +221,17 @@ function logFail(msg) {
 
 // 1) Health check ---------------------------------------------------------
 
-logSection(`Health check: ${options.method ?? 'GET'} ${options.url}`);
+logSection(`Health check: ${options.method ?? "GET"} ${options.url}`);
 
 const healthResult = await probe(
   options.url,
-  options.method ?? 'GET',
+  options.method ?? "GET",
   options.headers,
   options.timeoutMs,
 );
 
 if (healthResult.error) {
-  logFail(
-    healthResult.timedOut
-      ? `Timeout: ${healthResult.error}`
-      : `Conexión rechazada o error: ${healthResult.error}`,
-  );
+  logFail(probeFailureMessage(healthResult));
   exitCode = 1;
 } else if (healthResult.status < 200 || healthResult.status >= 300) {
   logFail(
@@ -234,7 +241,10 @@ if (healthResult.error) {
 } else {
   logPass(`HTTP ${healthResult.status}`);
   if (healthResult.body) {
-    const preview = healthResult.body.replace(/\s+/g, ' ').trim().slice(0, 120);
+    const preview = healthResult.body
+      .replaceAll(/\s+/g, " ")
+      .trim()
+      .slice(0, 120);
     process.stdout.write(`    body: ${preview}\n`);
   }
 }
@@ -247,43 +257,39 @@ logSection(
 
 const preflightResult = await probe(
   preflight.url,
-  'OPTIONS',
+  "OPTIONS",
   preflight.headers,
   preflight.timeoutMs,
 );
 
 if (preflightResult.error) {
-  logFail(
-    preflightResult.timedOut
-      ? `Timeout: ${preflightResult.error}`
-      : `Conexión rechazada o error: ${preflightResult.error}`,
-  );
+  logFail(probeFailureMessage(preflightResult));
   exitCode = 1;
 } else if (preflightResult.status < 200 || preflightResult.status >= 300) {
   logFail(
     `HTTP ${preflightResult.status} (esperado 2xx). El preflight fue rechazado.`,
   );
   exitCode = 1;
-} else if (!allowsOrigin(preflightResult.headers, preflight.headers.Origin)) {
-  const allow = preflightResult.headers['access-control-allow-origin'];
+} else if (allowsOrigin(preflightResult.headers, preflight.headers.Origin)) {
+  logPass(
+    `HTTP ${preflightResult.status}, Access-Control-Allow-Origin=${preflightResult.headers["access-control-allow-origin"]}`,
+  );
+} else {
+  const allow = preflightResult.headers["access-control-allow-origin"];
   logFail(
-    `Access-Control-Allow-Origin ausente o no cubre ${preflight.headers.Origin} (recibido: ${allow ?? '(vacío)'}).`,
+    `Access-Control-Allow-Origin ausente o no cubre ${preflight.headers.Origin} (recibido: ${allow ?? "(vacío)"}).`,
   );
   exitCode = 1;
-} else {
-  logPass(
-    `HTTP ${preflightResult.status}, Access-Control-Allow-Origin=${preflightResult.headers['access-control-allow-origin']}`,
-  );
 }
 
 // Resumen -----------------------------------------------------------------
 
-process.stdout.write('\n');
+process.stdout.write("\n");
 if (exitCode === 0) {
-  process.stdout.write('dev-check-backend: PASS\n');
+  process.stdout.write("dev-check-backend: PASS\n");
 } else {
   process.stderr.write(
-    'dev-check-backend: FAIL — el walkthrough manual (T034) no puede continuar hasta corregir los puntos anteriores.\n',
+    "dev-check-backend: FAIL — el walkthrough manual (T034) no puede continuar hasta corregir los puntos anteriores.\n",
   );
 }
 

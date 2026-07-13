@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 /**
  * ProblemDetails canónico devuelto por el backend para errores 4xx/5xx.
  * Refleja `components/problems.yaml` del contrato OpenAPI.

@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 import { HttpClient, HttpParams } from "@angular/common/http";
 import { Injectable, inject } from "@angular/core";
 import type { Observable } from "rxjs";
@@ -56,7 +57,7 @@ export class TeacherContractsApiService {
     const url = `${this.config.apiBaseUrl}/api/teachers/${params.teacherId}/contracts`;
     return this.http
       .post<readonly TeacherContractResponse[]>(url, params.request)
-      .pipe(map((data) => [...data]));
+      .pipe(map(data => [...data]));
   }
 
   list(
@@ -67,6 +68,6 @@ export class TeacherContractsApiService {
       .get<readonly TeacherContractResponse[]>(url, {
         params: toListParams(params),
       })
-      .pipe(map((data) => [...data]));
+      .pipe(map(data => [...data]));
   }
 }

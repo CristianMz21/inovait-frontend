@@ -175,7 +175,7 @@ describe("StudentHistoryMappers (CT-HIST-MAP)", () => {
 
     it("preserva el orden estable de inscripciones (desc por academicYear.startDate)", () => {
       const vm = studentHistoryResponseToVm(studentHistorySecondYearFixture);
-      expect(vm.enrollments.map((entry) => entry.academicYearName)).toEqual([
+      expect(vm.enrollments.map(entry => entry.academicYearName)).toEqual([
         "2026",
         "2025",
       ]);

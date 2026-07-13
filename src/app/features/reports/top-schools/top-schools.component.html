@@ -50,7 +50,7 @@
         type="submit"
         class="top-submit ec-btn ec-btn--secondary"
         [disabled]="form.invalid || isLoading()"
-        [attr.aria-busy]="isLoading() ? 'true' : 'false'"
+        [attr.aria-busy]="isLoading()"
       >
         @if (isLoading()) {
           Consultando…
@@ -77,15 +77,14 @@
   }
 
   @if (isLoading()) {
-    <p
+    <output
       class="top-status ec-alert ec-alert--info"
-      role="status"
       aria-live="polite"
       data-testid="top-loading"
     >
       <app-icon name="update" />
       <span>Consultando escuelas líderes…</span>
-    </p>
+    </output>
   }
 
   @if (hasError()) {
@@ -130,18 +129,13 @@
   }
 
   @if (isEmpty()) {
-    <div
-      class="top-empty ec-alert ec-alert--info"
-      role="status"
-      aria-live="polite"
-      data-testid="top-empty"
-    >
+    <div class="top-empty ec-alert ec-alert--info" data-testid="top-empty">
       <app-icon name="inbox" />
       <div>
-        <p>
+        <output aria-live="polite">
           El año académico seleccionado no tiene inscripciones. No hay escuelas
           líderes para mostrar.
-        </p>
+        </output>
         <button
           type="button"
           class="ec-btn ec-btn--outline"
@@ -154,23 +148,29 @@
   }
 
   @if (successData(); as data) {
-    <div
+    <section
       class="top-results"
-      role="region"
       aria-labelledby="top-results-title"
       data-testid="top-results"
     >
       <h2 id="top-results-title">Escuelas líderes</h2>
-      <p class="top-context" role="status" aria-live="polite">
+      <output class="top-context" aria-live="polite">
         Año académico <strong>{{ data.academicYearId }}</strong> ·
         {{ data.schools.length }}
-        {{ data.schools.length === 1 ? "escuela líder" : "escuelas líderes" }}
+        {{ schoolNoun(data.schools.length) }}
         @if (data.schools.length > 0) {
           · {{ data.schools[0]?.enrollmentCount }} inscripciones por escuela
         }
-      </p>
+      </output>
 
-      <div class="ec-table">
+      <section class="ec-table" aria-label="Tabla de escuelas líderes">
+        <button
+          type="button"
+          class="ec-table__skip"
+          appTableSkip="top-results-table-end"
+        >
+          Omitir tabla de escuelas líderes
+        </button>
         <table>
           <caption class="visually-hidden">
             Escuelas líderes por matrícula. Lista en el orden estable del
@@ -200,7 +200,14 @@
             }
           </tbody>
         </table>
-      </div>
-    </div>
+      </section>
+      <span
+        id="top-results-table-end"
+        class="ec-table__end visually-hidden"
+        tabindex="-1"
+      >
+        Fin de la tabla de escuelas líderes
+      </span>
+    </section>
   }
 </section>

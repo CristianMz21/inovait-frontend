@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 import {
   ChangeDetectionStrategy,
   Component,
@@ -55,7 +56,7 @@ const DESKTOP_BREAKPOINT_PX = 1024;
 function resolveSectionTitle(url: string): string {
   const path = url.split("?")[0] ?? url;
   return (
-    NAV_ITEMS.find((item) => path.startsWith(item.path))?.label ??
+    NAV_ITEMS.find(item => path.startsWith(item.path))?.label ??
     DEFAULT_SECTION_TITLE
   );
 }
@@ -92,7 +93,7 @@ export class App {
   protected readonly sectionTitle = toSignal(
     this.router.events.pipe(
       filter((event): event is NavigationEnd => event instanceof NavigationEnd),
-      map((event) => resolveSectionTitle(event.urlAfterRedirects)),
+      map(event => resolveSectionTitle(event.urlAfterRedirects)),
     ),
     { initialValue: resolveSectionTitle(this.router.url) },
   );
@@ -164,7 +165,10 @@ export class App {
    * state).
    */
   protected onWindowResize(): void {
-    if (this.drawerOpen() && window.innerWidth >= DESKTOP_BREAKPOINT_PX) {
+    if (
+      this.drawerOpen() &&
+      globalThis.window.innerWidth >= DESKTOP_BREAKPOINT_PX
+    ) {
       this.drawerOpen.set(false);
     }
   }

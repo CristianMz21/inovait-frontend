@@ -51,7 +51,7 @@ describe("EnrollmentApiService", () => {
 
   it("create() invoca POST /api/enrollments con el payload del contrato", () => {
     let received: unknown;
-    service.create(request).subscribe((value) => (received = value));
+    service.create(request).subscribe(value => (received = value));
 
     const req = http.expectOne(
       `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,

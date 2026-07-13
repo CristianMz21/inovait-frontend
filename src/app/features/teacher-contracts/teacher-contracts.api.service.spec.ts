@@ -60,7 +60,7 @@ describe("TeacherContractsApiService (ST-CON-PAYLOAD/LIST)", () => {
   describe("create()", () => {
     it("invoca POST /api/teachers/{id}/contracts con payload completo", () => {
       let received: unknown;
-      service.create(createParams).subscribe((value) => (received = value));
+      service.create(createParams).subscribe(value => (received = value));
 
       const req = http.expectOne(
         `${DEFAULT_API_CONFIG.apiBaseUrl}/api/teachers/${teacherId}/contracts`,
@@ -74,7 +74,7 @@ describe("TeacherContractsApiService (ST-CON-PAYLOAD/LIST)", () => {
 
     it("omite endDate cuando el contrato es vigente", () => {
       let received: unknown;
-      service.create(createParams).subscribe((value) => (received = value));
+      service.create(createParams).subscribe(value => (received = value));
 
       const req = http.expectOne(
         `${DEFAULT_API_CONFIG.apiBaseUrl}/api/teachers/${teacherId}/contracts`,
@@ -91,7 +91,7 @@ describe("TeacherContractsApiService (ST-CON-PAYLOAD/LIST)", () => {
       let error: unknown;
       service.create(createParams).subscribe({
         next: () => undefined,
-        error: (err) => {
+        error: err => {
           error = err;
         },
       });
@@ -117,7 +117,7 @@ describe("TeacherContractsApiService (ST-CON-PAYLOAD/LIST)", () => {
       let error: unknown;
       service.create(createParams).subscribe({
         next: () => undefined,
-        error: (err) => {
+        error: err => {
           error = err;
         },
       });
@@ -143,7 +143,7 @@ describe("TeacherContractsApiService (ST-CON-PAYLOAD/LIST)", () => {
       let error: unknown;
       service.create(createParams).subscribe({
         next: () => undefined,
-        error: (err) => {
+        error: err => {
           error = err;
         },
       });
@@ -169,7 +169,7 @@ describe("TeacherContractsApiService (ST-CON-PAYLOAD/LIST)", () => {
   describe("list()", () => {
     it("invoca GET /api/teachers/{id}/contracts sin asOfDate cuando se omite", () => {
       let received: unknown;
-      service.list({ teacherId }).subscribe((value) => (received = value));
+      service.list({ teacherId }).subscribe(value => (received = value));
 
       const req = http.expectOne(
         `${DEFAULT_API_CONFIG.apiBaseUrl}/api/teachers/${teacherId}/contracts`,
@@ -185,10 +185,10 @@ describe("TeacherContractsApiService (ST-CON-PAYLOAD/LIST)", () => {
       let received: unknown;
       service
         .list({ teacherId, asOfDate: "2026-07-10" })
-        .subscribe((value) => (received = value));
+        .subscribe(value => (received = value));
 
       const req = http.expectOne(
-        (r) =>
+        r =>
           r.url ===
             `${DEFAULT_API_CONFIG.apiBaseUrl}/api/teachers/${teacherId}/contracts` &&
           r.method === "GET",
@@ -201,11 +201,11 @@ describe("TeacherContractsApiService (ST-CON-PAYLOAD/LIST)", () => {
 
     it("mapea 200 [] a colección vacía (no error)", () => {
       let received: unknown;
-      service.list({ teacherId }).subscribe((value) => (received = value));
+      service.list({ teacherId }).subscribe(value => (received = value));
 
       http
         .expectOne(
-          (r) =>
+          r =>
             r.url ===
             `${DEFAULT_API_CONFIG.apiBaseUrl}/api/teachers/${teacherId}/contracts`,
         )
@@ -218,14 +218,14 @@ describe("TeacherContractsApiService (ST-CON-PAYLOAD/LIST)", () => {
       let error: unknown;
       service.list({ teacherId: 9999 }).subscribe({
         next: () => undefined,
-        error: (err) => {
+        error: err => {
           error = err;
         },
       });
 
       http
         .expectOne(
-          (r) =>
+          r =>
             r.url ===
             `${DEFAULT_API_CONFIG.apiBaseUrl}/api/teachers/9999/contracts`,
         )

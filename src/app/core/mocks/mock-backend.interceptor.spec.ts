@@ -84,7 +84,7 @@ describe("mock backend interceptor integration", () => {
     const httpTesting = configure(false);
     const client = TestBed.inject(HttpClient);
     let received: unknown;
-    client.get("/api/schools").subscribe((value) => (received = value));
+    client.get("/api/schools").subscribe(value => (received = value));
 
     httpTesting.expectOne("/api/schools").flush([{ id: 99 }]);
     expect(received).toEqual([{ id: 99 }]);

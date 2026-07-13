@@ -115,7 +115,7 @@ describe("EnrollmentCreateFacade", () => {
     expect(facade.result().status).toBe("loading");
 
     facade.submit(validForm);
-    http.expectNone((request) => request !== first.request);
+    http.expectNone(request => request !== first.request);
     expect(first.cancelled).toBe(false);
 
     first.flush({

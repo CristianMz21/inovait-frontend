@@ -34,7 +34,7 @@ describe("problemDetailsInterceptor", () => {
 
   it("deja pasar 2xx sin transformar", () => {
     let received: unknown;
-    client.get("/api/schools").subscribe((value) => (received = value));
+    client.get("/api/schools").subscribe(value => (received = value));
     const req = http.expectOne("/api/schools");
     req.flush([{ id: 1 }]);
     expect(received).toEqual([{ id: 1 }]);
@@ -44,7 +44,7 @@ describe("problemDetailsInterceptor", () => {
     let received: unknown;
     client.get("/api/x").subscribe({
       next: () => undefined,
-      error: (err) => {
+      error: err => {
         received = err;
       },
     });
@@ -55,6 +55,7 @@ describe("problemDetailsInterceptor", () => {
         title: "Bad Request",
         status: 400,
         code: "invalid_request",
+        detail: "The request body is invalid.",
         errors: { x: ["required"] },
       },
       {
@@ -68,26 +69,33 @@ describe("problemDetailsInterceptor", () => {
     expect(received).toBeInstanceOf(ApiProblemError);
     if (received instanceof ApiProblemError) {
       expect(received.problem.code).toBe("invalid_request");
+      expect(received.problem.detail).toBe("The request body is invalid.");
       expect(received.problem.errors?.["x"]).toEqual(["required"]);
       expect(received.status).toBe(400);
     }
   });
 
-  it("construye un ApiProblem mínimo cuando el cuerpo no es ProblemDetails", () => {
+  it("oculta el detail cuando el cuerpo no es ProblemDetails", () => {
     let received: unknown;
     client.get("/api/y").subscribe({
       next: () => undefined,
-      error: (err) => {
+      error: err => {
         received = err;
       },
     });
     const req = http.expectOne("/api/y");
-    req.flush("oops", { status: 500, statusText: "Server Error" });
+    req.flush("<html>internal server error</html>", {
+      status: 500,
+      statusText: "Server Error",
+    });
     expect(received).toBeInstanceOf(ApiProblemError);
     if (received instanceof ApiProblemError) {
-      expect(received.problem.status).toBe(500);
-      expect(received.problem.code).toBe("unknown_error");
-      expect(received.problem.detail).toBe("oops");
+      expect(received.problem).toMatchObject({
+        status: 500,
+        code: "unknown_error",
+        title: "Error inesperado",
+        detail: null,
+      });
     }
   });
 });

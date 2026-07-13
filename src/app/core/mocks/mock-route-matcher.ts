@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 import type { MockHttpMethod, MockRoute } from "./mock-types";
 
 const pathSegments = (path: string): readonly string[] =>
@@ -25,12 +26,12 @@ export const extractPathParams = (
   const patternParts = pathSegments(pattern);
   const pathParts = pathSegments(path);
   const params: Record<string, string> = {};
-  patternParts.forEach((part, index) => {
+  for (const [index, part] of patternParts.entries()) {
     const value = pathParts[index];
     if (isPlaceholder(part) && value !== undefined) {
       params[part.slice(1, -1)] = decodeURIComponent(value);
     }
-  });
+  }
   return params;
 };
 
@@ -40,5 +41,5 @@ export const matchRoute = (
   routes: readonly MockRoute[],
 ): MockRoute | undefined =>
   routes.find(
-    (route) => route.method === method && matchPath(route.pattern, path),
+    route => route.method === method && matchPath(route.pattern, path),
   );

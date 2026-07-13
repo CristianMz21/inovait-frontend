@@ -66,7 +66,7 @@ describe("EnrollmentCreateComponent", () => {
   /** Resuelve el GET /api/class-groups disparado por onGradeChange. */
   function flushClassGroupsRequest(): void {
     const req = http.expectOne(
-      (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/class-groups`,
+      r => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/class-groups`,
     );
     req.flush(classGroupsFixture);
   }
@@ -99,7 +99,7 @@ describe("EnrollmentCreateComponent", () => {
     fixture.detectChanges();
     const host = fixture.nativeElement as HTMLElement;
     expect(host.textContent).toContain("No se pudieron cargar escuelas");
-    const retry = Array.from(host.querySelectorAll("button")).find((button) =>
+    const retry = Array.from(host.querySelectorAll("button")).find(button =>
       button.textContent?.includes("Reintentar escuelas"),
     );
 
@@ -132,7 +132,7 @@ describe("EnrollmentCreateComponent", () => {
     component.form.controls.gradeId.setValue(1);
     http
       .expectOne(
-        (candidate) =>
+        candidate =>
           candidate.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/class-groups`,
       )
       .flush(apiProblemNotFoundFixture, {
@@ -160,9 +160,17 @@ describe("EnrollmentCreateComponent", () => {
         classGroupsFixture,
       ],
     ] as const) {
-      buttons.find((button) => button.textContent?.includes(label))?.click();
-      http.expectOne((candidate) => candidate.url === url).flush(response);
+      buttons.find(button => button.textContent?.includes(label))?.click();
+      http.expectOne(candidate => candidate.url === url).flush(response);
     }
+
+    expect(component.academicYearOptions()).toHaveLength(
+      academicYearsFixture.length,
+    );
+    expect(component.gradeOptions()).toHaveLength(gradesFixture.length);
+    expect(component.classGroupOptions()).toHaveLength(
+      classGroupsFixture.length,
+    );
   });
 
   it("bloquea niveles inferiores hasta seleccionar el padre (School → Year → Grade → Group)", () => {
@@ -222,7 +230,7 @@ describe("EnrollmentCreateComponent", () => {
     component.form.controls.gradeId.setValue(1);
 
     const req = http.expectOne(
-      (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/class-groups`,
+      r => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/class-groups`,
     );
     expect(req.request.params.get("schoolId")).toBe("1");
     expect(req.request.params.get("gradeId")).toBe("1");
@@ -240,7 +248,7 @@ describe("EnrollmentCreateComponent", () => {
     component.form.controls.academicYearId.setValue(2);
     component.form.controls.gradeId.setValue(1);
     const first = http.expectOne(
-      (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/class-groups`,
+      r => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/class-groups`,
     );
 
     component.form.controls.schoolId.setValue(2);
@@ -257,7 +265,7 @@ describe("EnrollmentCreateComponent", () => {
     component.form.controls.academicYearId.setValue(2);
     component.form.controls.gradeId.setValue(1);
     const request = http.expectOne(
-      (candidate) =>
+      candidate =>
         candidate.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/class-groups`,
     );
 
@@ -300,6 +308,56 @@ describe("EnrollmentCreateComponent", () => {
     }
   });
 
+  it("mantiene el éxito visible, reinicia la matrícula y enfoca el primer control", async () => {
+    flushInitialCatalogs();
+    component.form.patchValue({
+      documentType: "DNI",
+      documentNumber: "99.001.101",
+      firstNames: "Ana María",
+      lastNames: "Solís",
+      birthDate: "2018-07-10",
+      schoolId: 1,
+      academicYearId: 2,
+      gradeId: 1,
+    });
+    flushClassGroupsRequest();
+    component.form.controls.classGroupId.setValue(10);
+    component.onSubmit();
+
+    http
+      .expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`)
+      .flush(createEnrollmentResponseFixture);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const documentType = host.querySelector<HTMLSelectElement>(
+      "#enrollment-document-type",
+    );
+    expect(
+      host.querySelector("[data-testid='enrollment-success']"),
+    ).not.toBeNull();
+    expect(host.textContent).toContain("Ana María Solís");
+    expect(component.result().status).toBe("success");
+    expect(component.form.getRawValue()).toEqual({
+      documentType: "",
+      documentNumber: "",
+      firstNames: "",
+      lastNames: "",
+      birthDate: "",
+      schoolId: null,
+      academicYearId: null,
+      gradeId: null,
+      classGroupId: null,
+    });
+    expect(component.form.controls.academicYearId.disabled).toBe(true);
+    expect(component.form.controls.gradeId.disabled).toBe(true);
+    expect(component.form.controls.classGroupId.disabled).toBe(true);
+    expect(documentType).not.toBeNull();
+    expect(host.ownerDocument.activeElement).toBe(documentType);
+  });
+
   it("submit inválido no genera POST y marca todos los campos como touched", () => {
     flushInitialCatalogs();
     component.onSubmit();
@@ -326,6 +384,16 @@ describe("EnrollmentCreateComponent", () => {
 
     expect(component.form.controls.birthDate.hasError("futureDate")).toBe(true);
     http.expectNone(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`);
+  });
+
+  it("rechaza una fecha calendario inexistente", () => {
+    flushInitialCatalogs();
+
+    component.form.controls.birthDate.setValue("2026-02-30");
+
+    expect(
+      component.form.controls.birthDate.hasError("invalidCalendarDate"),
+    ).toBe(true);
   });
 
   it("submit con 409 expone error mapeado", () => {
@@ -355,6 +423,86 @@ describe("EnrollmentCreateComponent", () => {
 
     expect(component.hasError()).toBe(true);
     expect(component.errorProblem()?.code).toBe("enrollment_conflict");
+  });
+
+  it("mapea errores de campo canónicos, conserva desconocidos y enfoca el primero", async () => {
+    flushInitialCatalogs();
+    component.form.patchValue({
+      documentType: "DNI",
+      documentNumber: "99.001.101",
+      firstNames: "Ana María",
+      lastNames: "Solís",
+      birthDate: "2018-07-10",
+      schoolId: 1,
+      academicYearId: 2,
+      gradeId: 1,
+    });
+    flushClassGroupsRequest();
+    component.form.controls.classGroupId.setValue(10);
+    component.onSubmit();
+
+    http.expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`).flush(
+      {
+        type: "https://inovait.local/problems/invalid-request",
+        title: "La solicitud no es válida",
+        status: 400,
+        code: "invalid_request",
+        errors: {
+          SCHOOLID: ["La escuela no es válida."],
+          "Student.DocumentNumber": ["El documento ya no es válido."],
+          auditReference: ["No se pudo validar la referencia externa."],
+        },
+      },
+      {
+        status: 400,
+        statusText: "Bad Request",
+        headers: new HttpHeaders({
+          "Content-Type": "application/problem+json",
+        }),
+      },
+    );
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const documentNumber = host.querySelector<HTMLInputElement>(
+      "#enrollment-document-number",
+    );
+    const documentNumberError = host.querySelector<HTMLElement>(
+      "#enrollment-document-number-errors",
+    );
+    const school = host.querySelector<HTMLSelectElement>(
+      "#enrollment-school-id",
+    );
+    expect(component.form.controls.documentNumber.hasError("server")).toBe(
+      true,
+    );
+    expect(component.form.controls.schoolId.hasError("server")).toBe(true);
+    expect(documentNumber?.getAttribute("aria-invalid")).toBe("true");
+    expect(documentNumber?.getAttribute("aria-describedby")).toContain(
+      "enrollment-document-number-errors",
+    );
+    expect(documentNumberError?.textContent).toContain(
+      "El documento ya no es válido.",
+    );
+    expect(school?.getAttribute("aria-invalid")).toBe("true");
+    expect(host.textContent).toContain("auditReference");
+    expect(host.textContent).toContain(
+      "No se pudo validar la referencia externa.",
+    );
+    expect(host.ownerDocument.activeElement).toBe(documentNumber);
+
+    component.onRetry();
+
+    expect(component.form.controls.documentNumber.hasError("server")).toBe(
+      false,
+    );
+    const retryRequest = http.expectOne(
+      `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
+    );
+    expect(retryRequest.request.method).toBe("POST");
+    retryRequest.flush(createEnrollmentResponseFixture);
   });
 
   it("reset() limpia resultado y valores del formulario", () => {

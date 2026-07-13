@@ -68,6 +68,27 @@ describe("TeacherContractsMappers", () => {
       ).toBe(false);
     });
 
+    it("valida fechas calendario reales, incluidos años bisiestos", () => {
+      expect(
+        teacherContractsFormIsValid({
+          ...validForm,
+          startDate: "2026-02-30",
+        }),
+      ).toBe(false);
+      expect(
+        teacherContractsFormIsValid({
+          ...validForm,
+          startDate: "2028-02-29",
+        }),
+      ).toBe(true);
+      expect(
+        teacherContractsFormIsValid({
+          ...validForm,
+          startDate: "2027-02-29",
+        }),
+      ).toBe(false);
+    });
+
     it("rechaza cuando endDate no tiene formato YYYY-MM-DD", () => {
       expect(
         teacherContractsFormIsValid({ ...validForm, endDate: "foo" }),

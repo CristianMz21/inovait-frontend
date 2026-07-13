@@ -15,19 +15,19 @@ const test = base.extend<{
 }>({
   monitoredPage: async ({ page }, use) => {
     const runtimeFailures: string[] = [];
-    page.on("console", (message) => {
+    page.on("console", message => {
       if (message.type() === "error" || message.type() === "warning") {
         runtimeFailures.push(`console.${message.type()}: ${message.text()}`);
       }
     });
-    page.on("pageerror", (error) => {
+    page.on("pageerror", error => {
       runtimeFailures.push(`pageerror: ${error.message}`);
     });
 
     await use(page);
 
     const unexpectedFailures = runtimeFailures.filter(
-      (failure) => failure !== EXPECTED_NETWORK_LOG,
+      failure => failure !== EXPECTED_NETWORK_LOG,
     );
     expect(
       unexpectedFailures,
@@ -41,7 +41,7 @@ test("history 404 renders an explicit error state, never a silent empty", async 
 }) => {
   await monitoredPage.route(
     "http://localhost:5000/api/students/*/*/history",
-    async (route) => {
+    async route => {
       await route.fulfill({
         status: 404,
         contentType: "application/problem+json",

@@ -22,8 +22,15 @@ import {
   studentHistorySecondYearFixture,
 } from "../../../testing/fixtures";
 import { StudentHistoryComponent } from "./student-history.component";
+import { STUDENT_HISTORY_REMOTE_STATUS } from "./student-history.constants";
 
 const baseUrl = `${DEFAULT_API_CONFIG.apiBaseUrl}/api/students/DNI/99.001.101/history`;
+const alternateHistoryUrl = `${DEFAULT_API_CONFIG.apiBaseUrl}/api/students/DNI/88.200.300/history`;
+const CURRENT_ACADEMIC_YEAR_START_DATE = "2026-03-02";
+const HTTP_BAD_REQUEST_STATUS = 400;
+const HTTP_BAD_REQUEST_STATUS_TEXT = "Bad Request";
+const HTTP_NOT_FOUND_STATUS = 404;
+const HTTP_NOT_FOUND_STATUS_TEXT = "Not Found";
 
 describe("StudentHistoryComponent (CT-HIST-COMP)", () => {
   let http: HttpTestingController;
@@ -85,7 +92,7 @@ describe("StudentHistoryComponent (CT-HIST-COMP)", () => {
     component.onSubmit();
     fixture.detectChanges();
     expect(component.form.touched).toBe(true);
-    http.expectNone((r) => r.url.startsWith(baseUrl.split("/DNI")[0]));
+    http.expectNone(r => r.url.startsWith(baseUrl.split("/DNI")[0]));
   });
 
   it("success muestra la línea de tiempo con <ol>, <time> y asignaciones preservadas", () => {
@@ -98,11 +105,11 @@ describe("StudentHistoryComponent (CT-HIST-COMP)", () => {
 
     expect(
       (fixture.nativeElement as HTMLElement).querySelector(
-        '[data-testid="history-loading"][role="status"]',
+        'output[data-testid="history-loading"]',
       ),
     ).toBeTruthy();
 
-    http.expectOne((r) => r.url === baseUrl).flush(studentHistoryFixture);
+    http.expectOne(r => r.url === baseUrl).flush(studentHistoryFixture);
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
@@ -111,11 +118,14 @@ describe("StudentHistoryComponent (CT-HIST-COMP)", () => {
     const items = compiled.querySelectorAll("li.history-entry");
     expect(items.length).toBe(1);
     const time = compiled.querySelector("time");
-    expect(time?.getAttribute("datetime")).toBe("2026-03-02");
+    expect(time?.getAttribute("datetime")).toBe(
+      CURRENT_ACADEMIC_YEAR_START_DATE,
+    );
     expect(compiled.querySelectorAll(".history-assignment").length).toBe(1);
     expect(compiled.querySelector('[role="alert"]')).toBeNull();
 
     const identityMeta = compiled.querySelector(".history-identity-meta");
+    expect(compiled.querySelector("output.history-context")).toBeTruthy();
     expect(identityMeta?.textContent).toContain("2018-07-10");
     expect(identityMeta?.textContent).toContain("DNI");
     expect(identityMeta?.textContent).toContain("99.001.101");
@@ -129,7 +139,7 @@ describe("StudentHistoryComponent (CT-HIST-COMP)", () => {
     component.onSubmit();
     fixture.detectChanges();
     http
-      .expectOne((r) => r.url === baseUrl)
+      .expectOne(r => r.url === baseUrl)
       .flush(studentHistorySecondYearFixture);
     fixture.detectChanges();
 
@@ -142,7 +152,9 @@ describe("StudentHistoryComponent (CT-HIST-COMP)", () => {
     expect(headings[0]?.textContent).toContain("2026");
     expect(headings[1]?.textContent).toContain("2025");
     const times = compiled.querySelectorAll("time");
-    expect(times[0]?.getAttribute("datetime")).toBe("2026-03-02");
+    expect(times[0]?.getAttribute("datetime")).toBe(
+      CURRENT_ACADEMIC_YEAR_START_DATE,
+    );
     expect(times[1]?.getAttribute("datetime")).toBe("2025-03-03");
     const assignmentsYear1 = items[0]?.querySelectorAll(".history-assignment");
     expect(assignmentsYear1?.length).toBe(2);
@@ -156,7 +168,7 @@ describe("StudentHistoryComponent (CT-HIST-COMP)", () => {
     component.onSubmit();
     fixture.detectChanges();
     http
-      .expectOne((r) => r.url === baseUrl)
+      .expectOne(r => r.url === baseUrl)
       .flush(studentHistorySecondYearFixture);
     fixture.detectChanges();
 
@@ -189,11 +201,7 @@ describe("StudentHistoryComponent (CT-HIST-COMP)", () => {
     component.onSubmit();
     fixture.detectChanges();
     http
-      .expectOne(
-        (r) =>
-          r.url ===
-          `${DEFAULT_API_CONFIG.apiBaseUrl}/api/students/DNI/88.200.300/history`,
-      )
+      .expectOne(r => r.url === alternateHistoryUrl)
       .flush(studentHistoryNoAssignmentsFixture);
     fixture.detectChanges();
 
@@ -210,19 +218,16 @@ describe("StudentHistoryComponent (CT-HIST-COMP)", () => {
     component.onSubmit();
     fixture.detectChanges();
     http
-      .expectOne(
-        (r) =>
-          r.url ===
-          `${DEFAULT_API_CONFIG.apiBaseUrl}/api/students/DNI/88.200.300/history`,
-      )
+      .expectOne(r => r.url === alternateHistoryUrl)
       .flush(emptyStudentHistoryFixture);
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
     const empty = compiled.querySelector(
-      '[data-testid="history-empty"][role="status"]',
+      'section[data-testid="history-empty"]',
     );
     expect(empty).toBeTruthy();
+    expect(empty?.querySelector("output")).toBeTruthy();
     expect(empty?.querySelector("button")?.textContent?.trim()).toBe(
       "Reintentar",
     );
@@ -237,10 +242,10 @@ describe("StudentHistoryComponent (CT-HIST-COMP)", () => {
     component.onSubmit();
     fixture.detectChanges();
     http
-      .expectOne((r) => r.url === baseUrl)
+      .expectOne(r => r.url === baseUrl)
       .flush(apiProblemStudentNotFoundFixture, {
-        status: 404,
-        statusText: "Not Found",
+        status: HTTP_NOT_FOUND_STATUS,
+        statusText: HTTP_NOT_FOUND_STATUS_TEXT,
         headers: new HttpHeaders({
           "Content-Type": "application/problem+json",
         }),
@@ -265,10 +270,10 @@ describe("StudentHistoryComponent (CT-HIST-COMP)", () => {
     component.onSubmit();
     fixture.detectChanges();
     http
-      .expectOne((r) => r.url === baseUrl)
+      .expectOne(r => r.url === baseUrl)
       .flush(apiProblemHistoryBadRequestFixture, {
-        status: 400,
-        statusText: "Bad Request",
+        status: HTTP_BAD_REQUEST_STATUS,
+        statusText: HTTP_BAD_REQUEST_STATUS_TEXT,
         headers: new HttpHeaders({
           "Content-Type": "application/problem+json",
         }),
@@ -290,10 +295,10 @@ describe("StudentHistoryComponent (CT-HIST-COMP)", () => {
     component.onSubmit();
     fixture.detectChanges();
     http
-      .expectOne((r) => r.url === baseUrl)
+      .expectOne(r => r.url === baseUrl)
       .flush(apiProblemStudentNotFoundFixture, {
-        status: 404,
-        statusText: "Not Found",
+        status: HTTP_NOT_FOUND_STATUS,
+        statusText: HTTP_NOT_FOUND_STATUS_TEXT,
         headers: new HttpHeaders({
           "Content-Type": "application/problem+json",
         }),
@@ -303,7 +308,7 @@ describe("StudentHistoryComponent (CT-HIST-COMP)", () => {
 
     component.onRetry();
     fixture.detectChanges();
-    const retryReq = http.expectOne((r) => r.url === baseUrl);
+    const retryReq = http.expectOne(r => r.url === baseUrl);
     retryReq.flush(studentHistoryFixture);
     fixture.detectChanges();
 
@@ -319,11 +324,7 @@ describe("StudentHistoryComponent (CT-HIST-COMP)", () => {
     component.onSubmit();
     fixture.detectChanges();
     http
-      .expectOne(
-        (r) =>
-          r.url ===
-          `${DEFAULT_API_CONFIG.apiBaseUrl}/api/students/DNI/88.200.300/history`,
-      )
+      .expectOne(r => r.url === alternateHistoryUrl)
       .flush(emptyStudentHistoryFixture);
     fixture.detectChanges();
     expect(component.isEmpty()).toBe(true);
@@ -331,11 +332,7 @@ describe("StudentHistoryComponent (CT-HIST-COMP)", () => {
     component.onRetry();
     fixture.detectChanges();
     http
-      .expectOne(
-        (r) =>
-          r.url ===
-          `${DEFAULT_API_CONFIG.apiBaseUrl}/api/students/DNI/88.200.300/history`,
-      )
+      .expectOne(r => r.url === alternateHistoryUrl)
       .flush(studentHistoryFixture);
     fixture.detectChanges();
 
@@ -349,13 +346,13 @@ describe("StudentHistoryComponent (CT-HIST-COMP)", () => {
     });
     component.onSubmit();
     fixture.detectChanges();
-    const req = http.expectOne((r) => r.url === baseUrl);
+    const req = http.expectOne(r => r.url === baseUrl);
     expect(component.isLoading()).toBe(true);
 
     component.onReset();
     fixture.detectChanges();
     expect(req.cancelled).toBe(true);
-    expect(component.result().status).toBe("idle");
+    expect(component.result().status).toBe(STUDENT_HISTORY_REMOTE_STATUS.idle);
     expect(component.form.controls.documentType.value).toBe("");
     expect(component.form.controls.documentNumber.value).toBe("");
   });
@@ -367,16 +364,12 @@ describe("StudentHistoryComponent (CT-HIST-COMP)", () => {
     });
     component.onSubmit();
     fixture.detectChanges();
-    const first = http.expectOne((r) => r.url === baseUrl);
+    const first = http.expectOne(r => r.url === baseUrl);
 
     component.form.patchValue({ documentNumber: "88.200.300" });
     component.onSubmit();
     fixture.detectChanges();
-    const second = http.expectOne(
-      (r) =>
-        r.url ===
-        `${DEFAULT_API_CONFIG.apiBaseUrl}/api/students/DNI/88.200.300/history`,
-    );
+    const second = http.expectOne(r => r.url === alternateHistoryUrl);
     expect(first.cancelled).toBe(true);
 
     second.flush(studentHistoryFixture);
@@ -390,7 +383,7 @@ describe("StudentHistoryComponent (CT-HIST-COMP)", () => {
       documentNumber: "99.001.101",
     });
     component.onSubmit();
-    const request = http.expectOne((candidate) => candidate.url === baseUrl);
+    const request = http.expectOne(candidate => candidate.url === baseUrl);
 
     fixture.destroy();
 
@@ -399,7 +392,7 @@ describe("StudentHistoryComponent (CT-HIST-COMP)", () => {
 
   it("incluye media query 320 px, prefers-reduced-motion y tokens de contraste", () => {
     const css = Array.from(document.head.querySelectorAll("style"))
-      .map((style) => style.textContent ?? "")
+      .map(style => style.textContent ?? "")
       .join("\n");
     expect(css).toContain("max-width: 320px");
     expect(css).toContain("prefers-reduced-motion");

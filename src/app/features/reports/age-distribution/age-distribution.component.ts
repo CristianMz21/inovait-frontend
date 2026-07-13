@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 import {
   ChangeDetectionStrategy,
   Component,
@@ -19,6 +20,7 @@ import {
 import { CatalogFacade } from "../../../core/catalogs/catalog.facade";
 import { CatalogStatusComponent } from "../../../core/catalogs/catalog-status.component";
 import { AppIconComponent } from "../../../layout/educore-shell/app-icon.component";
+import { TableSkipDirective } from "../../../layout/educore-shell/table-skip.directive";
 import type { RemoteState } from "../../../core/api/remote-state";
 import { ReportFacade } from "../report.facade";
 import { ageDistributionFiltersToParams } from "../report.mappers";
@@ -31,6 +33,18 @@ import type {
 
 const requiredValidator: ValidatorFn = (control: AbstractControl<unknown>) =>
   Validators.required(control);
+
+const SCHOOL_SECTOR_LABELS: Readonly<Record<"Public" | "Private", string>> = {
+  Public: "Público",
+  Private: "Privado",
+};
+
+function emptyDateToNull(value: string): string | null {
+  if (value.length === 0) {
+    return null;
+  }
+  return value;
+}
 
 interface AgeFiltersFormShape {
   academicYearId: FormControl<number | null>;
@@ -66,7 +80,12 @@ type AgeFiltersFormGroup = FormGroup<AgeFiltersFormShape>;
 @Component({
   selector: "app-age-distribution",
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, CatalogStatusComponent, AppIconComponent],
+  imports: [
+    ReactiveFormsModule,
+    CatalogStatusComponent,
+    AppIconComponent,
+    TableSkipDirective,
+  ],
   providers: [ReportFacade],
   templateUrl: "./age-distribution.component.html",
   styleUrl: "./age-distribution.component.scss",
@@ -90,21 +109,27 @@ export class AgeDistributionComponent implements OnInit {
   });
 
   readonly academicYearOptions = computed(() =>
-    this.mapOptions(this.catalog.academicYearsState(), (year) => ({
-      value: year.id,
-      label: year.isCurrent ? `${year.name} (actual)` : year.name,
-    })),
+    this.mapOptions(this.catalog.academicYearsState(), year => {
+      let label = year.name;
+      if (year.isCurrent) {
+        label = `${year.name} (actual)`;
+      }
+      return {
+        value: year.id,
+        label,
+      };
+    }),
   );
 
   readonly schoolOptions = computed(() =>
-    this.mapOptions(this.catalog.schoolsState(), (school) => ({
+    this.mapOptions(this.catalog.schoolsState(), school => ({
       value: school.id,
-      label: `${school.name} · ${school.sector === "Public" ? "Público" : "Privado"}`,
+      label: `${school.name} · ${SCHOOL_SECTOR_LABELS[school.sector]}`,
     })),
   );
 
   readonly gradeOptions = computed(() =>
-    this.mapOptions(this.catalog.gradesState(), (grade) => ({
+    this.mapOptions(this.catalog.gradesState(), grade => ({
       value: grade.id,
       label: grade.name,
     })),
@@ -117,12 +142,18 @@ export class AgeDistributionComponent implements OnInit {
 
   readonly successData = computed<AgeDistributionVm | null>(() => {
     const state = this.result();
-    return state.status === "success" ? state.data : null;
+    if (state.status === "success") {
+      return state.data;
+    }
+    return null;
   });
 
   readonly errorProblem = computed(() => {
     const state = this.result();
-    return state.status === "error" ? state.problem : null;
+    if (state.status === "error") {
+      return state.problem;
+    }
+    return null;
   });
 
   readonly errorFields = computed(() => {
@@ -216,7 +247,7 @@ export class AgeDistributionComponent implements OnInit {
     const raw = this.form.getRawValue();
     return {
       academicYearId: raw.academicYearId,
-      asOfDate: raw.asOfDate.length === 0 ? null : raw.asOfDate,
+      asOfDate: emptyDateToNull(raw.asOfDate),
       schoolId: raw.schoolId,
       gradeId: raw.gradeId,
     };

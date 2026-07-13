@@ -21,6 +21,7 @@ const baseParams: ListEnrollmentsParams = {
   gradeId: 1,
   academicYearId: 2,
 };
+const REFERENCE_DATE = "2026-07-10";
 
 describe("StudentSearchApiService", () => {
   let service: StudentSearchApiService;
@@ -45,10 +46,10 @@ describe("StudentSearchApiService", () => {
 
   it("list() invoca GET /api/enrollments con los tres filtros obligatorios", () => {
     let received: unknown;
-    service.list(baseParams).subscribe((value) => (received = value));
+    service.list(baseParams).subscribe(value => (received = value));
 
     const req = http.expectOne(
-      (r) =>
+      r =>
         r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments` &&
         r.method === "GET",
     );
@@ -64,13 +65,13 @@ describe("StudentSearchApiService", () => {
   it("list() envía asOfDate sólo cuando la operadora lo define", () => {
     let received: unknown;
     service
-      .list({ ...baseParams, asOfDate: "2026-07-10" })
-      .subscribe((value) => (received = value));
+      .list({ ...baseParams, asOfDate: REFERENCE_DATE })
+      .subscribe(value => (received = value));
 
     const req = http.expectOne(
-      (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
+      r => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/enrollments`,
     );
-    expect(req.request.params.get("asOfDate")).toBe("2026-07-10");
+    expect(req.request.params.get("asOfDate")).toBe(REFERENCE_DATE);
     req.flush([]);
 
     expect(received).toEqual([]);

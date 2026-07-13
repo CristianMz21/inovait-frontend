@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 /**
  * Respuesta canónica de `getDistinctTeacherCountsBySector` (operationId
  * declarado en `paths/reports.yaml#/api/reports/teacher-counts-by-sector`).

@@ -33,16 +33,14 @@
   />
 
   @if (successData(); as success) {
-    <div
-      class="enrollment-success ec-card"
-      role="status"
-      aria-live="polite"
-      data-testid="enrollment-success"
-    >
+    <div class="enrollment-success ec-card" data-testid="enrollment-success">
       <div class="enrollment-success__header ec-alert ec-alert--success">
         <app-icon name="check_circle" />
         <h2>Inscripción registrada</h2>
       </div>
+      <output class="visually-hidden" aria-live="polite">
+        Inscripción registrada para {{ success.fullName }}.
+      </output>
       <dl class="enrollment-summary">
         <div>
           <dt>Identificador de inscripción</dt>
@@ -58,7 +56,7 @@
         </div>
         <div>
           <dt>Identidad reutilizada</dt>
-          <dd>{{ success.studentReused ? "Sí" : "No" }}</dd>
+          <dd>{{ studentReusedLabel(success.studentReused) }}</dd>
         </div>
         <div>
           <dt>Escuela</dt>
@@ -77,231 +75,369 @@
           <dd>{{ success.classGroupCode }}</dd>
         </div>
       </dl>
+    </div>
+  }
+
+  <form
+    class="enrollment-form"
+    [formGroup]="form"
+    (ngSubmit)="onSubmit()"
+    novalidate
+    aria-label="Formulario de nueva matrícula"
+    aria-describedby="enrollment-lede"
+  >
+    <fieldset class="ec-card" [disabled]="isSubmitting()">
+      <legend>Datos del estudiante</legend>
+
+      <label class="enrollment-field ec-field">
+        <span>Tipo de documento</span>
+        <select
+          id="enrollment-document-type"
+          formControlName="documentType"
+          required
+          aria-required="true"
+          [attr.aria-invalid]="isFieldInvalid('documentType') ? 'true' : null"
+          [attr.aria-describedby]="
+            isFieldInvalid('documentType')
+              ? 'enrollment-document-type-errors'
+              : null
+          "
+        >
+          <option value="" disabled>Seleccione…</option>
+          @for (opt of documentTypes; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+        @if (fieldErrorMessages("documentType"); as messages) {
+          @if (messages.length > 0) {
+            <span id="enrollment-document-type-errors" class="ec-field-error">
+              @for (message of messages; track $index) {
+                <span class="enrollment-field-error-message">{{
+                  message
+                }}</span>
+              }
+            </span>
+          }
+        }
+      </label>
+
+      <label class="enrollment-field ec-field">
+        <span>Número de documento</span>
+        <input
+          id="enrollment-document-number"
+          type="text"
+          formControlName="documentNumber"
+          required
+          aria-required="true"
+          autocomplete="off"
+          inputmode="text"
+          maxlength="32"
+          [attr.aria-invalid]="isFieldInvalid('documentNumber') ? 'true' : null"
+          [attr.aria-describedby]="
+            isFieldInvalid('documentNumber')
+              ? 'enrollment-document-number-errors'
+              : null
+          "
+        />
+        @if (fieldErrorMessages("documentNumber"); as messages) {
+          @if (messages.length > 0) {
+            <span id="enrollment-document-number-errors" class="ec-field-error">
+              @for (message of messages; track $index) {
+                <span class="enrollment-field-error-message">{{
+                  message
+                }}</span>
+              }
+            </span>
+          }
+        }
+      </label>
+
+      <label class="enrollment-field ec-field">
+        <span>Nombres</span>
+        <input
+          id="enrollment-first-names"
+          type="text"
+          formControlName="firstNames"
+          required
+          aria-required="true"
+          autocomplete="off"
+          maxlength="120"
+          [attr.aria-invalid]="isFieldInvalid('firstNames') ? 'true' : null"
+          [attr.aria-describedby]="
+            isFieldInvalid('firstNames')
+              ? 'enrollment-first-names-errors'
+              : null
+          "
+        />
+        @if (fieldErrorMessages("firstNames"); as messages) {
+          @if (messages.length > 0) {
+            <span id="enrollment-first-names-errors" class="ec-field-error">
+              @for (message of messages; track $index) {
+                <span class="enrollment-field-error-message">{{
+                  message
+                }}</span>
+              }
+            </span>
+          }
+        }
+      </label>
+
+      <label class="enrollment-field ec-field">
+        <span>Apellidos</span>
+        <input
+          id="enrollment-last-names"
+          type="text"
+          formControlName="lastNames"
+          required
+          aria-required="true"
+          autocomplete="off"
+          maxlength="120"
+          [attr.aria-invalid]="isFieldInvalid('lastNames') ? 'true' : null"
+          [attr.aria-describedby]="
+            isFieldInvalid('lastNames') ? 'enrollment-last-names-errors' : null
+          "
+        />
+        @if (fieldErrorMessages("lastNames"); as messages) {
+          @if (messages.length > 0) {
+            <span id="enrollment-last-names-errors" class="ec-field-error">
+              @for (message of messages; track $index) {
+                <span class="enrollment-field-error-message">{{
+                  message
+                }}</span>
+              }
+            </span>
+          }
+        }
+      </label>
+
+      <label class="enrollment-field ec-field">
+        <span>Fecha de nacimiento</span>
+        <input
+          id="enrollment-birth-date"
+          type="date"
+          formControlName="birthDate"
+          required
+          aria-required="true"
+          [attr.aria-invalid]="isFieldInvalid('birthDate') ? 'true' : null"
+          [attr.aria-describedby]="
+            isFieldInvalid('birthDate') ? 'enrollment-birth-date-errors' : null
+          "
+        />
+        @if (fieldErrorMessages("birthDate"); as messages) {
+          @if (messages.length > 0) {
+            <span id="enrollment-birth-date-errors" class="ec-field-error">
+              @for (message of messages; track $index) {
+                <span class="enrollment-field-error-message">{{
+                  message
+                }}</span>
+              }
+            </span>
+          }
+        }
+      </label>
+    </fieldset>
+
+    <fieldset class="ec-card" [disabled]="isSubmitting()">
+      <legend>Cadena académica</legend>
+
+      <label class="enrollment-field ec-field">
+        <span>Escuela</span>
+        <select
+          id="enrollment-school-id"
+          formControlName="schoolId"
+          required
+          aria-required="true"
+          [attr.aria-invalid]="isFieldInvalid('schoolId') ? 'true' : null"
+          [attr.aria-describedby]="
+            isFieldInvalid('schoolId') ? 'enrollment-school-id-errors' : null
+          "
+        >
+          <option [ngValue]="null" disabled>Seleccione…</option>
+          @for (opt of schoolOptions(); track opt.value) {
+            <option [ngValue]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+        @if (fieldErrorMessages("schoolId"); as messages) {
+          @if (messages.length > 0) {
+            <span id="enrollment-school-id-errors" class="ec-field-error">
+              @for (message of messages; track $index) {
+                <span class="enrollment-field-error-message">{{
+                  message
+                }}</span>
+              }
+            </span>
+          }
+        }
+      </label>
+
+      <label class="enrollment-field ec-field">
+        <span>Año académico</span>
+        <select
+          id="enrollment-academic-year-id"
+          formControlName="academicYearId"
+          required
+          aria-required="true"
+          [attr.aria-invalid]="isFieldInvalid('academicYearId') ? 'true' : null"
+          [attr.aria-describedby]="
+            isFieldInvalid('academicYearId')
+              ? 'enrollment-academic-year-id-errors'
+              : null
+          "
+        >
+          <option [ngValue]="null" disabled>Seleccione…</option>
+          @for (opt of academicYearOptions(); track opt.value) {
+            <option [ngValue]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+        @if (fieldErrorMessages("academicYearId"); as messages) {
+          @if (messages.length > 0) {
+            <span
+              id="enrollment-academic-year-id-errors"
+              class="ec-field-error"
+            >
+              @for (message of messages; track $index) {
+                <span class="enrollment-field-error-message">{{
+                  message
+                }}</span>
+              }
+            </span>
+          }
+        }
+      </label>
+
+      <label class="enrollment-field ec-field">
+        <span>Grado</span>
+        <select
+          id="enrollment-grade-id"
+          formControlName="gradeId"
+          required
+          aria-required="true"
+          [attr.aria-invalid]="isFieldInvalid('gradeId') ? 'true' : null"
+          [attr.aria-describedby]="
+            isFieldInvalid('gradeId') ? 'enrollment-grade-id-errors' : null
+          "
+        >
+          <option [ngValue]="null" disabled>Seleccione…</option>
+          @for (opt of gradeOptions(); track opt.value) {
+            <option [ngValue]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+        @if (fieldErrorMessages("gradeId"); as messages) {
+          @if (messages.length > 0) {
+            <span id="enrollment-grade-id-errors" class="ec-field-error">
+              @for (message of messages; track $index) {
+                <span class="enrollment-field-error-message">{{
+                  message
+                }}</span>
+              }
+            </span>
+          }
+        }
+      </label>
+
+      <label class="enrollment-field ec-field">
+        <span>Grupo</span>
+        <select
+          id="enrollment-class-group-id"
+          formControlName="classGroupId"
+          required
+          aria-required="true"
+          [attr.aria-invalid]="isFieldInvalid('classGroupId') ? 'true' : null"
+          [attr.aria-describedby]="
+            isFieldInvalid('classGroupId')
+              ? 'enrollment-class-group-id-errors'
+              : null
+          "
+        >
+          <option [ngValue]="null" disabled>Seleccione…</option>
+          @for (opt of classGroupOptions(); track opt.value) {
+            <option [ngValue]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+        @if (fieldErrorMessages("classGroupId"); as messages) {
+          @if (messages.length > 0) {
+            <span id="enrollment-class-group-id-errors" class="ec-field-error">
+              @for (message of messages; track $index) {
+                <span class="enrollment-field-error-message">{{
+                  message
+                }}</span>
+              }
+            </span>
+          }
+        }
+      </label>
+
+      @if (classGroupStatusMessage(); as cgMsg) {
+        <output class="enrollment-help" aria-live="polite">
+          {{ cgMsg }}
+        </output>
+      }
+    </fieldset>
+
+    <div class="enrollment-actions">
+      <button
+        type="submit"
+        class="enrollment-submit ec-btn ec-btn--primary"
+        [disabled]="form.invalid || isSubmitting()"
+        [attr.aria-busy]="isSubmitting()"
+      >
+        @if (isSubmitting()) {
+          Enviando…
+        } @else {
+          Confirmar matrícula
+        }
+      </button>
       <button
         type="button"
-        class="enrollment-reset ec-btn ec-btn--primary"
+        class="enrollment-cancel ec-btn ec-btn--outline"
         (click)="onReset()"
+        [disabled]="isSubmitting()"
       >
-        Registrar otra matrícula
+        Cancelar
       </button>
     </div>
-  } @else {
-    <form
-      class="enrollment-form"
-      [formGroup]="form"
-      (ngSubmit)="onSubmit()"
-      novalidate
-      aria-label="Formulario de nueva matrícula"
-      aria-describedby="enrollment-lede"
-    >
-      <fieldset class="ec-card" [disabled]="isSubmitting()">
-        <legend>Datos del estudiante</legend>
 
-        <label class="enrollment-field ec-field">
-          <span>Tipo de documento</span>
-          <select
-            id="enrollment-document-type"
-            formControlName="documentType"
-            required
-            aria-required="true"
-          >
-            <option value="" disabled>Seleccione…</option>
-            @for (opt of documentTypes; track opt.value) {
-              <option [value]="opt.value">{{ opt.label }}</option>
+    @if (hasError()) {
+      <div
+        class="enrollment-error ec-alert ec-alert--error"
+        role="alert"
+        aria-live="assertive"
+        data-testid="enrollment-error"
+      >
+        <app-icon name="error" />
+        @if (errorProblem(); as problem) {
+          <div class="enrollment-error__body">
+            <p class="enrollment-error-title">
+              <strong>{{ problem.title }}</strong>
+              <span class="enrollment-error-status">
+                (HTTP {{ problem.status }})
+              </span>
+            </p>
+            @if (problem.detail) {
+              <p>{{ problem.detail }}</p>
             }
-          </select>
-        </label>
-
-        <label class="enrollment-field ec-field">
-          <span>Número de documento</span>
-          <input
-            id="enrollment-document-number"
-            type="text"
-            formControlName="documentNumber"
-            required
-            aria-required="true"
-            autocomplete="off"
-            inputmode="text"
-            maxlength="32"
-          />
-        </label>
-
-        <label class="enrollment-field ec-field">
-          <span>Nombres</span>
-          <input
-            id="enrollment-first-names"
-            type="text"
-            formControlName="firstNames"
-            required
-            aria-required="true"
-            autocomplete="off"
-            maxlength="120"
-          />
-        </label>
-
-        <label class="enrollment-field ec-field">
-          <span>Apellidos</span>
-          <input
-            id="enrollment-last-names"
-            type="text"
-            formControlName="lastNames"
-            required
-            aria-required="true"
-            autocomplete="off"
-            maxlength="120"
-          />
-        </label>
-
-        <label class="enrollment-field ec-field">
-          <span>Fecha de nacimiento</span>
-          <input
-            id="enrollment-birth-date"
-            type="date"
-            formControlName="birthDate"
-            required
-            aria-required="true"
-          />
-        </label>
-      </fieldset>
-
-      <fieldset class="ec-card" [disabled]="isSubmitting()">
-        <legend>Cadena académica</legend>
-
-        <label class="enrollment-field ec-field">
-          <span>Escuela</span>
-          <select
-            id="enrollment-school-id"
-            formControlName="schoolId"
-            required
-            aria-required="true"
-          >
-            <option [ngValue]="null" disabled>Seleccione…</option>
-            @for (opt of schoolOptions(); track opt.value) {
-              <option [ngValue]="opt.value">{{ opt.label }}</option>
-            }
-          </select>
-        </label>
-
-        <label class="enrollment-field ec-field">
-          <span>Año académico</span>
-          <select
-            id="enrollment-academic-year-id"
-            formControlName="academicYearId"
-            required
-            aria-required="true"
-            [attr.aria-disabled]="isAcademicYearDisabled() ? 'true' : null"
-          >
-            <option [ngValue]="null" disabled>Seleccione…</option>
-            @for (opt of academicYearOptions(); track opt.value) {
-              <option [ngValue]="opt.value">{{ opt.label }}</option>
-            }
-          </select>
-        </label>
-
-        <label class="enrollment-field ec-field">
-          <span>Grado</span>
-          <select
-            id="enrollment-grade-id"
-            formControlName="gradeId"
-            required
-            aria-required="true"
-            [attr.aria-disabled]="isGradeDisabled() ? 'true' : null"
-          >
-            <option [ngValue]="null" disabled>Seleccione…</option>
-            @for (opt of gradeOptions(); track opt.value) {
-              <option [ngValue]="opt.value">{{ opt.label }}</option>
-            }
-          </select>
-        </label>
-
-        <label class="enrollment-field ec-field">
-          <span>Grupo</span>
-          <select
-            id="enrollment-class-group-id"
-            formControlName="classGroupId"
-            required
-            aria-required="true"
-            [attr.aria-disabled]="isClassGroupDisabled() ? 'true' : null"
-          >
-            <option [ngValue]="null" disabled>Seleccione…</option>
-            @for (opt of classGroupOptions(); track opt.value) {
-              <option [ngValue]="opt.value">{{ opt.label }}</option>
-            }
-          </select>
-        </label>
-
-        @if (classGroupStatusMessage(); as cgMsg) {
-          <p class="enrollment-help" role="status" aria-live="polite">
-            {{ cgMsg }}
-          </p>
-        }
-      </fieldset>
-
-      <div class="enrollment-actions">
-        <button
-          type="submit"
-          class="enrollment-submit ec-btn ec-btn--primary"
-          [disabled]="form.invalid || isSubmitting()"
-          [attr.aria-busy]="isSubmitting() ? 'true' : 'false'"
-        >
-          @if (isSubmitting()) {
-            Enviando…
-          } @else {
-            Confirmar matrícula
-          }
-        </button>
-        <button
-          type="button"
-          class="enrollment-cancel ec-btn ec-btn--outline"
-          (click)="onReset()"
-          [disabled]="isSubmitting()"
-        >
-          Cancelar
-        </button>
-      </div>
-
-      @if (hasError()) {
-        <div
-          class="enrollment-error ec-alert ec-alert--error"
-          role="alert"
-          aria-live="assertive"
-          data-testid="enrollment-error"
-        >
-          <app-icon name="error" />
-          @if (errorProblem(); as problem) {
-            <div class="enrollment-error__body">
-              <p class="enrollment-error-title">
-                <strong>{{ problem.title }}</strong>
-                <span class="enrollment-error-status">
-                  (HTTP {{ problem.status }})
-                </span>
-              </p>
-              @if (problem.detail) {
-                <p>{{ problem.detail }}</p>
-              }
-              @if (errorFields().length > 0) {
-                <ul class="enrollment-error-fields">
-                  @for (entry of errorFields(); track entry.field) {
-                    @for (msg of entry.messages; track msg) {
-                      <li>
-                        <code>{{ entry.field }}</code
-                        >: {{ msg }}
-                      </li>
-                    }
+            @if (errorFields().length > 0) {
+              <ul class="enrollment-error-fields">
+                @for (entry of errorFields(); track entry.field) {
+                  @for (msg of entry.messages; track msg) {
+                    <li>
+                      <code>{{ entry.field }}</code
+                      >: {{ msg }}
+                    </li>
                   }
-                </ul>
-              }
-              <button
-                type="button"
-                class="ec-btn ec-btn--outline"
-                (click)="onRetry()"
-              >
-                Reintentar
-              </button>
-            </div>
-          }
-        </div>
-      }
-    </form>
-  }
+                }
+              </ul>
+            }
+            <button
+              type="button"
+              class="ec-btn ec-btn--outline"
+              (click)="onRetry()"
+            >
+              Reintentar
+            </button>
+          </div>
+        }
+      </div>
+    }
+  </form>
 </section>

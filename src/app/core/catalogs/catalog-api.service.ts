@@ -1,7 +1,7 @@
+/* Copyright (c) 2026. All rights reserved. */
 import { HttpClient, HttpParams } from "@angular/common/http";
 import { Injectable, inject } from "@angular/core";
-import type { Observable } from "rxjs";
-import { map } from "rxjs";
+import { map, type Observable } from "rxjs";
 import { API_CONFIG } from "../api/api-config";
 import type { AcademicYearSummary } from "../api/dtos/academic-year-summary.dto";
 import type { ClassGroupSummary } from "../api/dtos/class-group-summary.dto";
@@ -48,13 +48,13 @@ export class CatalogApiService {
   listSchools(): Observable<readonly SchoolSummary[]> {
     return this.http
       .get<readonly SchoolSummary[]>(`${this.config.apiBaseUrl}/api/schools`)
-      .pipe(map((data) => [...data]));
+      .pipe(map(data => [...data]));
   }
 
   listGrades(): Observable<readonly GradeSummary[]> {
     return this.http
       .get<readonly GradeSummary[]>(`${this.config.apiBaseUrl}/api/grades`)
-      .pipe(map((data) => [...data]));
+      .pipe(map(data => [...data]));
   }
 
   listAcademicYears(): Observable<readonly AcademicYearSummary[]> {
@@ -62,7 +62,7 @@ export class CatalogApiService {
       .get<readonly AcademicYearSummary[]>(
         `${this.config.apiBaseUrl}/api/academic-years`,
       )
-      .pipe(map((data) => [...data]));
+      .pipe(map(data => [...data]));
   }
 
   listClassGroups(
@@ -73,19 +73,19 @@ export class CatalogApiService {
         `${this.config.apiBaseUrl}/api/class-groups`,
         { params: toHttpParams(params) },
       )
-      .pipe(map((data) => [...data]));
+      .pipe(map(data => [...data]));
   }
 
   listTeachers(): Observable<readonly TeacherSummary[]> {
     return this.http
       .get<readonly TeacherSummary[]>(`${this.config.apiBaseUrl}/api/teachers`)
-      .pipe(map((data) => [...data]));
+      .pipe(map(data => [...data]));
   }
 
   listSubjects(): Observable<readonly SubjectSummary[]> {
     return this.http
       .get<readonly SubjectSummary[]>(`${this.config.apiBaseUrl}/api/subjects`)
-      .pipe(map((data) => [...data]));
+      .pipe(map(data => [...data]));
   }
 
   listTeachersBySchool(
@@ -101,6 +101,6 @@ export class CatalogApiService {
         `${this.config.apiBaseUrl}/api/schools/${schoolId}/teachers`,
         { params },
       )
-      .pipe(map((data) => [...data]));
+      .pipe(map(data => [...data]));
   }
 }

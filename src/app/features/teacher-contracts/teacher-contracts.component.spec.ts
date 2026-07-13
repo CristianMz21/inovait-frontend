@@ -91,7 +91,7 @@ describe("TeacherContractsComponent (CT form/list remoto)", () => {
     fixture.detectChanges();
     const host = fixture.nativeElement as HTMLElement;
     expect(host.textContent).toContain("No se pudieron cargar docentes");
-    const retry = Array.from(host.querySelectorAll("button")).find((button) =>
+    const retry = Array.from(host.querySelectorAll("button")).find(button =>
       button.textContent?.includes("Reintentar docentes"),
     );
 
@@ -116,7 +116,7 @@ describe("TeacherContractsComponent (CT form/list remoto)", () => {
     fixture.detectChanges();
     const retry = Array.from(
       (fixture.nativeElement as HTMLElement).querySelectorAll("button"),
-    ).find((button) => button.textContent?.includes("Reintentar escuelas"));
+    ).find(button => button.textContent?.includes("Reintentar escuelas"));
 
     retry?.click();
 
@@ -149,31 +149,39 @@ describe("TeacherContractsComponent (CT form/list remoto)", () => {
       teacherId: 5,
       startDate: "2026-03-01",
     });
-    component.onToggleSchool(1, true);
+    component.selectSchool(1);
     expect(component.isCreateSubmittable()).toBe(true);
   });
 
   // -- Creación: éxito -----------------------------------------------
 
-  it("submit() válido expone loading y luego success con contratos", () => {
+  it("tras el 201 conserva el success y muestra la lista canónica completa", () => {
     flushInitialCatalogs();
     component.createForm.patchValue({
       teacherId: 5,
       startDate: "2026-03-01",
     });
-    component.onToggleSchool(1, true);
-    component.onToggleSchool(2, true);
+    component.queryForm.patchValue({
+      teacherId: 6,
+      asOfDate: "2026-07-10",
+    });
+    component.selectSchool(1);
+    component.selectSchool(2);
 
     component.onSubmitCreate();
     expect(component.isCreating()).toBe(true);
 
-    const req = http.expectOne((r) => r.url === url(5) && r.method === "POST");
+    const req = http.expectOne(r => r.url === url(5) && r.method === "POST");
     expect(req.request.body).toEqual({
       schoolIds: [1, 2],
       startDate: "2026-03-01",
       endDate: null,
     });
-    req.flush(teacherContractsCreatedFixture);
+    req.flush(teacherContractsCreatedFixture, {
+      status: 201,
+      statusText: "Created",
+    });
+    fixture.detectChanges();
 
     expect(component.isCreating()).toBe(false);
     const success = component.createSuccess();
@@ -182,6 +190,32 @@ describe("TeacherContractsComponent (CT form/list remoto)", () => {
     expect(success?.[0].schoolName).toBe("Escuela Río Claro");
     expect(success?.[0].persistedStatus).toBe("Confirmed");
     expect(success?.[0].effectiveStatus).toBe("Effective");
+    expect(component.queryForm.getRawValue()).toEqual({
+      teacherId: 5,
+      asOfDate: "",
+    });
+
+    const listRequest = http.expectOne(
+      request => request.url === url(5) && request.method === "GET",
+    );
+    expect(listRequest.request.params.has("asOfDate")).toBe(false);
+    listRequest.flush(teacherContractsListedFixture);
+    fixture.detectChanges();
+
+    expect(component.createSuccess()).toEqual(success);
+    const rows = component.querySuccess();
+    expect(rows).not.toBeNull();
+    expect(rows).toHaveLength(teacherContractsListedFixture.length);
+    expect(rows?.[0].startDate).toBe(
+      teacherContractsListedFixture[0].startDate,
+    );
+    const host = fixture.nativeElement as HTMLElement;
+    expect(
+      host.querySelector('[data-testid="contracts-create-success"]'),
+    ).not.toBeNull();
+    expect(host.querySelectorAll(".ec-table tbody tr")).toHaveLength(
+      teacherContractsListedFixture.length,
+    );
   });
 
   // -- Creación: error canónico --------------------------------------
@@ -192,10 +226,10 @@ describe("TeacherContractsComponent (CT form/list remoto)", () => {
       teacherId: 5,
       startDate: "2026-03-01",
     });
-    component.onToggleSchool(1, true);
+    component.selectSchool(1);
     component.onSubmitCreate();
 
-    const req = http.expectOne((r) => r.url === url(5) && r.method === "POST");
+    const req = http.expectOne(r => r.url === url(5) && r.method === "POST");
     req.flush(apiProblemTeacherContractConflictFixture, {
       status: 409,
       statusText: "Conflict",
@@ -206,10 +240,18 @@ describe("TeacherContractsComponent (CT form/list remoto)", () => {
     expect(component.createErrorProblem()?.code).toBe(
       "teacher_contract_conflict",
     );
+    expect(component.createForm.getRawValue()).toEqual({
+      teacherId: 5,
+      startDate: "2026-03-01",
+      endDate: "",
+    });
     // La selección de escuelas se conserva para corrección.
     expect(component.isSchoolSelected(1)).toBe(true);
     // Ningún contrato se muestra como creado: el resultado sigue vacío.
     expect(component.createSuccess()).toBeNull();
+    http.expectNone(
+      request => request.url === url(5) && request.method === "GET",
+    );
   });
 
   it("422 business rule expone error sin mostrar contratos", () => {
@@ -218,10 +260,10 @@ describe("TeacherContractsComponent (CT form/list remoto)", () => {
       teacherId: 5,
       startDate: "2026-03-01",
     });
-    component.onToggleSchool(1, true);
+    component.selectSchool(1);
     component.onSubmitCreate();
 
-    const req = http.expectOne((r) => r.url === url(5) && r.method === "POST");
+    const req = http.expectOne(r => r.url === url(5) && r.method === "POST");
     req.flush(apiProblemBadRequestFixture, {
       status: 400,
       statusText: "Bad Request",
@@ -241,11 +283,11 @@ describe("TeacherContractsComponent (CT form/list remoto)", () => {
       teacherId: 5,
       startDate: "2026-03-01",
     });
-    component.onToggleSchool(1, true);
+    component.selectSchool(1);
     component.onSubmitCreate();
 
     http
-      .expectOne((r) => r.url === url(5) && r.method === "POST")
+      .expectOne(r => r.url === url(5) && r.method === "POST")
       .flush(apiProblemTeacherContractConflictFixture, {
         status: 409,
         statusText: "Conflict",
@@ -258,10 +300,13 @@ describe("TeacherContractsComponent (CT form/list remoto)", () => {
     component.onRetryCreate();
 
     const retryReq = http.expectOne(
-      (r) => r.url === url(5) && r.method === "POST",
+      r => r.url === url(5) && r.method === "POST",
     );
     retryReq.flush(teacherContractsCreatedFixture);
     expect(component.createSuccess()).not.toBeNull();
+    http
+      .expectOne(request => request.url === url(5) && request.method === "GET")
+      .flush(teacherContractsListedFixture);
   });
 
   it("resetCreate() cancela el envío en curso y limpia escuelas seleccionadas", () => {
@@ -270,10 +315,10 @@ describe("TeacherContractsComponent (CT form/list remoto)", () => {
       teacherId: 5,
       startDate: "2026-03-01",
     });
-    component.onToggleSchool(1, true);
+    component.selectSchool(1);
     component.onSubmitCreate();
 
-    const req = http.expectOne((r) => r.url === url(5) && r.method === "POST");
+    const req = http.expectOne(r => r.url === url(5) && r.method === "POST");
     expect(component.isCreating()).toBe(true);
 
     component.onResetCreate();
@@ -293,7 +338,7 @@ describe("TeacherContractsComponent (CT form/list remoto)", () => {
     component.onSubmitQuery();
     expect(component.isQuerying()).toBe(true);
 
-    const req = http.expectOne((r) => r.url === url(5) && r.method === "GET");
+    const req = http.expectOne(r => r.url === url(5) && r.method === "GET");
     expect(req.request.params.has("asOfDate")).toBe(false);
     req.flush(teacherContractsListedFixture);
 
@@ -314,7 +359,7 @@ describe("TeacherContractsComponent (CT form/list remoto)", () => {
 
     component.onSubmitQuery();
 
-    const req = http.expectOne((r) => r.url === url(5) && r.method === "GET");
+    const req = http.expectOne(r => r.url === url(5) && r.method === "GET");
     expect(req.request.params.get("asOfDate")).toBe("2026-07-10");
     req.flush(teacherContractsListedFixture);
 
@@ -330,7 +375,7 @@ describe("TeacherContractsComponent (CT form/list remoto)", () => {
     component.onSubmitQuery();
 
     http
-      .expectOne((r) => r.url === url(5) && r.method === "GET")
+      .expectOne(r => r.url === url(5) && r.method === "GET")
       .flush(emptyTeacherContractsListedFixture);
 
     expect(component.isQueryEmpty()).toBe(true);
@@ -347,7 +392,7 @@ describe("TeacherContractsComponent (CT form/list remoto)", () => {
     component.onSubmitQuery();
 
     http
-      .expectOne((r) => r.url === url(9999) && r.method === "GET")
+      .expectOne(r => r.url === url(9999) && r.method === "GET")
       .flush(apiProblemNotFoundFixture, {
         status: 404,
         statusText: "Not Found",
@@ -368,7 +413,7 @@ describe("TeacherContractsComponent (CT form/list remoto)", () => {
 
     component.onSubmitQuery();
     http
-      .expectOne((r) => r.url === url(5) && r.method === "GET")
+      .expectOne(r => r.url === url(5) && r.method === "GET")
       .flush(apiProblemNotFoundFixture, {
         status: 404,
         statusText: "Not Found",
@@ -381,7 +426,7 @@ describe("TeacherContractsComponent (CT form/list remoto)", () => {
     component.onRetryQuery();
 
     const retryReq = http.expectOne(
-      (r) => r.url === url(5) && r.method === "GET",
+      r => r.url === url(5) && r.method === "GET",
     );
     retryReq.flush(teacherContractsListedFixture);
     expect(component.querySuccess()).not.toBeNull();
@@ -392,7 +437,7 @@ describe("TeacherContractsComponent (CT form/list remoto)", () => {
     component.queryForm.patchValue({ teacherId: 5 });
 
     component.onSubmitQuery();
-    const req = http.expectOne((r) => r.url === url(5) && r.method === "GET");
+    const req = http.expectOne(r => r.url === url(5) && r.method === "GET");
     expect(component.isQuerying()).toBe(true);
 
     component.onResetQuery();
@@ -423,6 +468,52 @@ describe("TeacherContractsComponent (CT form/list remoto)", () => {
     expect(component.effectiveTone("Cancelled")).toBe("expired");
   });
 
+  it("presenta el conteo con singular y plural correctos", () => {
+    flushInitialCatalogs();
+
+    expect(component.contractCountLabel(1)).toBe("contrato");
+    expect(component.contractCountLabel(2)).toBe("contratos");
+  });
+
+  it("valida fechas calendario reales y compara el rango cronológicamente", () => {
+    flushInitialCatalogs();
+    component.createForm.patchValue({
+      teacherId: 5,
+      startDate: "2026-02-30",
+    });
+    component.selectSchool(1);
+
+    expect(
+      component.createForm.controls.startDate.hasError("invalidCalendarDate"),
+    ).toBe(true);
+    expect(component.isCreateSubmittable()).toBe(false);
+
+    component.createForm.patchValue({
+      startDate: "2028-02-29",
+      endDate: "2028-02-28",
+    });
+    expect(component.createRangeHint()).toBe(
+      "La fecha de fin debe ser igual o posterior a la fecha de inicio.",
+    );
+    expect(component.isCreateSubmittable()).toBe(false);
+
+    component.createForm.controls.endDate.setValue("2028-03-01");
+    expect(component.createRangeHint()).toBe(
+      "Desde 2028-02-29 hasta 2028-03-01",
+    );
+    expect(component.isCreateSubmittable()).toBe(true);
+  });
+
+  it("selecciona y deselecciona escuelas con acciones independientes", () => {
+    flushInitialCatalogs();
+
+    component.selectSchool(1);
+    expect(component.isSchoolSelected(1)).toBe(true);
+
+    component.deselectSchool(1);
+    expect(component.isSchoolSelected(1)).toBe(false);
+  });
+
   // -- Renderizado DOM: tono de badge → clase (lock-in, EduCore) -----
 
   it("renderiza las celdas de estado con la clase de tono y la etiqueta correctas", () => {
@@ -431,7 +522,7 @@ describe("TeacherContractsComponent (CT form/list remoto)", () => {
 
     component.onSubmitQuery();
     http
-      .expectOne((r) => r.url === url(5) && r.method === "GET")
+      .expectOne(r => r.url === url(5) && r.method === "GET")
       .flush(teacherContractsListedFixture);
     fixture.detectChanges();
 
@@ -481,15 +572,13 @@ describe("TeacherContractsComponent (CT form/list remoto)", () => {
       teacherId: 5,
       startDate: "2026-03-01",
     });
-    component.onToggleSchool(1, true);
+    component.selectSchool(1);
     component.onSubmitCreate();
-    const first = http.expectOne(
-      (r) => r.url === url(5) && r.method === "POST",
-    );
+    const first = http.expectOne(r => r.url === url(5) && r.method === "POST");
 
-    component.onToggleSchool(2, true);
+    component.selectSchool(2);
     component.onSubmitCreate();
-    http.expectNone((r) => r.url === url(5) && r.method === "POST");
+    http.expectNone(r => r.url === url(5) && r.method === "POST");
     expect(first.cancelled).toBe(false);
     expect(component.isCreating()).toBe(true);
     fixture.detectChanges();
@@ -505,5 +594,8 @@ describe("TeacherContractsComponent (CT form/list remoto)", () => {
 
     first.flush(teacherContractsCreatedFixture);
     expect(component.createSuccess()).not.toBeNull();
+    http
+      .expectOne(request => request.url === url(5) && request.method === "GET")
+      .flush(teacherContractsListedFixture);
   });
 });

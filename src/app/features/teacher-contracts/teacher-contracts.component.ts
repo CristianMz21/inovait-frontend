@@ -1,8 +1,10 @@
+/* Copyright (c) 2026. All rights reserved. */
 import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
   computed,
+  effect,
   inject,
   type OnInit,
 } from "@angular/core";
@@ -18,7 +20,13 @@ import {
 } from "@angular/forms";
 import { CatalogFacade } from "../../core/catalogs/catalog.facade";
 import { CatalogStatusComponent } from "../../core/catalogs/catalog-status.component";
+import {
+  CALENDAR_DATE_PATTERN,
+  isCalendarDateBefore,
+  isCalendarDateOnly,
+} from "../../core/dates/calendar-date";
 import { AppIconComponent } from "../../layout/educore-shell/app-icon.component";
+import { TableSkipDirective } from "../../layout/educore-shell/table-skip.directive";
 import type { RemoteState } from "../../core/api/remote-state";
 import { TeacherContractsFacade } from "./teacher-contracts.facade";
 import { teacherContractsFormToRequest } from "./teacher-contracts.mappers";
@@ -30,6 +38,18 @@ import type {
 
 const requiredValidator: ValidatorFn = (control: AbstractControl<unknown>) =>
   Validators.required(control);
+
+const calendarDateValidator: ValidatorFn = (
+  control: AbstractControl<unknown>,
+) => {
+  if (typeof control.value !== "string" || control.value.length === 0) {
+    return null;
+  }
+  if (!isCalendarDateOnly(control.value)) {
+    return { invalidCalendarDate: true };
+  }
+  return null;
+};
 
 interface TeacherContractsFormShape {
   teacherId: FormControl<number | null>;
@@ -70,7 +90,12 @@ type TeacherQueryFormGroup = FormGroup<TeacherQueryFormShape>;
 @Component({
   selector: "app-teacher-contracts",
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, CatalogStatusComponent, AppIconComponent],
+  imports: [
+    ReactiveFormsModule,
+    CatalogStatusComponent,
+    AppIconComponent,
+    TableSkipDirective,
+  ],
   providers: [TeacherContractsFacade],
   templateUrl: "./teacher-contracts.component.html",
   styleUrl: "./teacher-contracts.component.scss",
@@ -92,9 +117,13 @@ export class TeacherContractsComponent implements OnInit {
     teacherId: this.fb.control<number | null>(null, [requiredValidator]),
     startDate: this.fb.control("", [
       requiredValidator,
-      Validators.pattern(/^\d{4}-\d{2}-\d{2}$/),
+      Validators.pattern(CALENDAR_DATE_PATTERN),
+      calendarDateValidator,
     ]),
-    endDate: this.fb.control("", [Validators.pattern(/^\d{4}-\d{2}-\d{2}$/)]),
+    endDate: this.fb.control("", [
+      Validators.pattern(CALENDAR_DATE_PATTERN),
+      calendarDateValidator,
+    ]),
   });
 
   /** Conjunto de escuelas seleccionadas para el envío atómico. */
@@ -102,17 +131,23 @@ export class TeacherContractsComponent implements OnInit {
   readonly selectedSchoolsCount = computed(() => this.selectedSchoolIds.size);
 
   readonly createTeacherOptions = computed(() =>
-    this.mapOptions(this.catalog.teachersState(), (teacher) => ({
+    this.mapOptions(this.catalog.teachersState(), teacher => ({
       value: teacher.id,
       label: `${teacher.firstNames} ${teacher.lastNames} · ${teacher.documentType} ${teacher.documentNumber}`,
     })),
   );
 
   readonly schoolOptions = computed(() =>
-    this.mapOptions(this.catalog.schoolsState(), (school) => ({
-      value: school.id,
-      label: `${school.name} · ${school.sector === "Public" ? "Público" : "Privado"}`,
-    })),
+    this.mapOptions(this.catalog.schoolsState(), school => {
+      let sectorLabel = "Privado";
+      if (school.sector === "Public") {
+        sectorLabel = "Público";
+      }
+      return {
+        value: school.id,
+        label: `${school.name} · ${sectorLabel}`,
+      };
+    }),
   );
 
   readonly isCreating = computed(
@@ -120,14 +155,20 @@ export class TeacherContractsComponent implements OnInit {
   );
   readonly createSuccess = computed(() => {
     const state = this.createResult();
-    return state.status === "success" ? state.data : null;
+    if (state.status === "success") {
+      return state.data;
+    }
+    return null;
   });
   readonly hasCreateError = computed(
     () => this.createResult().status === "error",
   );
   readonly createErrorProblem = computed(() => {
     const state = this.createResult();
-    return state.status === "error" ? state.problem : null;
+    if (state.status === "error") {
+      return state.problem;
+    }
+    return null;
   });
   readonly createErrorFields = computed(() => {
     const problem = this.createErrorProblem();
@@ -144,11 +185,34 @@ export class TeacherContractsComponent implements OnInit {
 
   readonly queryForm: TeacherQueryFormGroup = this.fb.group({
     teacherId: this.fb.control<number | null>(null, [requiredValidator]),
-    asOfDate: this.fb.control("", [Validators.pattern(/^\d{4}-\d{2}-\d{2}$/)]),
+    asOfDate: this.fb.control("", [
+      Validators.pattern(CALENDAR_DATE_PATTERN),
+      calendarDateValidator,
+    ]),
   });
 
+  constructor() {
+    effect(() => {
+      const state = this.createResult();
+      if (state.status !== "success") {
+        return;
+      }
+      const [createdContract] = state.data;
+      if (createdContract === undefined) {
+        return;
+      }
+      this.queryForm.patchValue(
+        {
+          teacherId: createdContract.teacherId,
+          asOfDate: "",
+        },
+        { emitEvent: false },
+      );
+    });
+  }
+
   readonly queryTeacherOptions = computed(() =>
-    this.mapOptions(this.catalog.teachersState(), (teacher) => ({
+    this.mapOptions(this.catalog.teachersState(), teacher => ({
       value: teacher.id,
       label: `${teacher.firstNames} ${teacher.lastNames} · ${teacher.documentType} ${teacher.documentNumber}`,
     })),
@@ -159,13 +223,19 @@ export class TeacherContractsComponent implements OnInit {
   readonly querySuccess = computed<readonly TeacherContractResultVm[] | null>(
     () => {
       const state = this.listResult();
-      return state.status === "success" ? state.data : null;
+      if (state.status === "success") {
+        return state.data;
+      }
+      return null;
     },
   );
   readonly hasQueryError = computed(() => this.listResult().status === "error");
   readonly queryErrorProblem = computed(() => {
     const state = this.listResult();
-    return state.status === "error" ? state.problem : null;
+    if (state.status === "error") {
+      return state.problem;
+    }
+    return null;
   });
 
   /** Etiqueta humana del estado efectivo. */
@@ -303,17 +373,22 @@ export class TeacherContractsComponent implements OnInit {
     this.selectedSchoolIds.clear();
   }
 
-  onToggleSchool(schoolId: number, checked: boolean): void {
-    if (checked) {
-      this.selectedSchoolIds.add(schoolId);
-    } else {
-      this.selectedSchoolIds.delete(schoolId);
-    }
+  selectSchool(schoolId: number): void {
+    this.selectedSchoolIds.add(schoolId);
+  }
+
+  deselectSchool(schoolId: number): void {
+    this.selectedSchoolIds.delete(schoolId);
   }
 
   onSchoolCheckboxChange(schoolId: number, event: Event): void {
-    if (event.target instanceof HTMLInputElement) {
-      this.onToggleSchool(schoolId, event.target.checked);
+    if (!(event.target instanceof HTMLInputElement)) {
+      return;
+    }
+    if (event.target.checked) {
+      this.selectSchool(schoolId);
+    } else {
+      this.deselectSchool(schoolId);
     }
   }
 
@@ -336,10 +411,20 @@ export class TeacherContractsComponent implements OnInit {
     if (!end) {
       return `Desde ${start} · sin fecha de fin`;
     }
-    if (end < start) {
+    if (!isCalendarDateOnly(start) || !isCalendarDateOnly(end)) {
+      return "Ingrese fechas calendario válidas.";
+    }
+    if (isCalendarDateBefore(end, start)) {
       return "La fecha de fin debe ser igual o posterior a la fecha de inicio.";
     }
     return `Desde ${start} hasta ${end}`;
+  }
+
+  contractCountLabel(count: number): string {
+    if (count === 1) {
+      return "contrato";
+    }
+    return "contratos";
   }
 
   // -- Acciones de consulta --------------------------------------------
@@ -355,7 +440,11 @@ export class TeacherContractsComponent implements OnInit {
       return;
     }
     const asOf = this.queryForm.controls.asOfDate.value;
-    this.contracts.searchByTeacher(teacherId, asOf.length === 0 ? null : asOf);
+    let asOfDate: string | null = null;
+    if (asOf.length > 0) {
+      asOfDate = asOf;
+    }
+    this.contracts.searchByTeacher(teacherId, asOfDate);
   }
 
   onRetryQuery(): void {
@@ -374,11 +463,15 @@ export class TeacherContractsComponent implements OnInit {
 
   private toCreateVm(): TeacherContractsFormVm {
     const raw = this.createForm.getRawValue();
+    let endDate: string | null = null;
+    if (raw.endDate.length > 0) {
+      endDate = raw.endDate;
+    }
     return {
       teacherId: raw.teacherId,
       schoolIds: [...this.selectedSchoolIds],
       startDate: raw.startDate,
-      endDate: raw.endDate.length === 0 ? null : raw.endDate,
+      endDate,
     };
   }
 

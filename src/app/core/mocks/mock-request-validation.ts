@@ -1,6 +1,11 @@
+/* Copyright (c) 2026. All rights reserved. */
 import { isValidDateOnly } from "./date-only";
 
 export type MockFieldErrors = Readonly<Record<string, readonly string[]>>;
+
+const DOCUMENT_TYPE_MAX_LENGTH = 20;
+const DOCUMENT_NUMBER_MAX_LENGTH = 32;
+const PERSON_NAME_MAX_LENGTH = 120;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -35,6 +40,15 @@ const validateRequiredString = (
 const isPositiveInteger = (value: unknown): value is number =>
   typeof value === "number" && Number.isInteger(value) && value > 0;
 
+const validationResult = (
+  errors: Record<string, readonly string[]>,
+): MockFieldErrors | null => {
+  if (Object.keys(errors).length === 0) {
+    return null;
+  }
+  return errors;
+};
+
 export const validateEnrollmentBody = (
   body: unknown,
 ): MockFieldErrors | null => {
@@ -48,9 +62,7 @@ export const validateEnrollmentBody = (
     errors,
   );
   const student = body["student"];
-  if (!isRecord(student)) {
-    errors["student"] = ["El campo es obligatorio."];
-  } else {
+  if (isRecord(student)) {
     hasOnlyKeys(
       student,
       [
@@ -65,30 +77,32 @@ export const validateEnrollmentBody = (
     validateRequiredString(
       student["documentType"],
       "student.documentType",
-      20,
+      DOCUMENT_TYPE_MAX_LENGTH,
       errors,
     );
     validateRequiredString(
       student["documentNumber"],
       "student.documentNumber",
-      32,
+      DOCUMENT_NUMBER_MAX_LENGTH,
       errors,
     );
     validateRequiredString(
       student["firstNames"],
       "student.firstNames",
-      120,
+      PERSON_NAME_MAX_LENGTH,
       errors,
     );
     validateRequiredString(
       student["lastNames"],
       "student.lastNames",
-      120,
+      PERSON_NAME_MAX_LENGTH,
       errors,
     );
     if (!isValidDateOnly(student["birthDate"])) {
       errors["student.birthDate"] = ["Debe ser una fecha válida YYYY-MM-DD."];
     }
+  } else {
+    errors["student"] = ["El campo es obligatorio."];
   }
   for (const field of [
     "schoolId",
@@ -100,7 +114,7 @@ export const validateEnrollmentBody = (
       errors[field] = ["Debe ser un entero mayor o igual a 1."];
     }
   }
-  return Object.keys(errors).length === 0 ? null : errors;
+  return validationResult(errors);
 };
 
 export const validateTeacherContractBody = (
@@ -128,5 +142,5 @@ export const validateTeacherContractBody = (
   if (endDate !== undefined && endDate !== null && !isValidDateOnly(endDate)) {
     errors["endDate"] = ["Debe ser null o una fecha válida YYYY-MM-DD."];
   }
-  return Object.keys(errors).length === 0 ? null : errors;
+  return validationResult(errors);
 };

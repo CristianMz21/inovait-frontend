@@ -12,15 +12,15 @@ const test = base.extend<{ appPage: Page }>({
   appPage: async ({ page }, use) => {
     const runtimeFailures: string[] = [];
     const apiRequests: string[] = [];
-    page.on("console", (message) => {
+    page.on("console", message => {
       if (message.type() === "error" || message.type() === "warning") {
         runtimeFailures.push(`console.${message.type()}: ${message.text()}`);
       }
     });
-    page.on("pageerror", (error) =>
+    page.on("pageerror", error =>
       runtimeFailures.push(`pageerror: ${error.message}`),
     );
-    page.on("request", (request) => {
+    page.on("request", request => {
       if (new URL(request.url()).pathname.startsWith("/api/")) {
         apiRequests.push(`${request.method()} ${request.url()}`);
       }
@@ -70,14 +70,23 @@ test("five operative screens render with unique IDs, labels, responsive layout, 
 
 test("keyboard navigation moves focus to each route heading", async ({
   appPage,
-}) => {
+}, testInfo) => {
   await appPage.goto("/enrollments");
+  const isMobile = testInfo.project.name === "mobile-chromium";
+  if (isMobile) {
+    await appPage.getByLabel("Abrir menú de navegación").focus();
+    await appPage.keyboard.press("Enter");
+  }
   await appPage.getByRole("link", { name: "Consulta de estudiantes" }).focus();
   await appPage.keyboard.press("Enter");
   await expect(
     appPage.getByRole("heading", { level: 1, name: "Consulta de estudiantes" }),
   ).toBeFocused();
 
+  if (isMobile) {
+    await appPage.getByLabel("Abrir menú de navegación").focus();
+    await appPage.keyboard.press("Enter");
+  }
   await appPage.getByRole("link", { name: "Historia" }).focus();
   await appPage.keyboard.press("Enter");
   await expect(
@@ -88,21 +97,21 @@ test("keyboard navigation moves focus to each route heading", async ({
   ).toBeFocused();
 });
 
-test("drawer navigation to a different route closes the drawer and moves focus to the destination heading", async ({
+test("navigation to a different route moves focus and closes the mobile drawer", async ({
   appPage,
 }, testInfo) => {
-  // The drawer only exists below the 1024px breakpoint (see
-  // app.component.scss `.ec-hamburger` display rule); on desktop-chromium
-  // the hamburger is `display: none` and never actionable.
-  test.skip(
-    testInfo.project.name !== "mobile-chromium",
-    "the drawer only exists below the 1024px breakpoint",
-  );
-
   await appPage.goto("/enrollments");
-  const hamburger = appPage.getByLabel("Abrir menú de navegación");
-  await hamburger.click();
-  await expect(hamburger).toHaveAttribute("aria-expanded", "true");
+  const isMobile = testInfo.project.name === "mobile-chromium";
+  const rail = appPage.locator(".ec-rail");
+  const hamburger = isMobile
+    ? appPage.getByLabel("Abrir menú de navegación")
+    : null;
+  if (hamburger) {
+    await expect(rail).toBeHidden();
+    await hamburger.click();
+    await expect(rail).toBeVisible();
+    await expect(hamburger).toHaveAttribute("aria-expanded", "true");
+  }
 
   // Real-browser guard for the suspected inert/focus race: with the drawer
   // open, `<main>` is `[inert]`. Clicking a nav link to a DIFFERENT route
@@ -113,7 +122,10 @@ test("drawer navigation to a different route closes the drawer and moves focus t
   // spec — jsdom does not enforce this, so only a real browser can prove it.
   await appPage.getByRole("link", { name: "Consulta de estudiantes" }).click();
 
-  await expect(hamburger).toHaveAttribute("aria-expanded", "false");
+  if (hamburger) {
+    await expect(hamburger).toHaveAttribute("aria-expanded", "false");
+    await expect(rail).toBeHidden();
+  }
   await expect(
     appPage.getByRole("heading", { level: 1, name: "Consulta de estudiantes" }),
   ).toBeVisible();
@@ -128,7 +140,7 @@ test("drawer navigation to a different route closes the drawer and moves focus t
   });
 });
 
-test("enrollment cascade synchronizes native and ARIA disabled state", async ({
+test("enrollment cascade synchronizes native disabled state", async ({
   appPage,
 }) => {
   await appPage.goto("/enrollments");
@@ -138,10 +150,8 @@ test("enrollment cascade synchronizes native and ARIA disabled state", async ({
   const group = appPage.getByLabel("Grupo");
 
   await expect(year).toBeDisabled();
-  await expect(year).toHaveAttribute("aria-disabled", "true");
   await school.selectOption({ label: "Escuela Río Claro · Público" });
   await expect(year).toBeEnabled();
-  await expect(year).not.toHaveAttribute("aria-disabled", "true");
   await year.selectOption({ label: "2026 (actual)" });
   await expect(grade).toBeEnabled();
   await grade.selectOption({ label: "Grade 1" });
@@ -174,11 +184,19 @@ test("student search preserves native asOfDate and renders recalculated ages", a
   await expect(
     results.getByRole("cell", { name: "8", exact: true }),
   ).toBeVisible();
+  await assertTableCanBeSkipped(
+    appPage,
+    results,
+    "Omitir tabla de inscripciones",
+    "#search-results-table-end",
+  );
   await assertUniqueIdsAndLabels(appPage);
   await assertNoAxeViolations(appPage, "student search success");
 });
 
-test("student search renders the valid empty state", async ({ appPage }) => {
+test("student search distinguishes a valid combination without groups", async ({
+  appPage,
+}) => {
   await appPage.goto("/student-search");
   await appPage
     .getByLabel("Escuela")
@@ -188,11 +206,30 @@ test("student search renders the valid empty state", async ({ appPage }) => {
     .getByLabel("Año académico")
     .selectOption({ label: "2026 (actual)" });
   await appPage.getByRole("button", { name: "Buscar" }).click();
-  await expect(appPage.getByTestId("search-empty")).toContainText(
-    "Sin coincidencias",
+  await expect(appPage.getByTestId("search-empty-no-groups")).toContainText(
+    "Sin grupos disponibles",
   );
   await expect(appPage.getByTestId("search-loading")).toBeHidden();
-  await assertNoAxeViolations(appPage, "student search empty");
+  await assertNoAxeViolations(appPage, "student search without groups");
+});
+
+test("student search distinguishes groups without enrollments", async ({
+  appPage,
+}) => {
+  await appPage.goto("/student-search");
+  await appPage
+    .getByLabel("Escuela")
+    .selectOption({ label: "Escuela Río Claro · Público" });
+  await appPage.getByLabel("Grado").selectOption({ label: "Grade 2" });
+  await appPage
+    .getByLabel("Año académico")
+    .selectOption({ label: "2026 (actual)" });
+  await appPage.getByRole("button", { name: "Buscar" }).click();
+  await expect(appPage.getByTestId("search-empty-no-results")).toContainText(
+    "Sin inscripciones",
+  );
+  await expect(appPage.getByTestId("search-loading")).toBeHidden();
+  await assertNoAxeViolations(appPage, "student search without enrollments");
 });
 
 for (const [path, width] of [
@@ -389,6 +426,12 @@ test("teacher contracts and reports load catalogs and submit mocked forms", asyn
   });
   await createButton.click();
   await expect(appPage.getByTestId("contracts-create-success")).toBeVisible();
+  await assertTableCanBeSkipped(
+    appPage,
+    appPage.getByTestId("contracts-query-results"),
+    "Omitir tabla de contratos",
+    "#contracts-results-table-end",
+  );
   await assertNoAxeViolations(appPage, "teacher contracts success");
 
   await appPage.goto("/reports");
@@ -403,19 +446,49 @@ test("teacher contracts and reports load catalogs and submit mocked forms", asyn
   await expect(ageResults).toContainText("3 a 7 años");
   await expect(ageResults).toContainText("8 a 12 años");
   await expect(appPage.getByTestId("age-loading")).toBeHidden();
+  await assertTableCanBeSkipped(
+    appPage,
+    ageResults,
+    "Omitir tabla de distribución por edad",
+    "#age-results-table-end",
+  );
   await assertNoAxeViolations(appPage, "age report success");
+
+  await appPage.getByRole("tab", { name: "Docentes por sector" }).click();
+  const sectorReportForm = appPage.getByRole("form", {
+    name: "Filtros de docentes por sector",
+  });
+  await sectorReportForm.getByRole("button", { name: "Consultar" }).click();
+  const sectorResults = appPage.getByTestId("sector-results");
+  await assertTableCanBeSkipped(
+    appPage,
+    sectorResults,
+    "Omitir tabla de docentes por sector",
+    "#sector-results-table-end",
+  );
+  await assertNoAxeViolations(appPage, "sector report success");
+
+  await appPage.getByRole("tab", { name: "Escuelas líderes" }).click();
+  const topSchoolsForm = appPage.getByRole("form", {
+    name: "Filtros de escuelas líderes",
+  });
+  await topSchoolsForm
+    .getByLabel("Año académico")
+    .selectOption({ label: "2026 (actual)" });
+  await topSchoolsForm.getByRole("button", { name: "Consultar" }).click();
+  const topResults = appPage.getByTestId("top-results");
+  await assertTableCanBeSkipped(
+    appPage,
+    topResults,
+    "Omitir tabla de escuelas líderes",
+    "#top-results-table-end",
+  );
+  await assertNoAxeViolations(appPage, "top schools report success");
 });
 
-test("reports tabs are keyboard operable and contained at mobile width", async ({
+test("reports tabs are keyboard operable without horizontal overflow", async ({
   appPage,
-}, testInfo) => {
-  // Mobile containment is the point of this test; desktop-chromium already
-  // covers the same tablist markup via the "five operative screens" test.
-  test.skip(
-    testInfo.project.name !== "mobile-chromium",
-    "this test targets mobile-width containment",
-  );
-
+}) => {
   await appPage.goto("/reports");
   await waitForTerminalInitialState(appPage, "/reports");
 
@@ -452,7 +525,7 @@ test("reports tabs are keyboard operable and contained at mobile width", async (
   );
   await expect.poll(() => new URL(appPage.url()).hash).toBe("#sector-report");
 
-  await assertNoAxeViolations(appPage, "reports tabs mobile");
+  await assertNoAxeViolations(appPage, "reports tabs");
 });
 
 async function waitForTerminalInitialState(
@@ -513,8 +586,21 @@ async function assertNoAxeViolations(page: Page, state: string): Promise<void> {
   expect(results.violations, `axe violations: ${state}`).toEqual([]);
 }
 
+async function assertTableCanBeSkipped(
+  page: Page,
+  results: Locator,
+  linkName: string,
+  endSelector: string,
+): Promise<void> {
+  const skipLink = results.getByRole("button", { name: linkName });
+  await skipLink.focus();
+  await expect(skipLink).toBeFocused();
+  await skipLink.press("Enter");
+  await expect(page.locator(endSelector)).toBeFocused();
+}
+
 async function assertUniqueIdsAndLabels(page: Page): Promise<void> {
-  const duplicateIds = await page.locator("[id]").evaluateAll((elements) => {
+  const duplicateIds = await page.locator("[id]").evaluateAll(elements => {
     const counts = new Map<string, number>();
     for (const element of elements) {
       counts.set(element.id, (counts.get(element.id) ?? 0) + 1);
@@ -525,10 +611,10 @@ async function assertUniqueIdsAndLabels(page: Page): Promise<void> {
 
   const controlsWithoutLabels = await page
     .locator("input:not([type=hidden]), select, textarea")
-    .evaluateAll((controls) =>
+    .evaluateAll(controls =>
       controls
-        .filter((control) => (control as HTMLInputElement).labels?.length === 0)
-        .map((control) => control.id),
+        .filter(control => (control as HTMLInputElement).labels?.length === 0)
+        .map(control => control.id),
     );
   expect(controlsWithoutLabels).toEqual([]);
 }
@@ -538,7 +624,7 @@ async function selectLongestValidOption(select: Locator): Promise<void> {
     .locator("option:not([disabled])")
     .allTextContents();
   const label = labels
-    .map((text) => text.trim())
+    .map(text => text.trim())
     .sort((a, b) => b.length - a.length)[0]!;
   await select.selectOption({ label });
   await expect(select.locator("option:checked")).toHaveText(label);
@@ -557,7 +643,7 @@ async function assertFormGeometry(
         first.right > second.left + tolerance &&
         first.top < second.bottom - tolerance &&
         first.bottom > second.top + tolerance;
-      const pairs = elements.map((field) => {
+      const pairs = elements.map(field => {
         const control = field.querySelector<HTMLElement>(
           ':scope > input:not([type="checkbox"]), :scope > select, :scope > textarea',
         )!;
@@ -578,7 +664,7 @@ async function assertFormGeometry(
         focused.control.height + extent * 2,
       );
       const peers = pairs.filter(
-        (pair) =>
+        pair =>
           pair.id !== focusedId &&
           Math.abs(pair.field.top - focused.field.top) <= tolerance,
       );
@@ -590,15 +676,15 @@ async function assertFormGeometry(
             control.left >= field.left - tolerance &&
             control.right <= field.right + tolerance,
         ),
-        separated: pairs.every((current) =>
+        separated: pairs.every(current =>
           pairs.every(
-            (adjacent) =>
+            adjacent =>
               current.id === adjacent.id ||
               Math.abs(current.field.top - adjacent.field.top) > tolerance ||
               !overlaps(current.control, adjacent.field),
           ),
         ),
-        focusClear: peers.every((peer) => !overlaps(focusRect, peer.field)),
+        focusClear: peers.every(peer => !overlaps(focusRect, peer.field)),
         peerCount: peers.length,
         outlineStyle: style.outlineStyle,
         outlineColor: style.outlineColor,

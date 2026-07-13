@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 /**
  * Sub-banda de edad reportada por `getAgeDistribution`. Refleja la
  * definición de `components/reports.yaml#/schemas/AgeBandResponse` del

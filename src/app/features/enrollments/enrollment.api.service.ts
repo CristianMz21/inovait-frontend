@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 import { HttpClient } from "@angular/common/http";
 import { Injectable, inject } from "@angular/core";
 import type { Observable } from "rxjs";

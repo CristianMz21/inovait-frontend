@@ -1,4 +1,6 @@
+/* Copyright (c) 2026. All rights reserved. */
 import type { StudentSearchFiltersVm } from "./student-search.vm";
+import { isCalendarDateOnly } from "../../core/dates/calendar-date";
 
 export interface StudentSearchQueryValues {
   readonly schoolId: string | null;
@@ -30,11 +32,16 @@ export function studentSearchFiltersFromQueryValues(
     return null;
   }
 
+  let normalizedAsOfDate: string | null = null;
+  if (asOfDate.length > 0) {
+    normalizedAsOfDate = asOfDate;
+  }
+
   return {
     schoolId,
     gradeId,
     academicYearId,
-    asOfDate: asOfDate.length > 0 ? asOfDate : null,
+    asOfDate: normalizedAsOfDate,
   };
 }
 
@@ -56,40 +63,19 @@ export function studentSearchFiltersToQueryParams(
     return null;
   }
 
+  if (asOfDate.length > 0) {
+    return {
+      schoolId,
+      gradeId,
+      academicYearId,
+      asOfDate,
+    };
+  }
   return {
     schoolId,
     gradeId,
     academicYearId,
-    ...(asOfDate.length > 0 ? { asOfDate } : {}),
   };
-}
-
-export function isCalendarDateOnly(value: string): boolean {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  if (match === null) {
-    return false;
-  }
-  const year = Number(match[1]);
-  const month = Number(match[2]);
-  const day = Number(match[3]);
-  if (year < 1 || month < 1 || month > 12 || day < 1) {
-    return false;
-  }
-  const monthLengths = [
-    31,
-    isLeapYear(year) ? 29 : 28,
-    31,
-    30,
-    31,
-    30,
-    31,
-    31,
-    30,
-    31,
-    30,
-    31,
-  ];
-  return day <= (monthLengths[month - 1] ?? 0);
 }
 
 function positiveIntegerFromQuery(value: string | null): number | null {
@@ -97,13 +83,12 @@ function positiveIntegerFromQuery(value: string | null): number | null {
     return null;
   }
   const parsed = Number(value);
-  return isPositiveInteger(parsed) ? parsed : null;
+  if (!isPositiveInteger(parsed)) {
+    return null;
+  }
+  return parsed;
 }
 
 function isPositiveInteger(value: number | null): value is number {
   return value !== null && Number.isSafeInteger(value) && value > 0;
-}
-
-function isLeapYear(year: number): boolean {
-  return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
 }

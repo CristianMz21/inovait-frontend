@@ -103,7 +103,8 @@
   font-size: 18px;
 }
 
-.search-empty p {
+.search-empty output {
+  display: block;
   margin: 0;
 }
 

@@ -36,7 +36,7 @@ describe("CatalogApiService", () => {
     ];
 
     let received: unknown;
-    service.listSchools().subscribe((value) => (received = value));
+    service.listSchools().subscribe(value => (received = value));
 
     const req = http.expectOne(`${DEFAULT_API_CONFIG.apiBaseUrl}/api/schools`);
     expect(req.request.method).toBe("GET");
@@ -67,7 +67,7 @@ describe("CatalogApiService", () => {
       .subscribe();
 
     const req = http.expectOne(
-      (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/class-groups`,
+      r => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/class-groups`,
     );
     expect(req.request.params.get("schoolId")).toBe("1");
     expect(req.request.params.get("gradeId")).toBe("2");
@@ -79,7 +79,7 @@ describe("CatalogApiService", () => {
     service.listClassGroups({ schoolId: 1 }).subscribe();
 
     const req = http.expectOne(
-      (r) => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/class-groups`,
+      r => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/class-groups`,
     );
     expect(req.request.params.has("schoolId")).toBe(true);
     expect(req.request.params.has("gradeId")).toBe(false);
@@ -112,8 +112,7 @@ describe("CatalogApiService", () => {
 
     service.listTeachersBySchool(7, "2026-07-10").subscribe();
     const req2 = http.expectOne(
-      (r) =>
-        r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/schools/7/teachers`,
+      r => r.url === `${DEFAULT_API_CONFIG.apiBaseUrl}/api/schools/7/teachers`,
     );
     expect(req2.request.params.get("asOfDate")).toBe("2026-07-10");
     req2.flush([]);

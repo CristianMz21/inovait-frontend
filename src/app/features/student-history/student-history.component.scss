@@ -71,11 +71,16 @@
 }
 
 .history-context {
+  display: block;
   margin: 0;
   padding-left: var(--app-space-3);
   border-left: 3px solid var(--app-accent);
   color: var(--app-muted);
   font-size: 0.9rem;
+}
+
+.history-empty output {
+  display: block;
 }
 
 .history-identity-meta {

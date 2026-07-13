@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 import type { CreateEnrollmentRequest } from "../../core/api/dtos/create-enrollment-request.dto";
 import type { CreateEnrollmentResponse } from "../../core/api/dtos/create-enrollment-response.dto";
 import type {
@@ -54,7 +55,9 @@ export function enrollmentResponseToResult(
     enrollmentId: dto.enrollmentId,
     studentId: dto.studentId,
     studentReused: dto.studentReused,
-    fullName: `${dto.firstNames} ${dto.lastNames}`.replace(/\s+/g, " ").trim(),
+    fullName: `${dto.firstNames} ${dto.lastNames}`
+      .replaceAll(/\s+/g, " ")
+      .trim(),
     age: dto.age,
     schoolName: dto.school.name,
     academicYearName: dto.academicYear.name,

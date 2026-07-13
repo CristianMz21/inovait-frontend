@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 import { DestroyRef, Injectable, inject, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import type { Subscription } from "rxjs";
@@ -18,6 +19,10 @@ import {
   studentHistoryFiltersToParams,
   studentHistoryResponseToVm,
 } from "./student-history.mappers";
+import {
+  STUDENT_HISTORY_NO_RESULTS_REASON,
+  STUDENT_HISTORY_REMOTE_STATUS,
+} from "./student-history.constants";
 import type {
   StudentHistoryFiltersVm,
   StudentHistoryVm,
@@ -88,7 +93,10 @@ export class StudentHistoryFacade {
    */
   retryHistory(): void {
     const current = this.state();
-    if (current.status !== "error" && current.status !== "empty") {
+    if (
+      current.status !== STUDENT_HISTORY_REMOTE_STATUS.error &&
+      current.status !== STUDENT_HISTORY_REMOTE_STATUS.empty
+    ) {
       return;
     }
     const params = studentHistoryFiltersToParams(this.filters());
@@ -123,7 +131,7 @@ export class StudentHistoryFacade {
       .getStudentHistory(params)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (dto) => {
+        next: dto => {
           if (this.isStale(requestKey)) {
             return;
           }
@@ -131,7 +139,9 @@ export class StudentHistoryFacade {
             // El contrato declara `200 []` como respuesta válida para
             // "identidad sin inscripciones". Se mapea a `empty('noResults')`,
             // NO a `error`, para mantener la paridad con `top-schools`.
-            this.state.set(emptyState<StudentHistoryVm>("noResults"));
+            this.state.set(
+              emptyState<StudentHistoryVm>(STUDENT_HISTORY_NO_RESULTS_REASON),
+            );
             return;
           }
           const vm = studentHistoryResponseToVm(dto);
@@ -157,6 +167,9 @@ export class StudentHistoryFacade {
    */
   private isStale(requestKey: string): boolean {
     const current = this.state();
-    return current.status !== "loading" || current.requestKey !== requestKey;
+    return (
+      current.status !== STUDENT_HISTORY_REMOTE_STATUS.loading ||
+      current.requestKey !== requestKey
+    );
   }
 }

@@ -68,6 +68,10 @@
   gap: 0.5rem;
 }
 
+.top-empty output {
+  display: block;
+}
+
 .top-results {
   display: flex;
   flex-direction: column;
@@ -81,6 +85,7 @@
 }
 
 .top-context {
+  display: block;
   margin: 0;
   padding-left: 0.75rem;
   border-left: 3px solid var(--app-accent);

@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 import { DestroyRef, Injectable, inject, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import type { Subscription } from "rxjs";
@@ -107,7 +108,7 @@ export class EnrollmentCreateFacade {
       .create(request)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (response) => {
+        next: response => {
           if (this.isStale(requestKey)) {
             return;
           }

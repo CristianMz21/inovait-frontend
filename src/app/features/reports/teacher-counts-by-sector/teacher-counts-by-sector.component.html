@@ -1,8 +1,8 @@
 <section class="sector" aria-labelledby="sector-title">
   <h1 id="sector-title" tabindex="-1">Docentes distintos por sector</h1>
   <p id="sector-lede" class="sector-lede">
-    Consulta el total de docentes con contratos vigentes en los sectores público
-    y privado.
+    Consulta los conteos de docentes con contratos vigentes en los sectores
+    público y privado.
   </p>
 
   <form
@@ -22,7 +22,7 @@
           id="sector-period-start"
           type="date"
           formControlName="periodStart"
-          [attr.aria-required]="oneDateFilled('start') ? 'true' : null"
+          [attr.aria-required]="oneDateFilled('start') || null"
           [attr.aria-describedby]="describedByFor('start')"
         />
         @if (oneDateFilled("start")) {
@@ -38,7 +38,7 @@
           id="sector-period-end"
           type="date"
           formControlName="periodEnd"
-          [attr.aria-required]="oneDateFilled('end') ? 'true' : null"
+          [attr.aria-required]="oneDateFilled('end') || null"
           [attr.aria-describedby]="describedByFor('end')"
         />
         @if (oneDateFilled("end")) {
@@ -61,7 +61,7 @@
         type="submit"
         class="sector-submit ec-btn ec-btn--secondary"
         [disabled]="!canSubmit() || isLoading() || hasDateRangeError()"
-        [attr.aria-busy]="isLoading() ? 'true' : 'false'"
+        [attr.aria-busy]="isLoading()"
       >
         @if (isLoading()) {
           Consultando…
@@ -89,15 +89,14 @@
   }
 
   @if (isLoading()) {
-    <p
+    <output
       class="sector-status ec-alert ec-alert--info"
-      role="status"
       aria-live="polite"
       data-testid="sector-loading"
     >
       <app-icon name="update" />
       <span>Consultando docentes por sector…</span>
-    </p>
+    </output>
   }
 
   @if (hasError()) {
@@ -144,13 +143,12 @@
   }
 
   @if (successData(); as data) {
-    <div
+    <section
       class="sector-results"
-      role="region"
       aria-labelledby="sector-results-title"
       data-testid="sector-results"
     >
-      <h2 id="sector-results-title">Docentes distintos por sector</h2>
+      <h2 id="sector-results-title">Resultados de docentes por sector</h2>
 
       <div class="sector-kpis">
         <div class="ec-kpi">
@@ -169,14 +167,19 @@
         </div>
       </div>
 
-      <p class="sector-context" role="status" aria-live="polite">
+      <output class="sector-context" aria-live="polite">
         Período <strong>{{ data.periodStart }}</strong> a
         <strong>{{ data.periodEnd }}</strong>
-        · Total <strong>{{ data.totalDistinctTeacherCount }}</strong>
-        {{ data.totalDistinctTeacherCount === 1 ? "docente" : "docentes" }}
-      </p>
+      </output>
 
-      <div class="ec-table">
+      <section class="ec-table" aria-label="Tabla de docentes por sector">
+        <button
+          type="button"
+          class="ec-table__skip"
+          appTableSkip="sector-results-table-end"
+        >
+          Omitir tabla de docentes por sector
+        </button>
         <table>
           <caption class="visually-hidden">
             Docentes distintos por sector. Dos sectores canónicos con conteos
@@ -198,7 +201,14 @@
             }
           </tbody>
         </table>
-      </div>
-    </div>
+      </section>
+      <span
+        id="sector-results-table-end"
+        class="ec-table__end visually-hidden"
+        tabindex="-1"
+      >
+        Fin de la tabla de docentes por sector
+      </span>
+    </section>
   }
 </section>

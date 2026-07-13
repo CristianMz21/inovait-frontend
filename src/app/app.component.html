@@ -1,7 +1,13 @@
 <a class="skip-link" href="#main">Saltar al contenido principal</a>
 
 @if (drawerOpen()) {
-  <div class="ec-scrim" (click)="closeDrawer()" aria-hidden="true"></div>
+  <button
+    type="button"
+    class="ec-scrim"
+    (click)="closeDrawer()"
+    aria-label="Cerrar menú de navegación"
+    tabindex="-1"
+  ></button>
 }
 
 <div class="ec-shell">

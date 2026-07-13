@@ -14,6 +14,7 @@ const completeFilters: StudentSearchFiltersVm = {
   academicYearId: 2,
   asOfDate: null,
 };
+const REFERENCE_DATE = "2026-07-10";
 
 describe("studentSearchFiltersAreComplete", () => {
   it("es true cuando los tres filtros académicos están definidos", () => {
@@ -64,13 +65,13 @@ describe("studentSearchFiltersToParams", () => {
     expect(
       studentSearchFiltersToParams({
         ...completeFilters,
-        asOfDate: " 2026-07-10 ",
+        asOfDate: ` ${REFERENCE_DATE} `,
       }),
     ).toEqual({
       schoolId: 1,
       gradeId: 1,
       academicYearId: 2,
-      asOfDate: "2026-07-10",
+      asOfDate: REFERENCE_DATE,
     });
   });
 
@@ -121,7 +122,7 @@ describe("studentSearchFiltersEqual", () => {
     expect(
       studentSearchFiltersEqual(completeFilters, {
         ...completeFilters,
-        asOfDate: "2026-07-10",
+        asOfDate: REFERENCE_DATE,
       }),
     ).toBe(false);
   });

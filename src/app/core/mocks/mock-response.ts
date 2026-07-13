@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 import {
   HttpErrorResponse,
   HttpHeaders,
@@ -28,13 +29,17 @@ interface MockProblemOptions extends Omit<MockResponseOptions, "status"> {
 }
 
 const DEFAULT_LATENCY_MS = 120;
+const OK_STATUS = 200;
 
 export const applyDelay = <T>(
   source: Observable<T>,
   delayMs?: number,
 ): Observable<T> => {
   const ms = delayMs ?? DEFAULT_LATENCY_MS;
-  return ms > 0 ? timer(ms).pipe(mergeMap(() => source)) : source;
+  if (ms > 0) {
+    return timer(ms).pipe(mergeMap(() => source));
+  }
+  return source;
 };
 
 /**
@@ -50,7 +55,7 @@ export function mockOk<T>(
 ): Observable<HttpResponse<T>> {
   const response = new HttpResponse<T>({
     body,
-    status: options.status ?? 200,
+    status: options.status ?? OK_STATUS,
     headers: mergeDefaultHeaders(options.headers),
   });
   return applyDelay(of(response), options.delayMs);
@@ -70,10 +75,10 @@ export function mockProblem(
   options: MockProblemOptions = {},
 ): Observable<never> {
   const problem = {
-    type: options.type ?? `https://inovait.local/problems/${code}`,
     title,
     status,
     code,
+    type: options.type ?? `https://inovait.local/problems/${code}`,
     detail: options.detail,
     instance: options.instance,
     errors: options.errors,
@@ -101,13 +106,14 @@ function mergeDefaultHeaders(
   overrides: Record<string, string | readonly string[]> | undefined,
   defaultContentType = "application/json",
 ): HttpHeaders {
-  const base: Record<string, string | readonly string[]> = {
+  const merged: Record<string, string | readonly string[]> = {
     "Content-Type": defaultContentType,
   };
-  const merged: Record<string, string | readonly string[]> = {
-    ...base,
-    ...(overrides ?? {}),
-  };
+  if (overrides) {
+    for (const [key, value] of Object.entries(overrides)) {
+      merged[key] = value;
+    }
+  }
   let headers = new HttpHeaders();
   for (const [key, value] of Object.entries(merged)) {
     headers = headers.set(key, value as string | string[]);

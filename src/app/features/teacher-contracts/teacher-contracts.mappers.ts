@@ -1,5 +1,10 @@
+/* Copyright (c) 2026. All rights reserved. */
 import type { CreateTeacherContractsRequest } from "../../core/api/dtos/create-teacher-contracts-request.dto";
 import type { TeacherContractResponse } from "../../core/api/dtos/teacher-contract-response.dto";
+import {
+  isCalendarDateBefore,
+  isCalendarDateOnly,
+} from "../../core/dates/calendar-date";
 import type {
   TeacherContractResultVm,
   TeacherContractsFormVm,
@@ -30,22 +35,18 @@ export function teacherContractsFormIsValid(
   if (uniqueSchoolIds.size !== vm.schoolIds.length) {
     return false;
   }
-  if (!isDateString(vm.startDate)) {
+  if (!isCalendarDateOnly(vm.startDate)) {
     return false;
   }
   if (vm.endDate !== null) {
-    if (!isDateString(vm.endDate)) {
+    if (!isCalendarDateOnly(vm.endDate)) {
       return false;
     }
-    if (vm.endDate < vm.startDate) {
+    if (isCalendarDateBefore(vm.endDate, vm.startDate)) {
       return false;
     }
   }
   return true;
-}
-
-function isDateString(value: string): boolean {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
 /**
@@ -88,12 +89,16 @@ export function teacherContractsFormToRequest(
 export function teacherContractResponseToResult(
   dto: TeacherContractResponse,
 ): TeacherContractResultVm {
+  let schoolSector = "Privado";
+  if (dto.school.sector === "Public") {
+    schoolSector = "Público";
+  }
   return {
+    schoolSector,
     id: dto.id,
     teacherId: dto.teacherId,
     schoolId: dto.school.id,
     schoolName: dto.school.name,
-    schoolSector: dto.school.sector === "Public" ? "Público" : "Privado",
     startDate: dto.startDate,
     endDate: dto.endDate,
     persistedStatus: dto.persistedStatus,

@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 import type { Routes } from "@angular/router";
 
 /**
@@ -21,35 +22,33 @@ export const routes: Routes = [
   {
     path: "enrollments",
     loadComponent: () =>
-      import("./features/enrollments").then((m) => m.EnrollmentCreateComponent),
+      import("./features/enrollments").then(m => m.EnrollmentCreateComponent),
     title: "Matrículas · EduCore",
   },
   {
     path: "student-search",
     loadComponent: () =>
-      import("./features/student-search").then((m) => m.StudentSearchComponent),
+      import("./features/student-search").then(m => m.StudentSearchComponent),
     title: "Consulta de estudiantes · EduCore",
   },
   {
     path: "teacher-contracts",
     loadComponent: () =>
       import("./features/teacher-contracts").then(
-        (m) => m.TeacherContractsComponent,
+        m => m.TeacherContractsComponent,
       ),
     title: "Contratos docentes · EduCore",
   },
   {
     path: "reports",
     loadComponent: () =>
-      import("./features/reports").then((m) => m.ReportsShellComponent),
+      import("./features/reports").then(m => m.ReportsShellComponent),
     title: "Reportes · EduCore",
   },
   {
     path: "student-history",
     loadComponent: () =>
-      import("./features/student-history").then(
-        (m) => m.StudentHistoryComponent,
-      ),
+      import("./features/student-history").then(m => m.StudentHistoryComponent),
     title: "Historial del estudiante · EduCore",
   },
   {

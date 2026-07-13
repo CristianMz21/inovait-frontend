@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 import type { SchoolSummary } from "./school-summary.dto";
 import type {
   TeacherContractEffectiveStatus,

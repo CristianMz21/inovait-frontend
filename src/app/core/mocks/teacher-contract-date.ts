@@ -1,7 +1,8 @@
+/* Copyright (c) 2026. All rights reserved. */
 import type { TeacherContractResponse } from "../api/dtos/teacher-contract-response.dto";
-import { currentLocalDateOnly } from "./date-only";
+import { compareDateOnly } from "./date-only";
 
-export { currentLocalDateOnly };
+export { currentLocalDateOnly } from "./date-only";
 
 /**
  * Evaluates the temporal status exposed by the public teacher-contract DTO.
@@ -19,9 +20,12 @@ export const evaluateTeacherContract = (
   let effectiveStatus: TeacherContractResponse["effectiveStatus"];
   if (contract.persistedStatus === "Cancelled") {
     effectiveStatus = "Cancelled";
-  } else if (asOfDate < contract.startDate) {
+  } else if (compareDateOnly(asOfDate, contract.startDate) < 0) {
     effectiveStatus = "Upcoming";
-  } else if (contract.endDate !== null && asOfDate > contract.endDate) {
+  } else if (
+    contract.endDate !== null &&
+    compareDateOnly(asOfDate, contract.endDate) > 0
+  ) {
     effectiveStatus = "Expired";
   } else {
     effectiveStatus = "Effective";

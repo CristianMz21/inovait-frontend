@@ -1,3 +1,4 @@
+/* Copyright (c) 2026. All rights reserved. */
 import type { Observable } from "rxjs";
 import type { HttpRequest, HttpResponse } from "@angular/common/http";
 
