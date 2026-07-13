@@ -19,6 +19,7 @@
     "lint:style": "prettier --check src e2e package.json angular.json playwright.config.ts playwright.production.config.ts vitest-base.config.ts .github/workflows README.md",
     "lint:eslint": "eslint \"src/**/*.{ts,html}\" --max-warnings=0 --no-inline-config --report-unused-disable-directives",
     "lint": "npm run typecheck && npm run lint:eslint && npm run lint:style",
+    "sonar:local": "./scripts/run-sonar-local.sh",
     "contract:verify": "node ./src/app/scripts/verify-openapi-contract.mjs"
   },
   "dependencies": {
@@ -49,6 +50,7 @@
     "@axe-core/playwright": "^4.12.1",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.61.0",
+    "@sonar/scan": "4.3.8",
     "@types/node": "^24.13.3",
     "@vitest/coverage-v8": "^4.1.10",
     "eslint": "^10.7.0",
