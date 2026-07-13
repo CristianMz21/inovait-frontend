@@ -1,5 +1,26 @@
 # Trazabilidad frontend de requisitos
 
+## Estado ejecutado
+
+Al 2026-07-13, las seis superficies y los 13 consumidores runtime están
+implementados. La verificación vigente es `625/625` pruebas Vitest, `32/32` E2E
+mock, `10/10` E2E de build production y contrato `15/15` contra backend
+`8ed5e6e57aa90758059ebb84ebd2ea55b8dd5854`. El análisis Sonar final mantiene
+Quality Gate `OK`, 0 issues, cobertura 86.1 %, line coverage 84.7 %, branch
+coverage 88.6 %, duplicación 0.6 % y ratings A.
+
+Decisiones funcionales confirmadas:
+
+- `listClassGroups` precede a `listEnrollments`; ausencia de grupos evita la
+  segunda llamada y se distingue de grupos sin matrículas.
+- `createTeacherContracts` siempre se reconcilia con un
+  `listTeacherContracts` posterior; la vista nunca anexa el POST como estado
+  canónico.
+- Reportes presentan los conteos recibidos sin derivar totales, distinct ni
+  orden cliente.
+- La normalización de errores no expone strings, objetos parciales ni
+  extensiones inesperadas del transporte.
+
 ## Fuentes de verdad
 
 | Aspecto | Fuente canónica |
@@ -47,10 +68,10 @@ checksum coincidente.
 | `listSubjects` | ninguno; contract-only | sin consumidor necesario | T008; `ST-CONTRACT-BUNDLE` |
 | `listTeachersBySchool` | ninguno; contract-only | flujo UI es teacher-first | T008; `ST-CONTRACT-BUNDLE` |
 | `createEnrollment` | `EnrollmentApiService.createEnrollment` | FE-S01 | T014–T018; `ST-ENR-CREATE` |
-| `listEnrollments` | `EnrollmentApiService.listEnrollments` | FE-S02 | T020–T023; `ST-SEARCH-QUERY` |
-| `getStudentHistory` | `EnrollmentApiService.getStudentHistory` | FE-S06 | T036,T045–T046; `ST-HISTORY`, `CT-HISTORY` |
-| `createTeacherContracts` | `TeacherContractApiService.createTeacherContracts` | FE-S03 | T025–T028; `ST-CON-PAYLOAD` |
-| `listTeacherContracts` | `TeacherContractApiService.listTeacherContracts` | FE-S04 | T025–T029; `ST-CON-LIST` |
+| `listEnrollments` | `StudentSearchApiService.list` | FE-S02 | T020–T023; `ST-SEARCH-QUERY` |
+| `getStudentHistory` | `StudentHistoryApiService.getStudentHistory` | FE-S06 | T036,T045–T046; `ST-HISTORY`, `CT-HISTORY` |
+| `createTeacherContracts` | `TeacherContractsApiService.create` | FE-S03 | T025–T028; `ST-CON-PAYLOAD` |
+| `listTeacherContracts` | `TeacherContractsApiService.list` | FE-S04 | T025–T029; `ST-CON-LIST` |
 | `getAgeDistribution` | `ReportApiService.getAgeDistribution` | FE-S05 | T036–T040; `ST-RPT-AGE`, `CT-RPT-AGE` |
 | `getDistinctTeacherCountsBySector` | `ReportApiService.getDistinctTeacherCountsBySector` | FE-S05 | T036–T038,T041–T042; `ST-RPT-SECTOR`, `CT-RPT-SECTOR` |
 | `getTopSchoolsByEnrollment` | `ReportApiService.getTopSchoolsByEnrollment` | FE-S05 | T036–T038,T043–T044; `ST-RPT-TOP`, `CT-RPT-TOP` |
@@ -120,4 +141,5 @@ schoolId/gradeId omitido/null, propiedades fijas e historia completa.
 - P1: ninguna tarea, DTO ni fixture P1 comienza antes de la puerta T035; T036 prepara los contratos P1 antes de sus tests.
 - Contexto académico: toda combinación School/Grade/AcademicYear existente es consultable; `200` vacío/ceros cubre ausencia de grupos o inscripciones y no se traza 422 por incompatibilidad en GET.
 - Contrato backend: commit autorizado `1223630ab99bf1bfaa4f5919fccf5ff539379c8e`; checksum `802c13b91bf5c6425d24c540b6841a2abe134e084ea310fc2b7041e32c24a81a`; baseline contractual completado.
-- Implementación: 0 tareas ejecutadas; no existen fuente, package, lockfile ni workspace.
+- Implementación: P0 y P1 operativos; 13 consumidores runtime, cinco rutas,
+  workspace Angular, gates Vitest/Playwright/axe y despliegue local integrado.

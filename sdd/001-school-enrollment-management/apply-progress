@@ -1,5 +1,19 @@
 # Progreso de aplicación (acumulativo)
 
+## Estado vigente (2026-07-13)
+
+- P0 y P1 están implementados en las cinco rutas.
+- Suite vigente: `625/625` Vitest, `32/32` Playwright mock y `10/10`
+  Playwright production; lint, builds, axe y contrato pasan.
+- La integración real pasó contra backend
+  `8ed5e6e57aa90758059ebb84ebd2ea55b8dd5854`, incluido CORS, matrícula con
+  reset/foco, preflight de búsqueda, reportes sin totales derivados y
+  reconciliación POST→GET de contratos.
+- SonarQube final: Quality Gate `OK`, 0 issues, cobertura 86.1 %, line coverage
+  84.7 %, branch coverage 88.6 %, duplicación 0.6 % y ratings A.
+- El detalle WU03 inferior queda como registro histórico y no representa el
+  estado pendiente actual.
+
 ## Cambio
 
 - `001-school-enrollment-management`

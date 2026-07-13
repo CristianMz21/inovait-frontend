@@ -4,11 +4,17 @@ description: "Tareas frontend P0-first para matrícula y contratación docente"
 
 # Tareas: Gestión frontend de inscripción escolar y contratación docente
 
-**Estado**: planificación únicamente; solo se completó el registro contractual
-pre-apply T004. No se ejecutaron scaffold, Angular, dependencias, build, pruebas
-ni tareas de implementación. P0 es el compromiso de una jornada bajo un
-pronóstico asistido por IA de riesgo alto. P1 es condicional, está fuera de la
-ruta crítica de ocho horas y permanece bloqueado hasta T035.
+**Estado ejecutado (2026-07-13)**: P0 y P1 implementados. T001–T032 y
+T034–T048 cuentan con evidencia en código, suites y
+`docs/evaluator-execution.md`. T033 conserva pendiente únicamente la
+confirmación humana del popup nativo de fecha y del zoom manual al 200 %; la
+matriz automatizada responsive/teclado/axe está verde. SonarQube final está en
+Quality Gate `OK` con 0 issues. T049 se completa mediante tres commits locales
+por unidad de trabajo en `main`, sin push.
+
+La lista detallada inferior se conserva como baseline histórico de
+planificación; cuando su checkbox contradiga este resumen, prevalece el estado
+ejecutado de este bloque y la evidencia fechada del evaluador.
 
 Las 49 tareas son ítems finos de control de dependencia, revisión y evidencia; no
 representan 49 horas secuenciales. P0 agrupa T001–T035 en los timeboxes de
@@ -137,4 +143,4 @@ P0, errores/accesibilidad crítica, integración real ni entregables requeridos.
 - **Tareas totales**: 49; P0 35, P1 12 y cierre 2.
 - **Contrato**: 15/15 operationIds; `listSubjects` y `listTeachersBySchool` contract-only.
 - **Paralelismo seguro**: solo tareas `[P]` con archivos distintos y prerequisitos completos.
-- **Fuera de alcance**: auth, NgRx, Playwright P0, CRUD, paginación, SQL, OpenAPI local y métodos cliente sin consumidor.
+- **Fuera de alcance**: auth, NgRx, CRUD, paginación, SQL, copia OpenAPI local y métodos cliente sin consumidor. Playwright se incorporó posteriormente como gate transversal de navegador.

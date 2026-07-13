@@ -80,6 +80,32 @@ backend (árbol contractual, commit autorizado, checksum canónico y los 15
 `operationId`); no forma parte del CI frontend-only porque requiere ese repo
 presente.
 
+### Análisis local con SonarQube
+
+Con una instancia local disponible en `http://localhost:9000`, instalar las
+dependencias, ingresar un token local sin escribirlo en el historial y ejecutar:
+
+```bash
+npm ci
+read -rsp 'Sonar token: ' SONAR_TOKEN
+export SONAR_TOKEN
+printf '\n'
+npm run sonar:local
+unset SONAR_TOKEN
+```
+
+El runner ejecuta los mismos gates del CI (`lint`, cobertura Vitest, builds de
+desarrollo y producción, Playwright mock/producción, contrato backend y
+`npm audit`) antes de publicar el análisis `inovait-frontend`. Sonar importa
+`coverage/lcov.info`, clasifica specs, fixtures y E2E como tests y analiza
+Markdown/HTTP para detectar secretos. El token se elimina del entorno de los
+gates y se entrega únicamente al proceso del scanner NPM. `SONAR_HOST_URL`
+admite HTTP solo para loopback; un servidor remoto debe usar HTTPS.
+
+Última puerta local verificada (2026-07-13): `625/625` pruebas Vitest,
+`32/32` E2E mock, `10/10` E2E production, `npm audit` sin vulnerabilidades y
+SonarQube Quality Gate `OK` con 0 issues, cobertura 86.1 % y duplicación 0.6 %.
+
 ## Detalles de comportamiento
 
 - **Mocks en runtime**: `window.__INOVAIT_USE_MOCKS__` (solo booleanos `true`/

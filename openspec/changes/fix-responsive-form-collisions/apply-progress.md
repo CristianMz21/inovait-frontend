@@ -4,7 +4,7 @@
 
 - Mode: Standard (`strict TDD` is disabled; `openspec/config.yaml` is absent).
 - Delivery: One urgent push to `main`; the implementation diff is 177 changed lines, and the full intended OpenSpec-backed change is 689 lines. The user explicitly accepted exceeding the 400-line review budget.
-- Progress: 8 of 10 tasks complete.
+- Progress: 8 of 10 tasks complete; all automated assertions pass and only the human native-picker confirmation remains across tasks 2.3 and 3.2.
 
 ## Completed Tasks
 
@@ -19,8 +19,8 @@
 
 ## Remaining Tasks
 
-- [ ] 2.3 Automated date type, keyboard focus, value retention, and containment pass at all four widths. A human still needs to confirm that Chromium's native calendar indicator opens and a picker-selected value persists.
-- [ ] 3.2 The headed suite passes, but no human manual picker result was available to record.
+- [ ] 2.3 Automated date type, keyboard focus, value retention, and containment pass at all five widths. A human still needs to confirm that Chromium's native calendar indicator opens and a picker-selected value persists.
+- [ ] 3.2 The headed suite passes 5/5, but no human manual picker result was available to record.
 
 ## Commands and Evidence
 
@@ -32,7 +32,8 @@
 | `npx prettier --check src/styles.scss e2e/frontend-remediation.spec.ts`                                                           | Passed.                                                                                                                                                              |
 | `npm run build`                                                                                                                   | Passed.                                                                                                                                                              |
 | `npm run e2e:mock -- e2e/frontend-remediation.spec.ts --project=desktop-chromium`                                                 | Passed: 12 tests.                                                                                                                                                    |
-| Focused command with `--headed`                                                                                                   | Passed: 4 tests. The first chained launch raced prior web-server cleanup and exited early; a standalone rerun passed.                                                |
+| Focused command with `--headed`                                                                                                   | Passed: 5 tests. The first chained launch raced prior web-server cleanup and exited early; a standalone rerun passed.                                                |
+| `npm run e2e` after accessibility hardening                                                                                       | Passed: 32/32 mock and 10/10 production tests across desktop/mobile.                                                                                                |
 | `git diff --check`                                                                                                                | Passed.                                                                                                                                                              |
 
 ## Files Changed

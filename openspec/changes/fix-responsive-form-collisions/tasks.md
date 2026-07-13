@@ -34,11 +34,11 @@ Chain strategy: not required for this urgent fix.
 
 - [x] 2.1 Extend `e2e/frontend-remediation.spec.ts` to cover loaded `/enrollments` at 800/320 px and `/student-search` at 1024/320 px, selecting longest valid loaded labels and asserting cell containment, same-row non-intersection, reachable wrapping, selected-value preservation, and `scrollWidth <= innerWidth`.
 - [x] 2.2 Add keyboard-focus checks that confirm a visible computed outline and prove its rectangle, inflated by outline width plus offset, is not intersected or obscured by an adjacent same-row field/control.
-- [ ] 2.3 Preserve native date behavior in the same matrix: assert `type="date"`, keyboard focus, valid fill/value retention, and containment; manually confirm the Chromium calendar indicator opens and a picker-selected value persists.
+- [ ] 2.3 Preserve native date behavior in the same matrix: automated `type="date"`, keyboard focus, valid fill/value retention, and containment pass at all five widths; manual confirmation of the Chromium calendar popup remains pending.
 - [x] 2.4 Run `npm run e2e:mock -- e2e/frontend-remediation.spec.ts --project=desktop-chromium --grep "responsive form containment"`.
 
 ## Phase 3: Focused Verification and Cleanup
 
 - [x] 3.1 Run `npm run typecheck`, `npx prettier --check src/styles.scss e2e/frontend-remediation.spec.ts`, `npm run build`, and `npm run e2e:mock -- e2e/frontend-remediation.spec.ts --project=desktop-chromium`.
-- [ ] 3.2 Run the focused test headed for the manual picker smoke with `npm run e2e:mock -- e2e/frontend-remediation.spec.ts --project=desktop-chromium --grep "responsive form containment" --headed`; retain the manual result in review evidence because browser chrome is not reliably inspectable by Playwright.
+- [ ] 3.2 The focused headed command passes 5/5; retain the task open until a human confirms the native calendar popup because browser chrome is not reliably inspectable by Playwright.
 - [x] 3.3 Remove temporary logging/reproduction instrumentation and confirm the implementation diff is limited to `src/styles.scss` and `e2e/frontend-remediation.spec.ts`, with no snapshots, fixture mutations, or feature-SCSS deduplication.

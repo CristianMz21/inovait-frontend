@@ -1,22 +1,22 @@
-# Quickstart futuro de validación
+# Quickstart de validación
 
 ## Estado
 
-Guía para la implementación futura. Ningún comando de esta página fue
-ejecutado durante planificación; no existen scaffold, `package.json`, lockfile,
-fuente ni pruebas.
+La implementación Angular está completa. Las secciones de scaffold se conservan
+como evidencia histórica y no deben repetirse sobre el workspace actual. Para
+una evaluación nueva, use primero los comandos vigentes de gates y despliegue
+que aparecen abajo.
 
-## Bloqueadores pre-apply
+## Estado de puertas
 
-1. Elegir una estrategia de PRs encadenadas o aprobar `size:exception` limitada
-   a scaffold/lockfile generado, separando líneas generadas de líneas humanas.
+- La estrategia ejecutada fue `stacked-to-main`; el workspace y sus cinco rutas
+  ya están implementados.
+- El baseline contractual y sus sucesores autorizados conservan el checksum
+  `802c13b91bf5c6425d24c540b6841a2abe134e084ea310fc2b7041e32c24a81a`.
+- El análisis local Sonar requiere `SONAR_TOKEN` solo en el entorno del proceso;
+  nunca debe escribirse en archivos ni en el historial.
 
-El baseline contractual ya fue autorizado y registrado en el commit backend
-`1223630ab99bf1bfaa4f5919fccf5ff539379c8e`, con checksum
-`802c13b91bf5c6425d24c540b6841a2abe134e084ea310fc2b7041e32c24a81a`.
-Mientras falte la decisión de revisión, no se ejecuta el scaffold.
-
-## Prerrequisitos futuros
+## Prerrequisitos
 
 - Node.js `24.11.1` y npm `11.6.2`, o versiones compatibles con Angular 21.
 - Backend en `http://localhost:5000`, con datos ficticios y CORS para
@@ -27,7 +27,7 @@ Mientras falte la decisión de revisión, no se ejecuta el scaffold.
 
 No se requieren autenticación, secretos ni credenciales.
 
-## Scaffold seguro en repositorio no vacío
+## Scaffold histórico en repositorio no vacío
 
 Ejecutar desde la raíz de `inovait-frontend`. Angular CLI documenta `--directory`
 como el destino del workspace y `--dry-run` como simulación sin escrituras. Se
@@ -138,18 +138,22 @@ La puerta P0 exige backend real. Configuración pública prevista:
 export const environment = { apiBaseUrl: 'http://localhost:5000' };
 ```
 
-## Comandos futuros después del scaffold
+## Comandos vigentes
 
 ```bash
 npm ci
 npm start
-npm test -- --no-watch --no-progress
-npm run build
-npm run contract:verify -- \
-  ../inovait-backend/specs/001-school-enrollment-management/contracts
+npm run lint
+npm test
+npm run e2e
+npm run build:development
+npm run build:production
+npm run contract:verify
 ```
 
-Angular 21 usa Vitest. No existe `npm run e2e` ni Playwright en P0.
+Angular 21 usa Vitest. Playwright y axe validan desktop/mobile con mocks y el
+build production. Para el stack real, ejecutar `./scripts/deploy-local.sh` desde
+el backend hermano y abrir `http://localhost:4200`.
 
 ## Ruta crítica P0 asistida por IA — ocho horas
 

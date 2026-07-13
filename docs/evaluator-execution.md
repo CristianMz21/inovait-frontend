@@ -1,5 +1,42 @@
 # Registro de ejecución del evaluador: WU00 → WU05 (P0 Gate)
 
+## Estado vigente (2026-07-13)
+
+La implementación P0 y P1 está operativa en las cinco rutas. Este bloque
+reemplaza como estado actual a los conteos históricos conservados más abajo.
+
+| Verificación | Resultado vigente |
+|---|---|
+| `npm run lint` | PASS: typecheck de app/spec/E2E, ESLint sin warnings y Prettier |
+| `npm test` | PASS: 49 archivos, 625/625 pruebas |
+| `npm run e2e` | PASS: 32/32 mock y 10/10 build production, desktop y mobile |
+| axe | PASS en los estados E2E recorridos; las tablas desplazables exponen controles de salto por teclado y sus landmarks tienen nombres únicos |
+| `npm run contract:verify` | PASS contra backend `8ed5e6e57aa90758059ebb84ebd2ea55b8dd5854`: 10 YAML bajo seguimiento, árbol limpio, checksum canónico y 15/15 `operationId` |
+| Backend/CORS | PASS: health `200`; preflight `204` para `http://localhost:4200` |
+| SonarQube | PASS final: Quality Gate `OK`, 0 issues, cobertura 86.1 %, line coverage 84.7 %, branch coverage 88.6 %, duplicación 0.6 % y ratings A |
+
+### Regresiones funcionales verificadas
+
+- La frontera HTTP descarta cuerpos inesperados y solo conserva
+  `ProblemDetails` estructuralmente válidos; las regresiones de string y objeto
+  parcial están cubiertas por `to-api-problem.spec.ts`.
+- Consulta ejecuta `classGroups → enrollments` bajo un único `switchMap`. Contra
+  backend real, una combinación sin grupos mostró `Sin grupos disponibles` y
+  emitió cero requests a `/api/enrollments`; una combinación con grupos emitió
+  un preflight y una consulta. `noResults` tiene cobertura E2E separada con mocks
+  porque el seed real posee matrículas en sus 37 combinaciones con grupos.
+- Matrícula real devolvió `201`, mantuvo visible la confirmación, limpió todos
+  los controles y devolvió el foco a `Tipo de documento`. Los errores de campo y
+  el foco al primer control inválido están cubiertos por pruebas de componente.
+- Distribución por edad y docentes por sector muestran exclusivamente los
+  conteos canónicos del backend; no calculan ni presentan totales cliente.
+- Contratos reales emitió `POST /api/teachers/31/contracts → 201` seguido de
+  `GET /api/teachers/31/contracts → 200`; la vista mostró 2 filas, igual que la
+  colección canónica devuelta por el GET, sin anexado optimista.
+- El navegador no registró errores ni warnings durante el recorrido real. El
+  stack local fue apagado al finalizar y los puertos de aplicación quedaron
+  liberados.
+
 ## Alcance y estado
 
 - Cambio: `001-school-enrollment-management`
@@ -52,7 +89,7 @@ sha256sum openapi.yaml \
 | Escenario | Estado remoto | Errores canónicos | A11y | 320 px / 200 % / contraste | Evidencia |
 |---|---|---|---|---|---|
 | Alta válida de nuevo estudiante | loading → success | 201 + `createEnrollmentResponseFixture` | h1 enfocable, fieldset+legend (Identidad, Cadena académica), `aria-required`, `aria-busy` en submit, `role="status"` en success | [x] tokens SCSS respetan contraste WCAG 2.2 AA; fieldset colapsa a una columna `max-width: 320px`; zoom 200 % sin clipping (revisar T033) | `enrollment-create.component.spec.ts` ("submit válido ejecuta POST"), `p0-a11y.routes.spec.ts` ("success tras POST expone region role=\"status\"") |
-| Identidad reutilizable por año distinto | loading → success con `studentReused=true` | 201 + fixture conserva `studentReused` | h1 enfocable, `role="status"` en success | [x] como arriba | `enrollment-create.component.spec.ts` ("submit válido ejecuta POST") cubre `studentReused` |
+| Identidad reutilizable por año distinto | loading → success con `studentReused=true` | 201 + fixture conserva `studentReused` | confirmación persistente; formulario reiniciado y foco en `Tipo de documento` | [x] como arriba | specs cubren `studentReused`, reset y foco; walkthrough real 2026-07-13 |
 | Segundo alta del mismo año | loading → error canónico, **sin mutación parcial** | 409 `enrollment_conflict` ProblemDetails | `role="alert"` con `aria-live="assertive"`, botón "Reintentar" | [x] como arriba | `enrollment-create.component.spec.ts` ("submit con 409 expone error mapeado"), `p0-a11y.routes.spec.ts` ("error canónico expone region role=\"alert\"") |
 | Selectores dependientes School→Year→Grade→Group | estados excluyentes + limpieza descendiente | 400/404/409/422 si el backend rechaza | `aria-disabled` cuando el padre está vacío, descripción con `aria-live="polite"` para estado de catálogos | [x] fieldset colapsa a una columna | `enrollment-create.component.spec.ts` ("bloquea niveles inferiores", "limpia selecciones descendientes", "cancela classGroups anterior") |
 | Catálogo de grupos: 200 [] | empty | 200 [] → `classGroupsState` = `empty` | `<p role="status" aria-live="polite">` con mensaje | [x] como arriba | `enrollment-create.component.spec.ts` (cubierto por `flushCatalog` + `loadClassGroups` → []) |
@@ -63,18 +100,18 @@ sha256sum openapi.yaml \
 | Escenario | Estado remoto | Errores canónicos | A11y | 320 px / 200 % / contraste | Evidencia |
 |---|---|---|---|---|---|
 | Búsqueda con resultados válidos | loading → success | 200 + `enrollmentListResponseFixture` | h1 enfocable, fieldset+legend "Filtros académicos", `aria-required` en school/grade/year, `aria-busy` en submit, tabla con `<caption>` oculto y `<th scope="col">`, contador `aria-live="polite"`, `role="status"`/`role="region"` | [x] SCSS con `max-width: 320px` colapsa tabla y fieldset a una columna | `student-search.component.spec.ts` ("busca cuando la combinación es válida y refleja success"), `p0-a11y.routes.spec.ts` ("success expone region con resultados") |
-| Sin resultados | loading → empty | 200 [] → `empty/noResults` | `role="status"` en bloque empty, sin `role="alert"` | [x] como arriba | `student-search.component.spec.ts` ("respuesta 200 [] se traduce a estado empty/noResults"), `p0-a11y.routes.spec.ts` ("empty (200 []) expone region role=\"status\"") |
-| Combinación sin grupos | loading → empty/noGroups | 200 [] (mismo recorrido) | misma UI empty (la API no distingue) | [x] como arriba | `student-search.component.spec.ts` (mismo test cubre ambos casos) |
+| Sin resultados | loading → empty/noResults | `classGroups` no vacío seguido de `GET /api/enrollments → 200 []` | estado `Sin inscripciones`, sin `role="alert"` | [x] como arriba | specs de componente/fachada y E2E mock dedicado desktop/mobile |
+| Combinación sin grupos | loading → empty/noGroups | `GET /api/class-groups → 200 []`; no se invoca `/api/enrollments` | estado `Sin grupos disponibles`, sin `role="alert"` | [x] como arriba | specs, E2E mock y walkthrough real 2026-07-13 |
 | Cambios de filtros activos | loading → success/error/empty según respuesta; stale descartado | cualquier error canónico mapeado al contexto correcto | cancela GET previo + descarte de stale vía `requestKey` | — | `student-search.component.spec.ts` ("cambiar filtros durante loading cancela el GET previo") |
 | Reintento | reload remoto con reset de estado | error recuperable → success/empty | botón "Reintentar" en `role="alert"` | [x] como arriba | `student-search.component.spec.ts` ("retry() reenvía la búsqueda tras un error"), `p0-a11y.routes.spec.ts` ("error 404 expone region role=\"alert\"") |
 | `asOfDate` opcional | success | 200 + lista con `age` calculado a la fecha | `<small>` con `aria-describedby` | [x] como arriba | `student-search.component.spec.ts` ("envía asOfDate cuando se completa en el formulario") |
-| Acción P1 "Ver historial" bloqueada | deshabilitado | — | `aria-disabled="true"` + `aria-describedby` apuntando a nota P1 | [x] como arriba | inspección manual del HTML en `student-search.component.html:204-211` |
+| Acción "Ver historial" | navegación operativa mediante token opaco | la identidad no se escribe en URL, history state ni web storage | botón accesible por fila y foco de ruta | [x] como arriba | specs de navegación/integración y E2E Back/Forward/reload |
 
 ### 3) Contratos docentes (`/teacher-contracts`)
 
 | Escenario | Estado remoto | Errores canónicos | A11y | 320 px / 200 % / contraste | Evidencia |
 |---|---|---|---|---|---|
-| Solicitud válida multiescuela | loading → success | 201 + `teacherContractsCreatedFixture` | h1 enfocable, 3 fieldsets+legend (Identidad y período, Escuelas, Filtros consulta), `aria-required` en docente/fechas, `aria-busy` en submit, `role="status"` en success, escuelas como checkboxes con `aria-label` por escuela, contador de escuelas en `role="status"` `aria-live="polite"` | [x] SCSS con `max-width: 320px` colapsa fieldset a una columna, lista de escuelas ancho completo | `teacher-contracts.component.spec.ts` ("submit() válido expone loading y luego success con contratos"), `p0-a11y.routes.spec.ts` ("success en creación expone region role=\"status\"") |
+| Solicitud válida multiescuela | loading → success → refresh canónico | POST 201 seguido de GET 200; la lista visible se reemplaza completa | h1 enfocable, 3 fieldsets+legend, `aria-required`, `aria-busy`, success y checkboxes etiquetados | [x] layout responsivo y tabla desplazable con control de salto por teclado | specs y walkthrough real 2026-07-13: secuencia POST→GET, 2 filas UI = 2 DTO canónicos |
 | Fallo parcial (escuela repetida o rango inválido) | loading → error, **sin contratos visibles** | 409 `teacher_contract_conflict` / 400 / 422 ProblemDetails | `role="alert"`, selección conservada | [x] como arriba | `teacher-contracts.component.spec.ts` ("409 conflict expone error con ProblemDetails y conserva la selección", "422 business rule expone error sin mostrar contratos") |
 | Validación local de rango | validación bloqueante local | 422 evitado por validación local | botón submit deshabilitado hasta VM válida | [x] como arriba | `teacher-contracts.component.spec.ts` ("bloquea el botón Crear contratos sin escuelas seleccionadas", "habilita el botón Crear contratos con docente, fechas y al menos una escuela") |
 | Consulta por docente con resultados | loading → success | 200 + `teacherContractsListedFixture` | `role="region"` en resultados, tabla con `<caption>` y `<th scope="col">`, contador `aria-live="polite"` | [x] como arriba | `teacher-contracts.component.spec.ts` ("consulta contratos del docente y muestra success con datos") |
