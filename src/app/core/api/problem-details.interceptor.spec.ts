@@ -92,8 +92,8 @@ describe("problemDetailsInterceptor", () => {
     if (received instanceof ApiProblemError) {
       expect(received.problem).toMatchObject({
         status: 500,
-        code: "unknown_error",
-        title: "Error inesperado",
+        code: "internal_error",
+        title: "Error interno",
         detail: null,
       });
     }

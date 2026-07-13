@@ -109,7 +109,7 @@ describe("mock backend interceptor integration", () => {
     expect(error).toBeInstanceOf(ApiProblemError);
     expect((error as ApiProblemError).problem).toMatchObject({
       status: 500,
-      code: "unknown_error",
+      code: "internal_error",
     });
     httpTesting.expectNone("/api/unexpected");
     httpTesting.verify();

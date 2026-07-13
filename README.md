@@ -102,9 +102,9 @@ Markdown/HTTP para detectar secretos. El token se elimina del entorno de los
 gates y se entrega únicamente al proceso del scanner NPM. `SONAR_HOST_URL`
 admite HTTP solo para loopback; un servidor remoto debe usar HTTPS.
 
-Última puerta local verificada (2026-07-13): `625/625` pruebas Vitest,
+Última puerta local verificada (2026-07-13): `629/629` pruebas Vitest,
 `32/32` E2E mock, `10/10` E2E production, `npm audit` sin vulnerabilidades y
-SonarQube Quality Gate `OK` con 0 issues, cobertura 86.1 % y duplicación 0.6 %.
+SonarQube Quality Gate `OK` con 0 issues, cobertura 86.3 % y duplicación 0.6 %.
 
 ## Detalles de comportamiento
 

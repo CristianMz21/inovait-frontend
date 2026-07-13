@@ -514,6 +514,36 @@ describe("TeacherContractsComponent (CT form/list remoto)", () => {
     expect(component.isSchoolSelected(1)).toBe(false);
   });
 
+  it("actualiza el contador visible al marcar y desmarcar una escuela", () => {
+    flushInitialCatalogs();
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    const checkbox = host.querySelector<HTMLInputElement>(
+      'input[type="checkbox"][aria-label]',
+    );
+    const selectionLabel = (): string =>
+      Array.from(host.querySelectorAll("small"))
+        .find(element => element.textContent?.includes("Seleccionadas:"))
+        ?.textContent?.trim() ?? "";
+
+    expect(checkbox).not.toBeNull();
+    expect(selectionLabel()).toContain("Seleccionadas: 0");
+
+    checkbox?.click();
+    fixture.detectChanges();
+    expect(selectionLabel()).toContain("Seleccionadas: 1");
+
+    const cancelButton = Array.from(host.querySelectorAll("button")).find(
+      button => button.textContent?.trim() === "Cancelar",
+    );
+    expect(cancelButton).toBeDefined();
+
+    cancelButton?.click();
+    fixture.detectChanges();
+    expect(selectionLabel()).toContain("Seleccionadas: 0");
+    expect(checkbox?.checked).toBe(false);
+  });
+
   // -- Renderizado DOM: tono de badge → clase (lock-in, EduCore) -----
 
   it("renderiza las celdas de estado con la clase de tono y la etiqueta correctas", () => {

@@ -6,19 +6,22 @@ const BAD_REQUEST_STATUS = 400;
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
 const UNPROCESSABLE_CONTENT_STATUS = 422;
+const INTERNAL_SERVER_ERROR_STATUS = 500;
+const HTTP_ERROR_STATUS_UPPER_BOUND = 600;
 
 /**
  * Coerce un `HttpErrorResponse` a un `ApiProblem` canónico.
- * Si el backend responde `application/problem+json` se usa su cuerpo tal cual.
- * Si no, se construye un `ApiProblem` mínimo con `code` derivado del estado.
+ * Si el backend responde un `ProblemDetails` 4xx consistente con el transporte,
+ * se usa su cuerpo. Para 5xx o cuerpos inconsistentes se construye un problema
+ * mínimo que no expone detalles internos.
  */
 export function toApiProblem(error: HttpErrorResponse): ApiProblem {
   const body: unknown = error.error;
-  if (isApiProblem(body)) {
+  const status = error.status ?? 0;
+  if (isApiProblemForStatus(body, status) && !isServerErrorStatus(status)) {
     return body;
   }
 
-  const status = error.status ?? 0;
   const code = deriveFallbackCode(status);
   return {
     status,
@@ -29,14 +32,37 @@ export function toApiProblem(error: HttpErrorResponse): ApiProblem {
   };
 }
 
-function isApiProblem(value: unknown): value is ApiProblem {
+function isApiProblemForStatus(
+  value: unknown,
+  transportStatus: number,
+): value is ApiProblem {
   if (!isRecord(value)) {
     return false;
   }
+  if (!isHttpErrorStatus(transportStatus)) {
+    return false;
+  }
+  if (value["status"] !== transportStatus || !hasRequiredProblemFields(value)) {
+    return false;
+  }
   return (
-    hasRequiredProblemFields(value) &&
-    isOptionalString(value["detail"]) &&
-    isOptionalErrorMap(value["errors"])
+    isOptionalString(value["detail"]) && isOptionalErrorMap(value["errors"])
+  );
+}
+
+function isHttpErrorStatus(status: number): boolean {
+  return (
+    Number.isInteger(status) &&
+    status >= BAD_REQUEST_STATUS &&
+    status < HTTP_ERROR_STATUS_UPPER_BOUND
+  );
+}
+
+function isServerErrorStatus(status: number): boolean {
+  return (
+    Number.isInteger(status) &&
+    status >= INTERNAL_SERVER_ERROR_STATUS &&
+    status < HTTP_ERROR_STATUS_UPPER_BOUND
   );
 }
 
@@ -81,12 +107,17 @@ function deriveFallbackTitle(code: string): string {
       return "Conflicto";
     case "business_rule_violation":
       return "Regla de negocio incumplida";
+    case "internal_error":
+      return "Error interno";
     default:
       return "Error inesperado";
   }
 }
 
 function deriveFallbackCode(status: number): string {
+  if (isServerErrorStatus(status)) {
+    return "internal_error";
+  }
   switch (status) {
     case BAD_REQUEST_STATUS:
       return "invalid_request";

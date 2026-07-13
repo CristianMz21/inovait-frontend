@@ -31,7 +31,13 @@ describe("toApiProblem", () => {
     expect(toApiProblem(error422).code).toBe("business_rule_violation");
 
     const errorUnknown = new HttpErrorResponse({ status: 503 });
-    expect(toApiProblem(errorUnknown).code).toBe("unknown_error");
+    expect(toApiProblem(errorUnknown).code).toBe("internal_error");
+
+    const error599 = new HttpErrorResponse({ status: 599 });
+    expect(toApiProblem(error599).code).toBe("internal_error");
+
+    const error600 = new HttpErrorResponse({ status: 600 });
+    expect(toApiProblem(error600).code).toBe("unknown_error");
   });
 
   it("no expone un cuerpo string inesperado como detail", () => {
@@ -43,8 +49,8 @@ describe("toApiProblem", () => {
     const problem = toApiProblem(error);
     expect(problem).toMatchObject({
       status: 500,
-      code: "unknown_error",
-      title: "Error inesperado",
+      code: "internal_error",
+      title: "Error interno",
       detail: null,
     });
   });
@@ -61,6 +67,66 @@ describe("toApiProblem", () => {
 
     expect(toApiProblem(error)).toMatchObject({
       status: 500,
+      code: "internal_error",
+      title: "Error interno",
+      detail: null,
+    });
+  });
+
+  it("no expone detail de un ProblemDetails completo para errores 5xx", () => {
+    const error = new HttpErrorResponse({
+      status: 500,
+      error: {
+        type: "https://inovait.local/problems/internal-error",
+        title: "Error interno",
+        status: 500,
+        code: "internal_error",
+        detail: "database=internal;password=secret",
+      },
+    });
+
+    expect(toApiProblem(error)).toMatchObject({
+      status: 500,
+      code: "internal_error",
+      title: "Error interno",
+      detail: null,
+    });
+  });
+
+  it("rechaza un ProblemDetails cuyo status contradice la respuesta HTTP", () => {
+    const error = new HttpErrorResponse({
+      status: 422,
+      error: {
+        type: "https://inovait.local/problems/invalid-request",
+        title: "Solicitud inválida",
+        status: 400,
+        code: "invalid_request",
+        detail: "Detalle que no corresponde al transporte.",
+      },
+    });
+
+    expect(toApiProblem(error)).toMatchObject({
+      status: 422,
+      code: "business_rule_violation",
+      title: "Regla de negocio incumplida",
+      detail: null,
+    });
+  });
+
+  it("rechaza un status fraccionario aunque coincida con el cuerpo", () => {
+    const error = new HttpErrorResponse({
+      status: 422.5,
+      error: {
+        type: "https://inovait.local/problems/business-rule-violation",
+        title: "Regla de negocio",
+        status: 422.5,
+        code: "business_rule_violation",
+        detail: "No es un status HTTP canónico.",
+      },
+    });
+
+    expect(toApiProblem(error)).toMatchObject({
+      status: 422.5,
       code: "unknown_error",
       title: "Error inesperado",
       detail: null,

@@ -6,6 +6,7 @@ import {
   computed,
   effect,
   inject,
+  signal,
   type OnInit,
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
@@ -127,8 +128,10 @@ export class TeacherContractsComponent implements OnInit {
   });
 
   /** Conjunto de escuelas seleccionadas para el envío atómico. */
-  private readonly selectedSchoolIds = new Set<number>();
-  readonly selectedSchoolsCount = computed(() => this.selectedSchoolIds.size);
+  private readonly selectedSchoolIds = signal<ReadonlySet<number>>(
+    new Set<number>(),
+  );
+  readonly selectedSchoolsCount = computed(() => this.selectedSchoolIds().size);
 
   readonly createTeacherOptions = computed(() =>
     this.mapOptions(this.catalog.teachersState(), teacher => ({
@@ -370,15 +373,29 @@ export class TeacherContractsComponent implements OnInit {
       startDate: "",
       endDate: "",
     });
-    this.selectedSchoolIds.clear();
+    this.selectedSchoolIds.set(new Set<number>());
   }
 
   selectSchool(schoolId: number): void {
-    this.selectedSchoolIds.add(schoolId);
+    this.selectedSchoolIds.update(current => {
+      if (current.has(schoolId)) {
+        return current;
+      }
+      const next = new Set(current);
+      next.add(schoolId);
+      return next;
+    });
   }
 
   deselectSchool(schoolId: number): void {
-    this.selectedSchoolIds.delete(schoolId);
+    this.selectedSchoolIds.update(current => {
+      if (!current.has(schoolId)) {
+        return current;
+      }
+      const next = new Set(current);
+      next.delete(schoolId);
+      return next;
+    });
   }
 
   onSchoolCheckboxChange(schoolId: number, event: Event): void {
@@ -393,7 +410,7 @@ export class TeacherContractsComponent implements OnInit {
   }
 
   isSchoolSelected(schoolId: number): boolean {
-    return this.selectedSchoolIds.has(schoolId);
+    return this.selectedSchoolIds().has(schoolId);
   }
 
   /** Validez de la VM de creación considerando escuelas seleccionadas. */
@@ -469,7 +486,7 @@ export class TeacherContractsComponent implements OnInit {
     }
     return {
       teacherId: raw.teacherId,
-      schoolIds: [...this.selectedSchoolIds],
+      schoolIds: [...this.selectedSchoolIds()],
       startDate: raw.startDate,
       endDate,
     };

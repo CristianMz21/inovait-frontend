@@ -3,11 +3,11 @@
 ## Estado ejecutado
 
 Al 2026-07-13, las seis superficies y los 13 consumidores runtime están
-implementados. La verificación vigente es `625/625` pruebas Vitest, `32/32` E2E
+implementados. La verificación vigente es `629/629` pruebas Vitest, `32/32` E2E
 mock, `10/10` E2E de build production y contrato `15/15` contra backend
 `8ed5e6e57aa90758059ebb84ebd2ea55b8dd5854`. El análisis Sonar final mantiene
-Quality Gate `OK`, 0 issues, cobertura 86.1 %, line coverage 84.7 %, branch
-coverage 88.6 %, duplicación 0.6 % y ratings A.
+Quality Gate `OK`, 0 issues, cobertura 86.3 %, line coverage 84.9 %, branch
+coverage 88.8 %, duplicación 0.6 % y ratings A.
 
 Decisiones funcionales confirmadas:
 

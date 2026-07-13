@@ -8,18 +8,22 @@ reemplaza como estado actual a los conteos históricos conservados más abajo.
 | Verificación | Resultado vigente |
 |---|---|
 | `npm run lint` | PASS: typecheck de app/spec/E2E, ESLint sin warnings y Prettier |
-| `npm test` | PASS: 49 archivos, 625/625 pruebas |
+| `npm test` | PASS: 49 archivos, 629/629 pruebas |
 | `npm run e2e` | PASS: 32/32 mock y 10/10 build production, desktop y mobile |
 | axe | PASS en los estados E2E recorridos; las tablas desplazables exponen controles de salto por teclado y sus landmarks tienen nombres únicos |
 | `npm run contract:verify` | PASS contra backend `8ed5e6e57aa90758059ebb84ebd2ea55b8dd5854`: 10 YAML bajo seguimiento, árbol limpio, checksum canónico y 15/15 `operationId` |
 | Backend/CORS | PASS: health `200`; preflight `204` para `http://localhost:4200` |
-| SonarQube | PASS final: Quality Gate `OK`, 0 issues, cobertura 86.1 %, line coverage 84.7 %, branch coverage 88.6 %, duplicación 0.6 % y ratings A |
+| SonarQube | PASS final: Quality Gate `OK`, 0 issues, cobertura 86.3 %, line coverage 84.9 %, branch coverage 88.8 %, duplicación 0.6 % y ratings A |
 
 ### Regresiones funcionales verificadas
 
 - La frontera HTTP descarta cuerpos inesperados y solo conserva
-  `ProblemDetails` estructuralmente válidos; las regresiones de string y objeto
-  parcial están cubiertas por `to-api-problem.spec.ts`.
+  `ProblemDetails` 4xx estructuralmente válidos cuyo status coincide con el
+  transporte. Los 5xx se normalizan a `internal_error` sin `detail`, y los status
+  contradictorios se convierten en errores seguros derivados del transporte; las
+  regresiones están cubiertas por `to-api-problem.spec.ts`.
+- La selección multiescuela usa estado reactivo inmutable; el contador visible
+  se actualiza al marcar, desmarcar y restablecer checkboxes.
 - Consulta ejecuta `classGroups → enrollments` bajo un único `switchMap`. Contra
   backend real, una combinación sin grupos mostró `Sin grupos disponibles` y
   emitió cero requests a `/api/enrollments`; una combinación con grupos emitió
